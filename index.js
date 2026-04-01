@@ -51,7 +51,7 @@ export default {
         logoUrl: '', 
         signupLink: '', 
         targetUrls: ['https://tenx365x.live'],
-        sliderImages: [] // নতুন: স্লাইডার ইমেজের জন্য
+        sliderImages: [] 
     };
 
     try {
@@ -125,7 +125,7 @@ export default {
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
       // =========================================================
-      // React-সেফ ইনজেকশন (CSS + Capture Event + Slider Hijack)
+      // React-সেফ ইনজেকশন (Independent Custom Slider)
       // =========================================================
       const scriptInjection = `
         <style>
@@ -133,15 +133,38 @@ export default {
              display: inline-block !important;
              ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : ''}
           }
-          /* মূল স্লাইডারগুলো লোড হওয়ার সাথে সাথে লুকিয়ে ফেলার ট্রিক */
-          #carouselExampleControls .carousel-inner .carousel-item:not(.custom-slider) {
+          
+          /* ১. মূল ওয়েবসাইটের স্লাইডারকে সম্পূর্ণ অদৃশ্য করে দেওয়া */
+          #carouselExampleControls, .carousel.slide {
              display: none !important;
+             visibility: hidden !important;
+             height: 0 !important;
+          }
+          
+          /* ২. আমাদের স্বাধীন কাস্টম স্লাইডারের ডিজাইন */
+          #my-custom-slider {
+              width: 100%;
+              position: relative;
+              z-index: 99;
+              overflow: hidden;
+          }
+          #my-custom-slider img {
+              width: 100%;
+              display: none;
+              animation: slideFade 0.6s ease-in-out;
+          }
+          #my-custom-slider img.active-slide {
+              display: block;
+          }
+          @keyframes slideFade {
+              from { opacity: 0.6; transform: scale(1.02); }
+              to { opacity: 1; transform: scale(1); }
           }
         </style>
         <script>
           (function() {
             var customLink = "${config.signupLink}";
-            var sliderImages = ${JSON.stringify(config.sliderImages)}; // অ্যাডমিন প্যানেলের ইমেজগুলো
+            var sliderImages = ${JSON.stringify(config.sliderImages || [])};
 
             // ১. সাইন-আপ বাটন ক্লিক হাইজ্যাকার
             document.addEventListener('click', function(e) {
@@ -161,30 +184,47 @@ export default {
               }
             }, true);
 
-            // ২. স্লাইডার হাইজ্যাকার (MutationObserver দিয়ে)
-            // React যখনই স্লাইডার লোড করবে, আমরা সেটা মুছে আমাদেরটা বসিয়ে দেবো
-            var observer = new MutationObserver(function() {
-              if (sliderImages && sliderImages.length > 0) {
-                var carouselInner = document.querySelector('#carouselExampleControls .carousel-inner');
-                // যদি স্লাইডার পাওয়া যায় এবং সেটাতে আমাদের ইমেজ না থাকে
-                if (carouselInner && !carouselInner.dataset.hijacked) {
-                  carouselInner.dataset.hijacked = "true"; // ট্যাগ করে দিলাম যাতে লুপ না হয়
-                  carouselInner.innerHTML = ''; // মূল ইমেজগুলো ডিলিট!
+            // ২. সুপার স্লাইডার হাইজ্যাকার (React-প্রুফ)
+            if (sliderImages && sliderImages.length > 0) {
+              var observer = new MutationObserver(function() {
+                // মূল স্লাইডারকে খোঁজা হচ্ছে
+                var originalSlider = document.querySelector('#carouselExampleControls') || document.querySelector('.carousel.slide');
+                
+                // যদি মূল স্লাইডার সাইটে লোড হয় এবং আমাদের কাস্টম স্লাইডার এখনো তৈরি না হয়ে থাকে
+                if (originalSlider && !document.getElementById('my-custom-slider')) {
                   
-                  // আমাদের ইমেজগুলো বসানো
+                  // আমাদের নিজস্ব স্বাধীন স্লাইডার কন্টেইনার তৈরি
+                  var customContainer = document.createElement('div');
+                  customContainer.id = 'my-custom-slider';
+
+                  // অ্যাডমিন প্যানেল থেকে পাওয়া ইমেজগুলো বসানো
                   sliderImages.forEach(function(imgUrl, index) {
-                    var itemDiv = document.createElement('div');
-                    itemDiv.className = 'carousel-item custom-slider' + (index === 0 ? ' active' : '');
                     var img = document.createElement('img');
                     img.src = imgUrl;
-                    img.className = 'd-block w-100';
-                    itemDiv.appendChild(img);
-                    carouselInner.appendChild(itemDiv);
+                    if (index === 0) img.className = 'active-slide';
+                    customContainer.appendChild(img);
                   });
+
+                  // মূল স্লাইডারের ঠিক আগে আমাদের স্বাধীন স্লাইডারটি বসিয়ে দেওয়া
+                  originalSlider.parentNode.insertBefore(customContainer, originalSlider);
+
+                  // অটো-স্লাইড লজিক (৩ সেকেন্ড পর পর ছবি বদলাবে)
+                  if (sliderImages.length > 1) {
+                    var currentIdx = 0;
+                    setInterval(function() {
+                      var imgs = customContainer.getElementsByTagName('img');
+                      if(imgs.length > 0) {
+                        imgs[currentIdx].classList.remove('active-slide');
+                        currentIdx = (currentIdx + 1) % imgs.length;
+                        imgs[currentIdx].classList.add('active-slide');
+                      }
+                    }, 3000); 
+                  }
                 }
-              }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
+              });
+              // পুরো সাইটের ওপর নজর রাখা
+              observer.observe(document.body, { childList: true, subtree: true });
+            }
 
           })();
         </script>
