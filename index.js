@@ -17,7 +17,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // API: Live Status Check
     if (url.pathname === '/api/live-status') {
       let targetUrls = [];
       try {
@@ -42,7 +41,6 @@ export default {
       });
     }
 
-    // Load Configurations
     let config = { 
         logoUrl: '', 
         loginBannerUrl: '',
@@ -118,7 +116,11 @@ export default {
       
       const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
 
-      // ১. লোগো রিপ্লেস
+      // ========================================================
+      // DEEP SCRUBBING: রুট লেভেল থেকে অরিজিনাল ইমেজ মুছে ফেলা
+      // ========================================================
+
+      // ১. লোগো চিরতরে মুছে নিজের লোগো বসানো
       if (config.logoUrl) {
           text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
           text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
@@ -128,12 +130,10 @@ export default {
           });
       }
 
-      // ২. লগইন ব্যানার রিপ্লেস (API Data)
+      // ২. লগইন ব্যানার রিপ্লেস
       let finalLoginBanner = (config.loginBannerUrl && config.loginBannerUrl.trim() !== '') ? config.loginBannerUrl : blankSvg;
-      
       text = text.replace(/(id="poupppLogo"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
       text = text.replace(/(class="[^"]*login-head[^"]*"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
-      
       text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:MloginImage)[^"'\\]*/gi, (match) => {
           if (match.includes('\\/')) return finalLoginBanner.replace(/\//g, '\\/');
           return finalLoginBanner;
@@ -148,11 +148,16 @@ export default {
           return replacement;
       });
 
+      // ৪. "NUKE": অরিজিনাল স্লাইডার, পপআপ এবং যেকোনো প্রোমোশনাল ব্যানার কোড থেকে পুরোপুরি মুছে ফেলা!
+      text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => {
+          if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/');
+          return blankSvg;
+      });
+
       const isHtml = contentType.includes('text/html');
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
       if (isHtml) {
-          // চরম শক্তিশালী CSS এবং JS ইনজেকশন
           const scriptInjection = `
             <style>
               #signupButton, .btn-signup {
@@ -160,10 +165,8 @@ export default {
                  ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`}
               }
               
-              /* লগইন ব্যানারের জন্য চরম শক্তিশালী CSS হ্যাক */
               #poupppLogo, img.login-head {
                  content: url("${finalLoginBanner}") !important;
-                 /* ইমেজ না থাকলে যাতে কোনো বর্ডার বা শ্যাডো না আসে */
                  ${(!config.loginBannerUrl || config.loginBannerUrl.trim() === '') ? `background: transparent !important; box-shadow: none !important;` : ''}
               }
 
@@ -179,7 +182,6 @@ export default {
                 var sliderImages = ${JSON.stringify(config.sliderImages || [])};
                 var forceLoginBannerUrl = "${finalLoginBanner}";
 
-                // সাইন-আপ বাটন ক্লিক লিসেনার
                 document.addEventListener('click', function(e) {
                   var target = e.target;
                   var isSignupClick = false;
@@ -196,10 +198,8 @@ export default {
                   }
                 }, true);
 
-                // মিউটেশন অবজারভার - কন্টিনিউয়াস ট্র্যাকিং
                 var observer = new MutationObserver(function() {
                   
-                  // ১. লগইন ব্যানার প্রোটেকশন
                   var loginImgs = document.querySelectorAll('#poupppLogo, img.login-head');
                   loginImgs.forEach(function(img) {
                     if (img.src !== forceLoginBannerUrl) {
@@ -207,7 +207,6 @@ export default {
                     }
                   });
 
-                  // ২. কাস্টম স্লাইডার
                   if (sliderImages && sliderImages.length > 0) {
                     var originalSlider = document.querySelector('#carouselExampleControls') || document.querySelector('.carousel.slide');
                     if (originalSlider && !document.getElementById('my-custom-slider')) {
@@ -257,7 +256,6 @@ export default {
                   }
                 });
                 
-                // পুরো পেজে নজরদারি চালু
                 observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
                 
               })();
