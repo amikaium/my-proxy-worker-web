@@ -1,12 +1,10 @@
-const MY_DOMAIN = 'playpbu.com';
 const FIRESTORE_PROJECT_ID = 'arfan-khan-e1f8f';
 const COLLECTION_NAME = 'settings';
 const DOCUMENT_ID = 'proxyConfig';
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${DOCUMENT_ID}`;
 
-// API রিকোয়েস্টের জন্য টাইমআউট একটু বাড়িয়ে দেওয়া হলো (৮ সেকেন্ড)
 async function fetchWithTimeout(resource, options = {}) {
-  const { timeout = 8000 } = options; 
+  const { timeout = 10000 } = options; 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   const response = await fetch(resource, { ...options, signal: controller.signal });
@@ -17,23 +15,25 @@ async function fetchWithTimeout(resource, options = {}) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    
+    // ========================================================
+    // ডাইনামিক ডোমেইন হ্যাক (যেকোনো লিংকে ১০০% কাজ করবে)
+    // ========================================================
+    const MY_DOMAIN = url.hostname; 
 
-    // ========================================================
-    // ১. CORS Preflight Bypass (API এরর এবং Authorization ফিক্স)
-    // ========================================================
+    // ১. গ্লোবাল CORS এবং Preflight বাইপাস
     if (request.method === "OPTIONS") {
         return new Response(null, {
             headers: {
                 "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "*",
                 "Access-Control-Allow-Credentials": "true",
                 "Access-Control-Max-Age": "86400",
             }
         });
     }
 
-    // অ্যাডমিন প্যানেলের লাইভ চেকার
     if (url.pathname === '/api/live-status') {
       let targetUrls = [];
       try {
@@ -58,14 +58,8 @@ export default {
       });
     }
 
-    // কনফিগারেশন লোড
     let config = { 
-        logoUrl: '', 
-        loginBannerUrl: '',
-        signupLink: '', 
-        targetUrls: ['https://tenx365x.live'],
-        sliderImages: [],
-        gameBanners: {} 
+        logoUrl: '', loginBannerUrl: '', signupLink: '', targetUrls: ['https://tenx365x.live'], sliderImages: [], gameBanners: {} 
     };
 
     try {
@@ -76,12 +70,8 @@ export default {
           if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
           if (fsData.fields.loginBannerUrl) config.loginBannerUrl = fsData.fields.loginBannerUrl.stringValue;
           if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
-          if (fsData.fields.targetUrls?.arrayValue?.values) {
-            config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
-          }
-          if (fsData.fields.sliderImages?.arrayValue?.values) {
-            config.sliderImages = fsData.fields.sliderImages.arrayValue.values.map(v => v.stringValue);
-          }
+          if (fsData.fields.targetUrls?.arrayValue?.values) config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
+          if (fsData.fields.sliderImages?.arrayValue?.values) config.sliderImages = fsData.fields.sliderImages.arrayValue.values.map(v => v.stringValue);
           if (fsData.fields.gameBanners?.mapValue?.fields) {
             let bMap = fsData.fields.gameBanners.mapValue.fields;
             for (let k in bMap) { config.gameBanners[k] = bMap[k].stringValue; }
@@ -100,22 +90,23 @@ export default {
         url.protocol = originUrlObj.protocol;
 
         let requestHeaders = new Headers(request.headers);
-        requestHeaders.set('Host', originUrlObj.hostname);
         
-        // ========================================================
-        // ২. Strict Header Spoofing (মেইন সাইটকে ধোঁকা দেওয়া)
-        // ========================================================
+        // রিকোয়েস্ট হেডার স্পুফিং
+        requestHeaders.set('Host', originUrlObj.hostname);
         requestHeaders.set('Origin', originUrlObj.origin);
         requestHeaders.set('Referer', originUrlObj.origin + url.pathname + url.search);
+        
         requestHeaders.delete('X-Forwarded-Host');
         requestHeaders.delete('X-Forwarded-Proto');
+        requestHeaders.delete('X-Forwarded-For');
+        requestHeaders.delete('CF-Connecting-IP');
 
         let res = await fetchWithTimeout(url.toString(), {
           method: request.method,
           headers: requestHeaders,
           body: request.body,
           redirect: 'manual',
-          timeout: 8000 
+          timeout: 10000 
         });
 
         if (res.status < 500) { response = res; break; }
@@ -130,21 +121,22 @@ export default {
       newHeaders.set('location', location.replace(originUrlObj.hostname, MY_DOMAIN));
     }
     
-    // ব্রাউজারের সিকিউরিটি ব্লক সরানো হলো
     newHeaders.delete('Content-Security-Policy');
     newHeaders.delete('X-Frame-Options');
     newHeaders.set('Access-Control-Allow-Origin', '*');
 
     // ========================================================
-    // ৩. Cookie Domain Rewriting (সেশন এবং অথোরাইজেশন ফিক্স)
+    // ২. ডাইনামিক কুকি ফরজিং (আপনার বর্তমান ডোমেইন নেবে)
     // ========================================================
     if (response.headers.has('set-cookie')) {
-        newHeaders.delete('set-cookie');
-        // Cloudflare-এর getSetCookie() দিয়ে সব কুকি আলাদা করে আনা হলো
         const cookies = response.headers.getSetCookie();
+        newHeaders.delete('set-cookie');
         for (let cookie of cookies) {
-            // অরিজিনাল ডোমেইন মুছে আপনার ডোমেইন বসানো হলো, যাতে ব্রাউজার কুকি সেভ করে রাখে
             let fixedCookie = cookie.replace(/domain=[^;]+/gi, `domain=${MY_DOMAIN}`);
+            fixedCookie = fixedCookie.replace(/SameSite=(Lax|Strict)/gi, 'SameSite=None');
+            if (!fixedCookie.toLowerCase().includes('secure')) {
+                fixedCookie += '; Secure';
+            }
             newHeaders.append('set-cookie', fixedCookie);
         }
     }
@@ -155,10 +147,6 @@ export default {
       let text = await response.text();
       
       const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
-
-      // ========================================================
-      // DEEP SCRUBBING
-      // ========================================================
 
       if (config.logoUrl) {
           text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
@@ -194,6 +182,8 @@ export default {
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
       if (isHtml) {
+          text = text.replace(/<head>/i, `<head>\n<meta name="referrer" content="no-referrer">\n`);
+
           const scriptInjection = `
             <style>
               #signupButton, .btn-signup {
