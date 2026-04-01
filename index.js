@@ -3,13 +3,45 @@ const COLLECTION_NAME = 'settings';
 const DOCUMENT_ID = 'proxyConfig';
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${DOCUMENT_ID}`;
 
-async function fetchWithTimeout(resource, options = {}) {
-    const { timeout = 25000 } = options;
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    const response = await fetch(resource, { ...options, signal: controller.signal });
-    clearTimeout(id);
-    return response;
+// ========================================================
+// ১. Memory Cache (ওয়েবসাইট ফাস্ট এবং বাফারিং ফ্রি করার জন্য)
+// ========================================================
+let cachedConfig = null;
+let lastFetchTime = 0;
+
+async function getAppConfig() {
+    // প্রতি ৬০ সেকেন্ডে একবার ফায়ারবেস চেক করবে, ফলে ভিডিও আর স্লো হবে না
+    if (cachedConfig && (Date.now() - lastFetchTime < 60000)) {
+        return cachedConfig;
+    }
+    
+    let config = { logoUrl: '', loginBannerUrl: '', signupLink: '', targetUrls: ['https://tenx365x.live'], sliderImages: [], gameBanners: {} };
+    try {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 3000);
+        const fsResponse = await fetch(FIRESTORE_URL, { signal: controller.signal });
+        clearTimeout(id);
+        
+        if (fsResponse.ok) {
+            const fsData = await fsResponse.json();
+            if (fsData && fsData.fields) {
+                if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
+                if (fsData.fields.loginBannerUrl) config.loginBannerUrl = fsData.fields.loginBannerUrl.stringValue;
+                if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
+                if (fsData.fields.targetUrls?.arrayValue?.values) config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
+                if (fsData.fields.sliderImages?.arrayValue?.values) config.sliderImages = fsData.fields.sliderImages.arrayValue.values.map(v => v.stringValue);
+                if (fsData.fields.gameBanners?.mapValue?.fields) {
+                    let bMap = fsData.fields.gameBanners.mapValue.fields;
+                    for (let k in bMap) { config.gameBanners[k] = bMap[k].stringValue; }
+                }
+            }
+        }
+        cachedConfig = config;
+        lastFetchTime = Date.now();
+    } catch (e) {
+        if (cachedConfig) return cachedConfig; // ফায়ারবেস ডাউন থাকলেও ক্যাশ থেকে সাইট চলবে
+    }
+    return config;
 }
 
 export default {
@@ -30,101 +62,17 @@ export default {
         }
 
         if (url.pathname === '/api/live-status') {
-            let targetUrls = [];
-            try {
-                const fsResponse = await fetch(FIRESTORE_URL);
-                if (fsResponse.ok) {
-                    const fsData = await fsResponse.json();
-                    if (fsData?.fields?.targetUrls?.arrayValue?.values) {
-                        targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
-                    }
-                }
-            } catch (e) {}
-
-            let liveUrl = null;
-            for (let target of targetUrls) {
-                try {
-                    let res = await fetchWithTimeout(target, { method: 'GET', timeout: 2000 });
-                    if (res.status < 500) { liveUrl = target; break; }
-                } catch (e) {}
-            }
-            return new Response(JSON.stringify({ liveUrl: liveUrl }), {
+            let config = await getAppConfig();
+            return new Response(JSON.stringify({ liveUrl: config.targetUrls[0] }), {
                 headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
             });
         }
 
-        let config = { 
-            logoUrl: '', loginBannerUrl: '', signupLink: '', targetUrls: ['https://tenx365x.live'], sliderImages: [], gameBanners: {} 
-        };
-
-        try {
-            const fsResponse = await fetch(FIRESTORE_URL);
-            if (fsResponse.ok) {
-                const fsData = await fsResponse.json();
-                if (fsData && fsData.fields) {
-                    if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
-                    if (fsData.fields.loginBannerUrl) config.loginBannerUrl = fsData.fields.loginBannerUrl.stringValue;
-                    if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
-                    if (fsData.fields.targetUrls?.arrayValue?.values) config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
-                    if (fsData.fields.sliderImages?.arrayValue?.values) config.sliderImages = fsData.fields.sliderImages.arrayValue.values.map(v => v.stringValue);
-                    if (fsData.fields.gameBanners?.mapValue?.fields) {
-                        let bMap = fsData.fields.gameBanners.mapValue.fields;
-                        for (let k in bMap) { config.gameBanners[k] = bMap[k].stringValue; }
-                    }
-                }
-            }
-        } catch (e) {}
-
+        let config = await getAppConfig();
         let originUrlObj = new URL(config.targetUrls[0]);
 
         // ========================================================
-        // ১. EXTERNAL IFRAME TUNNEL (Scoreboard Fixer)
-        // ========================================================
-        if (url.pathname.startsWith('/__ext__/')) {
-            let parts = url.pathname.split('/');
-            let proto = parts[2];
-            let host = parts[3];
-            let restPath = parts.slice(4).join('/');
-            let targetExtUrl = `${proto}://${host}/${restPath}${url.search}`;
-
-            let extHeaders = new Headers();
-            for (let [key, value] of request.headers.entries()) {
-                if (!key.toLowerCase().startsWith('cf-') && key.toLowerCase() !== 'host') {
-                    extHeaders.set(key, value);
-                }
-            }
-            
-            // সার্ভারকে বোকা বানিয়ে বোঝানো হচ্ছে যে রিকোয়েস্ট tenx365x থেকে আসছে
-            extHeaders.set('Host', host);
-            extHeaders.set('Referer', originUrlObj.origin + '/');
-            extHeaders.set('Origin', originUrlObj.origin);
-
-            let extRes = await fetchWithTimeout(targetExtUrl, {
-                method: request.method,
-                headers: extHeaders,
-                body: request.body,
-                redirect: 'follow', // ভিডিও বা আইফ্রেমের রিডাইরেক্ট ইন্টারনাল করা হলো
-                timeout: 20000
-            });
-
-            let outExtHeaders = new Headers(extRes.headers);
-            outExtHeaders.set('Access-Control-Allow-Origin', '*');
-            outExtHeaders.delete('X-Frame-Options');
-            outExtHeaders.delete('Content-Security-Policy');
-
-            let extType = extRes.headers.get('content-type') || '';
-            if (extType.includes('text/html')) {
-                let text = await extRes.text();
-                // আইফ্রেমের ভেতরের লিংকগুলোকেও টানেলের ভেতর দিয়ে পাঠানো হচ্ছে
-                let baseTag = `<base href="/__ext__/${proto}/${host}/">`;
-                text = text.replace(/<head>/i, `<head>\n${baseTag}`);
-                return new Response(text, { status: extRes.status, headers: outExtHeaders });
-            }
-            return new Response(extRes.body, { status: extRes.status, headers: outExtHeaders });
-        }
-
-        // ========================================================
-        // ২. DYNAMIC SUBDOMAIN ROUTER (Live TV Video Fixer)
+        // ২. Dynamic Subdomain Router (Live TV & Video Streaming)
         // ========================================================
         let targetHostname = request.headers.get('X-Proxy-Target-Host') || originUrlObj.hostname;
         url.hostname = targetHostname;
@@ -158,18 +106,22 @@ export default {
 
         let response = null;
         try {
-            response = await fetchWithTimeout(url.toString(), {
+            response = await fetch(url.toString(), {
                 method: request.method,
                 headers: upstreamHeaders,
                 body: request.body,
-                redirect: 'follow', // ভিডিও খণ্ডগুলো যেন সরাসরি প্লে হয়
-                timeout: 25000 
+                redirect: 'manual'
             });
         } catch (err) {
-            return new Response("Error: Server Offline.", { status: 502 });
+            return new Response("Error: Target Server Down.", { status: 502 });
         }
 
         let newHeaders = new Headers(response.headers);
+        if (newHeaders.has('location')) {
+            let location = newHeaders.get('location');
+            newHeaders.set('location', location.replaceAll(targetHostname, MY_DOMAIN));
+        }
+
         newHeaders.delete('Content-Security-Policy');
         newHeaders.delete('X-Frame-Options');
         newHeaders.delete('Strict-Transport-Security');
@@ -188,7 +140,18 @@ export default {
 
         const contentType = response.headers.get('content-type') || '';
 
-        if (contentType.includes('text/html') || contentType.includes('application/javascript')) {
+        // ========================================================
+        // ৩. Media & Video Streaming Optimizer (ভিডিও স্পিড ১০০ গুণ ফাস্ট করবে)
+        // ========================================================
+        // যদি রিকোয়েস্টটি ভিডিও বা ইমেজ হয়, তাহলে কোনো প্রসেস ছাড়া সরাসরি ব্রাউজারে পাঠিয়ে দেওয়া হবে
+        if (!contentType.includes('text/') && !contentType.includes('application/javascript') && !contentType.includes('application/json')) {
+            return new Response(response.body, { status: response.status, headers: newHeaders });
+        }
+
+        // ========================================================
+        // ৪. HTML & JS Rewriting
+        // ========================================================
+        if (contentType.includes('text/html') || contentType.includes('application/javascript') || contentType.includes('text/javascript')) {
             let text = await response.text();
             text = text.replace(/integrity="[^"]+"/gi, '');
 
@@ -212,18 +175,20 @@ export default {
 
             text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/'); return blankSvg; });
 
-            // বেসিক রিরাইট যাতে মেইন স্ট্রাকচার না ভাঙে
-            text = text.replace(new RegExp(`https://${originUrlObj.hostname}`, 'gi'), `https://${MY_DOMAIN}`);
+            let originalHost = originUrlObj.hostname;
+            let escapedHost = originalHost.replace(/\./g, '\\\\.');
+            
+            // সাধারণ লিংক রিপ্লেস
+            text = text.replace(new RegExp(originalHost, 'gi'), MY_DOMAIN);
+            text = text.replace(new RegExp(escapedHost, 'gi'), MY_DOMAIN.replace(/\./g, '\\.'));
 
             const isHtml = contentType.includes('text/html');
             const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
             
             if (isHtml) {
+                // Scoreboard এর জন্য no-referrer পলিসি অ্যাড করা হলো
                 text = text.replace(/<head>/i, `<head>\n<meta name="referrer" content="no-referrer">\n`);
 
-                // ========================================================
-                // ৩. THE GOD-MODE FRONTEND ENGINE (Iframe & Video Manager)
-                // ========================================================
                 const scriptInjection = `
                   <style>
                     #signupButton, .btn-signup { display: inline-block !important; ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`} }
@@ -238,80 +203,59 @@ export default {
                       var targetBase = "tenx365x.live";
                       var proxyHost = window.location.host;
 
-                      // থার্ড-পার্টি Iframe (স্কোরবোর্ড) কে টানেলের ভেতর দিয়ে নেয়ার ফাংশন
-                      function buildExtUrl(originalUrl) {
-                          try {
-                              let u = new URL(originalUrl);
-                              if (!u.hostname.includes(targetBase) && u.hostname !== proxyHost) {
-                                  return window.location.origin + '/__ext__/' + u.protocol.replace(':','') + '/' + u.hostname + u.pathname + u.search;
-                              }
-                          } catch(e) {}
-                          return originalUrl;
-                      }
-
-                      // Iframe Mutation Observer (স্কোরবোর্ড ফিক্স)
+                      // Scoreboard Iframe Protector (লগইন স্ক্রিন ফিক্স)
+                      // থার্ড-পার্টি Iframe (যেমন 365cric.com) গুলোকে আমরা আর মডিফাই করবো না, সরাসরি চলতে দেব
                       var observer = new MutationObserver(function(mutations) {
                           mutations.forEach(function(m) {
                               if (m.type === 'childList') {
                                   m.addedNodes.forEach(function(node) {
                                       if (node.tagName === 'IFRAME') {
-                                          let src = node.getAttribute('src');
-                                          if (src && src.startsWith('http')) node.setAttribute('src', buildExtUrl(src));
+                                          node.setAttribute('referrerpolicy', 'no-referrer');
                                       } else if (node.querySelectorAll) {
                                           node.querySelectorAll('iframe').forEach(ifr => {
-                                              let src = ifr.getAttribute('src');
-                                              if (src && src.startsWith('http')) ifr.setAttribute('src', buildExtUrl(src));
+                                              ifr.setAttribute('referrerpolicy', 'no-referrer');
                                           });
                                       }
                                   });
-                              } else if (m.type === 'attributes' && m.attributeName === 'src' && m.target.tagName === 'IFRAME') {
-                                  let src = m.target.getAttribute('src');
-                                  if (src && src.startsWith('http') && !src.includes('__ext__')) {
-                                      m.target.setAttribute('src', buildExtUrl(src));
-                                  }
                               }
                           });
                       });
-                      observer.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['src']});
+                      observer.observe(document.body, {childList: true, subtree: true});
 
-                      // Fetch Interceptor (লাইভ টিভির সাবডোমেইন ফিক্স)
+                      // Live TV Video Optimizer
                       var origFetch = window.fetch;
                       window.fetch = async function(...args) {
                           let reqUrl = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : null);
                           let options = args[1] || {};
+                          
                           if (reqUrl) {
                               try {
                                   let u = new URL(reqUrl, window.location.origin);
+                                  // শুধু tenx365x এর সাবডোমেইনগুলোকে প্রক্সিতে টানবে, 365cric.com কে ধরবে না
                                   if (u.hostname.includes(targetBase)) {
                                       options.headers = options.headers || {};
-                                      // কোন সাবডোমেইন থেকে ভিডিও আসছে, সেটা ওয়ার্কারকে জানিয়ে দেওয়া হচ্ছে
                                       if (options.headers instanceof Headers) options.headers.set('X-Proxy-Target-Host', u.hostname);
                                       else options.headers['X-Proxy-Target-Host'] = u.hostname;
                                       
                                       u.hostname = proxyHost;
                                       reqUrl = u.toString();
-                                  } else if (u.hostname !== proxyHost) {
-                                      reqUrl = buildExtUrl(u.href);
                                   }
                               } catch(e) {}
                           }
+                          
                           if (typeof args[0] === 'string') args[0] = reqUrl;
                           else if (args[0]) args[0] = new Request(reqUrl, { ...args[0], ...options });
                           return origFetch.apply(this, args);
                       };
 
-                      // XHR Interceptor (ভিডিও স্ট্রিম ডাটা ফিক্স)
                       var origOpen = XMLHttpRequest.prototype.open;
                       XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-                          this._extUrl = url;
                           try {
                               let u = new URL(url, window.location.origin);
                               if (u.hostname.includes(targetBase)) {
-                                  this._targetHost = u.hostname; // আসল সাবডোমেইন সেভ করে রাখা হচ্ছে
+                                  this._targetHost = u.hostname; 
                                   u.hostname = proxyHost;
                                   url = u.toString();
-                              } else if (u.hostname !== proxyHost) {
-                                  url = buildExtUrl(u.href);
                               }
                           } catch(e) {}
                           return origOpen.call(this, method, url, ...rest);
@@ -325,7 +269,6 @@ export default {
                           return origSend.apply(this, args);
                       };
 
-                      // WebSocket Fix
                       var OrigWS = window.WebSocket;
                       window.WebSocket = function(url, protocols) {
                           try {
@@ -335,14 +278,12 @@ export default {
                                   u.hostname = proxyHost;
                                   u.searchParams.set('__ws_target__', realHost);
                                   url = u.toString();
-                              } else if (u.hostname !== proxyHost) {
-                                  url = 'wss://' + proxyHost + '/__ext__/wss/' + u.hostname + u.pathname + u.search;
                               }
                           } catch(e) {}
                           return protocols ? new OrigWS(url, protocols) : new OrigWS(url);
                       };
 
-                      // Custom Link
+                      // Click Observer logic
                       var customLink = "${config.signupLink}";
                       var forceLoginBannerUrl = "${finalLoginBanner}";
                       document.addEventListener('click', function(e) {
