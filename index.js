@@ -54,7 +54,10 @@ export default {
         const fsData = await fsResponse.json();
         if (fsData && fsData.fields) {
           if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
-          if (fsData.fields.signupLink) config.signupLink = config.signupLink.stringValue;
+          
+          // এখানে ভুল ছিল, এখন ফিক্স করে দেওয়া হয়েছে!
+          if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
+          
           if (fsData.fields.targetUrls?.arrayValue?.values) {
             config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
           }
@@ -116,13 +119,15 @@ export default {
           });
       }
 
+      // সাইন আপ লিংক আছে কিনা তার ওপর ভিত্তি করে বাটন ডিজেবল হবে
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
       const scriptInjection = `
         <style>
           #signupButton, .btn-signup {
              display: inline-block !important;
-             ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : ''}
+             /* যদি লিংক থাকে তবে কালার নরমাল থাকবে, না থাকলে ঘোলা হবে */
+             ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`}
           }
           
           #carouselExampleControls, .carousel.slide {
@@ -153,12 +158,6 @@ export default {
               display: block;
               object-fit: fill; 
           }
-
-          /* অরিজিনাল অ্যারো বাটনগুলো যাতে ইমেজের ওপরে থাকে তার জন্য */
-          .custom-nav-btn {
-              z-index: 10 !important;
-              opacity: 0.8 !important;
-          }
         </style>
         
         <script>
@@ -177,7 +176,9 @@ export default {
               }
               if (isSignupClick) {
                 e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-                if (customLink && customLink.trim() !== '') { window.location.href = customLink; } 
+                if (customLink && customLink.trim() !== '') { 
+                   window.location.href = customLink; 
+                } 
                 return false; 
               }
             }, true);
@@ -190,6 +191,9 @@ export default {
                   
                   var customContainer = document.createElement('div');
                   customContainer.id = 'my-custom-slider';
+                  
+                  // অরিজিনাল সাইটের মতো দেখানোর জন্য ক্লাস যোগ করা হলো
+                  customContainer.className = 'carousel';
 
                   var track = document.createElement('div');
                   track.className = 'slider-track';
@@ -203,14 +207,22 @@ export default {
                   customContainer.appendChild(track);
 
                   if (sliderImages.length > 1) {
-                    // অরিজিনাল ওয়েবসাইটের Bootstrap ক্লাসগুলো ব্যবহার করা হয়েছে
+                    // হুবহু অরিজিনাল ওয়েবসাইটের HTML ক্লাস এবং স্ট্রাকচার ব্যবহার করা হয়েছে
                     var prevBtn = document.createElement('button');
-                    prevBtn.className = 'carousel-control-prev custom-nav-btn';
-                    prevBtn.innerHTML = '<span class="carousel-control-prev-icon" aria-hidden="true"></span>';
+                    prevBtn.className = 'carousel-control-prev';
+                    prevBtn.type = 'button';
+                    prevBtn.style.zIndex = '10'; // যাতে ছবির ওপরে থাকে
+                    prevBtn.style.border = 'none';
+                    prevBtn.style.background = 'transparent';
+                    prevBtn.innerHTML = '<span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span>';
                     
                     var nextBtn = document.createElement('button');
-                    nextBtn.className = 'carousel-control-next custom-nav-btn';
-                    nextBtn.innerHTML = '<span class="carousel-control-next-icon" aria-hidden="true"></span>';
+                    nextBtn.className = 'carousel-control-next';
+                    nextBtn.type = 'button';
+                    nextBtn.style.zIndex = '10';
+                    nextBtn.style.border = 'none';
+                    nextBtn.style.background = 'transparent';
+                    nextBtn.innerHTML = '<span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span>';
 
                     customContainer.appendChild(prevBtn);
                     customContainer.appendChild(nextBtn);
