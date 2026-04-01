@@ -43,6 +43,7 @@ export default {
 
     let config = { 
         logoUrl: '', 
+        loginBannerUrl: '', // নতুন: লগইন ব্যানারের জন্য
         signupLink: '', 
         targetUrls: ['https://tenx365x.live'],
         sliderImages: [],
@@ -55,6 +56,7 @@ export default {
         const fsData = await fsResponse.json();
         if (fsData && fsData.fields) {
           if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
+          if (fsData.fields.loginBannerUrl) config.loginBannerUrl = fsData.fields.loginBannerUrl.stringValue;
           if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
           if (fsData.fields.targetUrls?.arrayValue?.values) {
             config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
@@ -112,6 +114,9 @@ export default {
     if (contentType.includes('text/html') || contentType.includes('application/javascript') || contentType.includes('application/json')) {
       let text = await response.text();
       
+      const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
+
+      // ১. মেইন লোগো রিপ্লেস
       if (config.logoUrl) {
           text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
           text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
@@ -121,9 +126,18 @@ export default {
           });
       }
 
-      // এখানে মূল সাইজ (348x145) এর একটি ট্রান্সপারেন্ট SVG ছবি দেওয়া হলো যাতে বক্সের সাইজ একদম পারফেক্ট থাকে
-      const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
+      // ২. নতুন: লগইন ব্যানার রিপ্লেস (poupppLogo / login-head / MloginImage)
+      let finalLoginBanner = (config.loginBannerUrl && config.loginBannerUrl.trim() !== '') ? config.loginBannerUrl : blankSvg;
+      
+      text = text.replace(/(id="poupppLogo"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
+      text = text.replace(/(class="[^"]*login-head[^"]*"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
+      
+      text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:MloginImage)[^"'\\]*/gi, (match) => {
+          if (match.includes('\\/')) return finalLoginBanner.replace(/\//g, '\\/');
+          return finalLoginBanner;
+      });
 
+      // ৩. গেম ব্যানার রিপ্লেস
       text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)tenx365\.live-([a-zA-Z0-9_-]+)\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match, keyword) => {
           let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') 
                             ? config.gameBanners[keyword] 
