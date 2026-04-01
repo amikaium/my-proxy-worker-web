@@ -17,6 +17,9 @@ export default {
         const url = new URL(request.url);
         const MY_DOMAIN = url.host;
 
+        // ========================================================
+        // ১. CORS & Preflight (API ব্লক ঠেকানোর জন্য)
+        // ========================================================
         if (request.method === "OPTIONS") {
             return new Response(null, {
                 headers: {
@@ -85,68 +88,69 @@ export default {
                 url.protocol = originUrlObj.protocol;
 
                 // ========================================================
-                // ১. Total Header Sanitization (সার্ভারকে বোকা বানানোর মূল অস্ত্র)
+                // ২. Master Request Header Builder (সার্ভারকে বোকা বানানোর যন্ত্র)
                 // ========================================================
-                let requestHeaders = new Headers();
+                let upstreamHeaders = new Headers();
                 
-                // ক্লায়েন্টের অরিজিনাল হেডারগুলো ফিল্টার করে নিচ্ছি
+                // ক্লায়েন্টের হেডারগুলো ফিল্টার করে নিচ্ছি
                 for (let [key, value] of request.headers.entries()) {
                     let lowerKey = key.toLowerCase();
-                    // ক্লাউডফ্লেয়ার বা প্রক্সির কোনো চিহ্ন রাখা যাবে না
-                    if (lowerKey.startsWith('cf-') || 
-                        lowerKey.startsWith('x-forwarded-') || 
-                        lowerKey === 'host' || 
-                        lowerKey === 'origin' || 
-                        lowerKey === 'referer' || 
-                        lowerKey === 'sec-fetch-site') {
+                    if (lowerKey.startsWith('cf-') || lowerKey === 'host' || lowerKey === 'origin' || lowerKey === 'referer') {
                         continue; 
                     }
-                    requestHeaders.set(key, value);
+                    upstreamHeaders.set(key, value);
                 }
 
-                // একদম অরিজিনাল সাইটের মতো রিকোয়েস্ট তৈরি করা হচ্ছে
-                requestHeaders.set('Host', originUrlObj.hostname);
-                requestHeaders.set('Origin', originUrlObj.origin);
-                requestHeaders.set('Referer', originUrlObj.origin + url.pathname + url.search);
-                requestHeaders.set('Sec-Fetch-Site', 'same-origin');
-
-                // আপনার আসল আইপি সেট করা (সেশন ব্লক ঠেকানোর জন্য)
-                let clientIP = request.headers.get('CF-Connecting-IP');
-                if (clientIP) {
-                    requestHeaders.set('X-Forwarded-For', clientIP);
+                upstreamHeaders.set('Host', originUrlObj.hostname);
+                
+                // Referer ও Origin একদম ডাইনামিক করা হলো
+                let clientReferer = request.headers.get('Referer');
+                if (clientReferer) {
+                    let refUrl = new URL(clientReferer);
+                    upstreamHeaders.set('Referer', originUrlObj.origin + refUrl.pathname + refUrl.search);
+                } else {
+                    upstreamHeaders.set('Referer', originUrlObj.origin + url.pathname + url.search);
                 }
+
+                if (request.headers.get('Origin')) {
+                    upstreamHeaders.set('Origin', originUrlObj.origin);
+                }
+
+                // আপনার অরিজিনাল আইপি পাঠানো হচ্ছে (সেশন ব্লক ঠেকানোর প্রধান হাতিয়ার)
+                let clientIP = request.headers.get('CF-Connecting-IP') || '127.0.0.1';
+                upstreamHeaders.set('X-Forwarded-For', clientIP);
+                upstreamHeaders.set('X-Real-IP', clientIP);
+                upstreamHeaders.set('Sec-Fetch-Site', 'same-origin');
 
                 if (request.headers.get("Upgrade") === "websocket") {
                     return fetch(url.toString(), {
                         method: request.method,
-                        headers: requestHeaders
+                        headers: upstreamHeaders
                     });
                 }
 
                 let res = await fetchWithTimeout(url.toString(), {
                     method: request.method,
-                    headers: requestHeaders,
-                    body: request.body, // POST/AJAX রিকোয়েস্ট বডি ঠিক রাখা হলো
+                    headers: upstreamHeaders,
+                    body: request.body,
                     redirect: 'manual',
-                    timeout: 15000 
+                    timeout: 20000 
                 });
 
                 if (res.status < 500) { response = res; break; }
             } catch (err) {}
         }
 
-        if (!response) return new Response("Error: Server Connection Failed.", { status: 502 });
+        if (!response) return new Response("Error: Target Server Down or Unreachable.", { status: 502 });
 
         let newHeaders = new Headers(response.headers);
         
         if (newHeaders.has('location')) {
             let location = newHeaders.get('location');
-            // সাবডোমেইন সহ রিডাইরেক্ট ফিক্স
-            let redirectRegex = new RegExp(`https?://([a-zA-Z0-9-.]*\\.)?${originUrlObj.hostname.replace(/\./g, '\\.')}`, 'gi');
-            newHeaders.set('location', location.replace(redirectRegex, `https://${MY_DOMAIN}`));
+            newHeaders.set('location', location.replaceAll(originUrlObj.hostname, MY_DOMAIN));
         }
 
-        // ব্রাউজার সিকিউরিটি ক্লিয়ার করা
+        // সিকিউরিটি হেডারগুলো রিমুভ (নাহলে স্পোর্টস আইফ্রেম ব্লক হবে)
         newHeaders.delete('Content-Security-Policy');
         newHeaders.delete('X-Frame-Options');
         newHeaders.delete('Strict-Transport-Security');
@@ -154,11 +158,11 @@ export default {
         newHeaders.set('Access-Control-Allow-Origin', request.headers.get("Origin") || "*");
         newHeaders.set('Access-Control-Allow-Credentials', 'true');
 
+        // সেশন কুকি ফিক্স
         if (response.headers.has('set-cookie')) {
             const cookies = response.headers.getSetCookie();
             newHeaders.delete('set-cookie');
             for (let cookie of cookies) {
-                // কুকির ডোমেইন পুরোপুরি মুছে ফেলা হলো
                 let fixedCookie = cookie.replace(/domain=[^;]+;?/gi, ''); 
                 fixedCookie = fixedCookie.replace(/SameSite=[^;]+;?/gi, '');
                 fixedCookie += '; SameSite=None; Secure; Path=/'; 
@@ -174,10 +178,13 @@ export default {
             contentType.includes('application/json')) {
             
             let text = await response.text();
+            
+            // integrity অ্যাট্রিবিউট ডিলিট
             text = text.replace(/integrity="[^"]+"/gi, '');
 
             const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
 
+            // আপনার ডিজাইনের পরিবর্তনগুলো
             if (config.logoUrl) {
                 text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
                 text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
@@ -196,9 +203,7 @@ export default {
             });
 
             text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)tenx365\.live-([a-zA-Z0-9_-]+)\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match, keyword) => {
-                let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') 
-                                  ? config.gameBanners[keyword] 
-                                  : blankSvg; 
+                let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') ? config.gameBanners[keyword] : blankSvg; 
                 if (match.includes('\\/')) return replacement.replace(/\//g, '\\/');
                 return replacement;
             });
@@ -209,24 +214,15 @@ export default {
             });
 
             // ========================================================
-            // ২. Wildcard Subdomain & Deep API Rewriting (The Main Fix)
+            // ৩. The Master Text Replacer (ডোমেইনকে টেক্সট লেভেলে ধ্বংস করা)
             // ========================================================
-            let baseHost = originUrlObj.hostname;
-            let escapedHost = baseHost.replace(/\./g, '\\\\.');
-            
-            // এটি api.tenx365x.live, sports.tenx365x.live ইত্যাদি সব সাবডোমেইনকে আপনার ডোমেইনে কনভার্ট করবে
-            let wildcardRegex = new RegExp(`https?://([a-zA-Z0-9-.]*\\.)?${escapedHost}`, 'gi');
-            text = text.replace(wildcardRegex, `https://${MY_DOMAIN}`);
+            let originalHost = originUrlObj.host;
+            let escapedHost = originalHost.replace(/\./g, '\\\\.');
+            let escapedHost2 = originalHost.replace(/\./g, '%2E');
 
-            let wildcardWssRegex = new RegExp(`wss?://([a-zA-Z0-9-.]*\\.)?${escapedHost}`, 'gi');
-            text = text.replace(wildcardWssRegex, `wss://${MY_DOMAIN}`);
-
-            let wildcardJsonRegex = new RegExp(`https?:\\\\/\\\\/([a-zA-Z0-9-.]*\\.)?${escapedHost}`, 'gi');
-            text = text.replace(wildcardJsonRegex, `https:\\/\\/${MY_DOMAIN}`);
-
-            // সাধারণ ডোমেইন নাম রিপ্লেস (URL ছাড়া শুধু নাম থাকলে)
-            text = text.replaceAll(`"${baseHost}"`, `"${MY_DOMAIN}"`);
-            text = text.replaceAll(`'${baseHost}'`, `'${MY_DOMAIN}'`);
+            text = text.replace(new RegExp(originalHost, 'gi'), MY_DOMAIN);
+            text = text.replace(new RegExp(escapedHost, 'gi'), MY_DOMAIN.replace(/\./g, '\\.'));
+            text = text.replace(new RegExp(escapedHost2, 'gi'), MY_DOMAIN.replace(/\./g, '%2E'));
 
             const isHtml = contentType.includes('text/html');
             const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
@@ -234,6 +230,9 @@ export default {
             if (isHtml) {
                 text = text.replace(/<head>/i, `<head>\n<meta name="referrer" content="no-referrer">\n`);
 
+                // ========================================================
+                // ৪. God-Mode JavaScript Interceptor (The Ultimate Bypass)
+                // ========================================================
                 const scriptInjection = `
                   <style>
                     #signupButton, .btn-signup { display: inline-block !important; ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`} }
@@ -245,6 +244,40 @@ export default {
                   </style>
                   <script>
                     (function() {
+                      var targetHost = "${originalHost}";
+                      var proxyHost = window.location.host;
+
+                      // ১. Fetch API Hijack
+                      var origFetch = window.fetch;
+                      window.fetch = async function(...args) {
+                          if (typeof args[0] === 'string') {
+                              args[0] = args[0].replace(new RegExp(targetHost, 'gi'), proxyHost);
+                          } else if (args[0] && args[0].url) {
+                              var newUrl = args[0].url.replace(new RegExp(targetHost, 'gi'), proxyHost);
+                              args[0] = new Request(newUrl, args[0]);
+                          }
+                          return origFetch.apply(this, args);
+                      };
+
+                      // ২. AJAX (XHR) Hijack
+                      var origOpen = XMLHttpRequest.prototype.open;
+                      XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+                          if (typeof url === 'string') {
+                              url = url.replace(new RegExp(targetHost, 'gi'), proxyHost);
+                          }
+                          return origOpen.call(this, method, url, ...rest);
+                      };
+
+                      // ৩. WebSocket Hijack (For Live Score)
+                      var OrigWS = window.WebSocket;
+                      window.WebSocket = function(url, protocols) {
+                          if (typeof url === 'string') {
+                              url = url.replace(new RegExp(targetHost, 'gi'), proxyHost);
+                          }
+                          return protocols ? new OrigWS(url, protocols) : new OrigWS(url);
+                      };
+
+                      // আপনার কাস্টম লজিক
                       var customLink = "${config.signupLink}";
                       var forceLoginBannerUrl = "${finalLoginBanner}";
                       document.addEventListener('click', function(e) {
