@@ -4,7 +4,7 @@ const DOCUMENT_ID = 'proxyConfig';
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${DOCUMENT_ID}`;
 
 async function fetchWithTimeout(resource, options = {}) {
-    const { timeout = 15000 } = options;
+    const { timeout = 25000 } = options;
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     const response = await fetch(resource, { ...options, signal: controller.signal });
@@ -22,7 +22,7 @@ export default {
                 headers: {
                     "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
                     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-                    "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "*",
+                    "Access-Control-Allow-Headers": "*",
                     "Access-Control-Allow-Credentials": "true",
                     "Access-Control-Max-Age": "86400",
                 }
@@ -75,74 +75,105 @@ export default {
             }
         } catch (e) {}
 
-        let response = null;
-        let originUrlObj = null;
+        let originUrlObj = new URL(config.targetUrls[0]);
 
-        for (let target of config.targetUrls) {
-            try {
-                originUrlObj = new URL(target);
-                url.hostname = originUrlObj.hostname;
-                url.protocol = originUrlObj.protocol;
+        // ========================================================
+        // ১. EXTERNAL IFRAME TUNNEL (Scoreboard Fixer)
+        // ========================================================
+        if (url.pathname.startsWith('/__ext__/')) {
+            let parts = url.pathname.split('/');
+            let proto = parts[2];
+            let host = parts[3];
+            let restPath = parts.slice(4).join('/');
+            let targetExtUrl = `${proto}://${host}/${restPath}${url.search}`;
 
-                let upstreamHeaders = new Headers();
-                for (let [key, value] of request.headers.entries()) {
-                    let lowerKey = key.toLowerCase();
-                    if (lowerKey.startsWith('cf-') || lowerKey === 'host' || lowerKey === 'origin' || lowerKey === 'referer') {
-                        continue; 
-                    }
-                    upstreamHeaders.set(key, value);
+            let extHeaders = new Headers();
+            for (let [key, value] of request.headers.entries()) {
+                if (!key.toLowerCase().startsWith('cf-') && key.toLowerCase() !== 'host') {
+                    extHeaders.set(key, value);
                 }
+            }
+            
+            // সার্ভারকে বোকা বানিয়ে বোঝানো হচ্ছে যে রিকোয়েস্ট tenx365x থেকে আসছে
+            extHeaders.set('Host', host);
+            extHeaders.set('Referer', originUrlObj.origin + '/');
+            extHeaders.set('Origin', originUrlObj.origin);
 
-                upstreamHeaders.set('Host', originUrlObj.hostname);
-                
-                let clientReferer = request.headers.get('Referer');
-                if (clientReferer) {
-                    let refUrl = new URL(clientReferer);
-                    upstreamHeaders.set('Referer', originUrlObj.origin + refUrl.pathname + refUrl.search);
-                } else {
-                    upstreamHeaders.set('Referer', originUrlObj.origin + url.pathname + url.search);
-                }
+            let extRes = await fetchWithTimeout(targetExtUrl, {
+                method: request.method,
+                headers: extHeaders,
+                body: request.body,
+                redirect: 'follow', // ভিডিও বা আইফ্রেমের রিডাইরেক্ট ইন্টারনাল করা হলো
+                timeout: 20000
+            });
 
-                if (request.headers.get('Origin')) {
-                    upstreamHeaders.set('Origin', originUrlObj.origin);
-                }
+            let outExtHeaders = new Headers(extRes.headers);
+            outExtHeaders.set('Access-Control-Allow-Origin', '*');
+            outExtHeaders.delete('X-Frame-Options');
+            outExtHeaders.delete('Content-Security-Policy');
 
-                let clientIP = request.headers.get('CF-Connecting-IP') || '127.0.0.1';
-                upstreamHeaders.set('X-Forwarded-For', clientIP);
-                upstreamHeaders.set('X-Real-IP', clientIP);
-                upstreamHeaders.set('Sec-Fetch-Site', 'same-origin');
-
-                if (request.headers.get("Upgrade") === "websocket") {
-                    return fetch(url.toString(), { method: request.method, headers: upstreamHeaders });
-                }
-
-                let res = await fetchWithTimeout(url.toString(), {
-                    method: request.method,
-                    headers: upstreamHeaders,
-                    body: request.body,
-                    redirect: 'manual',
-                    timeout: 20000 
-                });
-
-                if (res.status < 500) { response = res; break; }
-            } catch (err) {}
+            let extType = extRes.headers.get('content-type') || '';
+            if (extType.includes('text/html')) {
+                let text = await extRes.text();
+                // আইফ্রেমের ভেতরের লিংকগুলোকেও টানেলের ভেতর দিয়ে পাঠানো হচ্ছে
+                let baseTag = `<base href="/__ext__/${proto}/${host}/">`;
+                text = text.replace(/<head>/i, `<head>\n${baseTag}`);
+                return new Response(text, { status: extRes.status, headers: outExtHeaders });
+            }
+            return new Response(extRes.body, { status: extRes.status, headers: outExtHeaders });
         }
 
-        if (!response) return new Response("Error: Target Server Down or Unreachable.", { status: 502 });
+        // ========================================================
+        // ২. DYNAMIC SUBDOMAIN ROUTER (Live TV Video Fixer)
+        // ========================================================
+        let targetHostname = request.headers.get('X-Proxy-Target-Host') || originUrlObj.hostname;
+        url.hostname = targetHostname;
+        url.protocol = originUrlObj.protocol;
+
+        let upstreamHeaders = new Headers();
+        for (let [key, value] of request.headers.entries()) {
+            let lowerKey = key.toLowerCase();
+            if (lowerKey.startsWith('cf-') || lowerKey === 'host' || lowerKey === 'x-proxy-target-host') {
+                continue; 
+            }
+            upstreamHeaders.set(key, value);
+        }
+
+        upstreamHeaders.set('Host', targetHostname);
+        upstreamHeaders.set('Referer', originUrlObj.origin + '/');
+        upstreamHeaders.set('Origin', originUrlObj.origin);
+
+        let clientIP = request.headers.get('CF-Connecting-IP') || '127.0.0.1';
+        upstreamHeaders.set('X-Forwarded-For', clientIP);
+        upstreamHeaders.set('X-Real-IP', clientIP);
+
+        if (request.headers.get("Upgrade") === "websocket") {
+            let wsTarget = url.searchParams.get('__ws_target__');
+            if (wsTarget) {
+                url.hostname = wsTarget;
+                url.searchParams.delete('__ws_target__');
+            }
+            return fetch(url.toString(), { method: request.method, headers: upstreamHeaders });
+        }
+
+        let response = null;
+        try {
+            response = await fetchWithTimeout(url.toString(), {
+                method: request.method,
+                headers: upstreamHeaders,
+                body: request.body,
+                redirect: 'follow', // ভিডিও খণ্ডগুলো যেন সরাসরি প্লে হয়
+                timeout: 25000 
+            });
+        } catch (err) {
+            return new Response("Error: Server Offline.", { status: 502 });
+        }
 
         let newHeaders = new Headers(response.headers);
-        if (newHeaders.has('location')) {
-            let location = newHeaders.get('location');
-            newHeaders.set('location', location.replaceAll(originUrlObj.hostname, MY_DOMAIN));
-        }
-
-        // সিকিউরিটি হেডারগুলো রিমুভ (নাহলে থার্ড-পার্টি স্পোর্টস ভিডিও ব্লক হবে)
         newHeaders.delete('Content-Security-Policy');
         newHeaders.delete('X-Frame-Options');
         newHeaders.delete('Strict-Transport-Security');
-        newHeaders.delete('X-XSS-Protection');
-        newHeaders.set('Access-Control-Allow-Origin', request.headers.get("Origin") || "*");
-        newHeaders.set('Access-Control-Allow-Credentials', 'true');
+        newHeaders.set('Access-Control-Allow-Origin', '*');
 
         if (response.headers.has('set-cookie')) {
             const cookies = response.headers.getSetCookie();
@@ -157,11 +188,7 @@ export default {
 
         const contentType = response.headers.get('content-type') || '';
 
-        if (contentType.includes('text/html') || 
-            contentType.includes('application/javascript') || 
-            contentType.includes('text/javascript') || 
-            contentType.includes('application/json')) {
-            
+        if (contentType.includes('text/html') || contentType.includes('application/javascript')) {
             let text = await response.text();
             text = text.replace(/integrity="[^"]+"/gi, '');
 
@@ -170,38 +197,23 @@ export default {
             if (config.logoUrl) {
                 text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
                 text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
-                text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:logo|Logo)[^"'\\]*/gi, (match) => {
-                    if (match.includes('\\/')) return config.logoUrl.replace(/\//g, '\\/');
-                    return config.logoUrl;
-                });
+                text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:logo|Logo)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return config.logoUrl.replace(/\//g, '\\/'); return config.logoUrl; });
             }
 
             let finalLoginBanner = (config.loginBannerUrl && config.loginBannerUrl.trim() !== '') ? config.loginBannerUrl : blankSvg;
             text = text.replace(/(id="poupppLogo"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
             text = text.replace(/(class="[^"]*login-head[^"]*"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
-            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:MloginImage)[^"'\\]*/gi, (match) => {
-                if (match.includes('\\/')) return finalLoginBanner.replace(/\//g, '\\/');
-                return finalLoginBanner;
-            });
+            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:MloginImage)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return finalLoginBanner.replace(/\//g, '\\/'); return finalLoginBanner; });
 
             text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)tenx365\.live-([a-zA-Z0-9_-]+)\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match, keyword) => {
                 let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') ? config.gameBanners[keyword] : blankSvg; 
-                if (match.includes('\\/')) return replacement.replace(/\//g, '\\/');
-                return replacement;
+                if (match.includes('\\/')) return replacement.replace(/\//g, '\\/'); return replacement;
             });
 
-            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => {
-                if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/');
-                return blankSvg;
-            });
+            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/'); return blankSvg; });
 
-            let originalHost = originUrlObj.host;
-            let escapedHost = originalHost.replace(/\./g, '\\\\.');
-            let escapedHost2 = originalHost.replace(/\./g, '%2E');
-
-            text = text.replace(new RegExp(originalHost, 'gi'), MY_DOMAIN);
-            text = text.replace(new RegExp(escapedHost, 'gi'), MY_DOMAIN.replace(/\./g, '\\.'));
-            text = text.replace(new RegExp(escapedHost2, 'gi'), MY_DOMAIN.replace(/\./g, '%2E'));
+            // বেসিক রিরাইট যাতে মেইন স্ট্রাকচার না ভাঙে
+            text = text.replace(new RegExp(`https://${originUrlObj.hostname}`, 'gi'), `https://${MY_DOMAIN}`);
 
             const isHtml = contentType.includes('text/html');
             const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
@@ -209,6 +221,9 @@ export default {
             if (isHtml) {
                 text = text.replace(/<head>/i, `<head>\n<meta name="referrer" content="no-referrer">\n`);
 
+                // ========================================================
+                // ৩. THE GOD-MODE FRONTEND ENGINE (Iframe & Video Manager)
+                // ========================================================
                 const scriptInjection = `
                   <style>
                     #signupButton, .btn-signup { display: inline-block !important; ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`} }
@@ -220,76 +235,114 @@ export default {
                   </style>
                   <script>
                     (function() {
-                      var targetHost = "${originalHost}";
+                      var targetBase = "tenx365x.live";
                       var proxyHost = window.location.host;
 
-                      // ========================================================
-                      // LIVE TV & SCOREBOARD FIXER (The Missing Magic)
-                      // ========================================================
-                      function fixExternalNode(node) {
-                          if (node.tagName === 'IFRAME') {
-                              // থার্ড-পার্টির কাছে আমাদের প্রক্সি ডোমেইন হাইড করা হচ্ছে
-                              node.setAttribute('referrerpolicy', 'no-referrer');
-                              
-                              if (node.src) {
-                                  try {
-                                      var u = new URL(node.src);
-                                      // যদি এটি থার্ড-পার্টি লাইভ টিভি বা স্কোরের লিংক হয়
-                                      if (u.hostname !== proxyHost && !u.hostname.includes(targetHost)) {
-                                          // ভিডিও লিংকের ভেতরে থাকা প্রক্সি ডোমেইনকে সরিয়ে আবার অরিজিনাল ডোমেইন বসানো হচ্ছে
-                                          var fixedSrc = node.src.replace(new RegExp(proxyHost, 'gi'), targetHost);
-                                          if (node.src !== fixedSrc) { 
-                                              node.src = fixedSrc; 
-                                          }
-                                      }
-                                  } catch(e) {}
+                      // থার্ড-পার্টি Iframe (স্কোরবোর্ড) কে টানেলের ভেতর দিয়ে নেয়ার ফাংশন
+                      function buildExtUrl(originalUrl) {
+                          try {
+                              let u = new URL(originalUrl);
+                              if (!u.hostname.includes(targetBase) && u.hostname !== proxyHost) {
+                                  return window.location.origin + '/__ext__/' + u.protocol.replace(':','') + '/' + u.hostname + u.pathname + u.search;
                               }
-                          }
+                          } catch(e) {}
+                          return originalUrl;
                       }
 
+                      // Iframe Mutation Observer (স্কোরবোর্ড ফিক্স)
                       var observer = new MutationObserver(function(mutations) {
-                          mutations.forEach(function(mutation) {
-                              mutation.addedNodes.forEach(function(node) {
-                                  if (node.nodeType === 1) { 
-                                      fixExternalNode(node);
-                                      node.querySelectorAll('iframe').forEach(fixExternalNode);
+                          mutations.forEach(function(m) {
+                              if (m.type === 'childList') {
+                                  m.addedNodes.forEach(function(node) {
+                                      if (node.tagName === 'IFRAME') {
+                                          let src = node.getAttribute('src');
+                                          if (src && src.startsWith('http')) node.setAttribute('src', buildExtUrl(src));
+                                      } else if (node.querySelectorAll) {
+                                          node.querySelectorAll('iframe').forEach(ifr => {
+                                              let src = ifr.getAttribute('src');
+                                              if (src && src.startsWith('http')) ifr.setAttribute('src', buildExtUrl(src));
+                                          });
+                                      }
+                                  });
+                              } else if (m.type === 'attributes' && m.attributeName === 'src' && m.target.tagName === 'IFRAME') {
+                                  let src = m.target.getAttribute('src');
+                                  if (src && src.startsWith('http') && !src.includes('__ext__')) {
+                                      m.target.setAttribute('src', buildExtUrl(src));
                                   }
-                              });
+                              }
                           });
                       });
-                      observer.observe(document.body, { childList: true, subtree: true });
+                      observer.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['src']});
 
-                      window.addEventListener('DOMContentLoaded', function() {
-                          document.querySelectorAll('iframe').forEach(fixExternalNode);
-                      });
-
-                      // Network Interceptors
+                      // Fetch Interceptor (লাইভ টিভির সাবডোমেইন ফিক্স)
                       var origFetch = window.fetch;
                       window.fetch = async function(...args) {
-                          if (typeof args[0] === 'string') {
-                              args[0] = args[0].replace(new RegExp(targetHost, 'gi'), proxyHost);
-                          } else if (args[0] && args[0].url) {
-                              args[0] = new Request(args[0].url.replace(new RegExp(targetHost, 'gi'), proxyHost), args[0]);
+                          let reqUrl = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : null);
+                          let options = args[1] || {};
+                          if (reqUrl) {
+                              try {
+                                  let u = new URL(reqUrl, window.location.origin);
+                                  if (u.hostname.includes(targetBase)) {
+                                      options.headers = options.headers || {};
+                                      // কোন সাবডোমেইন থেকে ভিডিও আসছে, সেটা ওয়ার্কারকে জানিয়ে দেওয়া হচ্ছে
+                                      if (options.headers instanceof Headers) options.headers.set('X-Proxy-Target-Host', u.hostname);
+                                      else options.headers['X-Proxy-Target-Host'] = u.hostname;
+                                      
+                                      u.hostname = proxyHost;
+                                      reqUrl = u.toString();
+                                  } else if (u.hostname !== proxyHost) {
+                                      reqUrl = buildExtUrl(u.href);
+                                  }
+                              } catch(e) {}
                           }
+                          if (typeof args[0] === 'string') args[0] = reqUrl;
+                          else if (args[0]) args[0] = new Request(reqUrl, { ...args[0], ...options });
                           return origFetch.apply(this, args);
                       };
 
+                      // XHR Interceptor (ভিডিও স্ট্রিম ডাটা ফিক্স)
                       var origOpen = XMLHttpRequest.prototype.open;
                       XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-                          if (typeof url === 'string') {
-                              url = url.replace(new RegExp(targetHost, 'gi'), proxyHost);
-                          }
+                          this._extUrl = url;
+                          try {
+                              let u = new URL(url, window.location.origin);
+                              if (u.hostname.includes(targetBase)) {
+                                  this._targetHost = u.hostname; // আসল সাবডোমেইন সেভ করে রাখা হচ্ছে
+                                  u.hostname = proxyHost;
+                                  url = u.toString();
+                              } else if (u.hostname !== proxyHost) {
+                                  url = buildExtUrl(u.href);
+                              }
+                          } catch(e) {}
                           return origOpen.call(this, method, url, ...rest);
                       };
+                      
+                      var origSend = XMLHttpRequest.prototype.send;
+                      XMLHttpRequest.prototype.send = function(...args) {
+                          if (this._targetHost) {
+                              this.setRequestHeader('X-Proxy-Target-Host', this._targetHost);
+                          }
+                          return origSend.apply(this, args);
+                      };
 
+                      // WebSocket Fix
                       var OrigWS = window.WebSocket;
                       window.WebSocket = function(url, protocols) {
-                          if (typeof url === 'string') {
-                              url = url.replace(new RegExp(targetHost, 'gi'), proxyHost);
-                          }
+                          try {
+                              let u = new URL(url);
+                              if (u.hostname.includes(targetBase)) {
+                                  let realHost = u.hostname;
+                                  u.hostname = proxyHost;
+                                  u.searchParams.set('__ws_target__', realHost);
+                                  url = u.toString();
+                              } else if (u.hostname !== proxyHost) {
+                                  url = 'wss://' + proxyHost + '/__ext__/wss/' + u.hostname + u.pathname + u.search;
+                              }
+                          } catch(e) {}
                           return protocols ? new OrigWS(url, protocols) : new OrigWS(url);
                       };
 
+                      // Custom Link
                       var customLink = "${config.signupLink}";
                       var forceLoginBannerUrl = "${finalLoginBanner}";
                       document.addEventListener('click', function(e) {
