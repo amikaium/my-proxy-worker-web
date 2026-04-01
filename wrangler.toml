@@ -1,0 +1,6 @@
+name = "my-proxy-worker-web"
+main = "index.js"
+compatibility_date = "2024-04-01"
+
+[observability]
+enabled = true
