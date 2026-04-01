@@ -1,235 +1,244 @@
 const FIRESTORE_PROJECT_ID = 'arfan-khan-e1f8f';
 const COLLECTION_NAME = 'settings';
 const DOCUMENT_ID = 'proxyConfig';
-const FIRESTORE_URL = https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${DOCUMENT_ID};
+const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${DOCUMENT_ID}`;
 
 async function fetchWithTimeout(resource, options = {}) {
-const { timeout = 25000 } = options;
-const controller = new AbortController();
-const id = setTimeout(() => controller.abort(), timeout);
-const response = await fetch(resource, { ...options, signal: controller.signal });
-clearTimeout(id);
-return response;
+    const { timeout = 25000 } = options;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    const response = await fetch(resource, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
 }
 
 export default {
-async fetch(request, env) {
-const url = new URL(request.url);
-const MY_DOMAIN = url.host;
+    async fetch(request, env) {
+        const url = new URL(request.url);
+        const MY_DOMAIN = url.hostname;
 
-code
-Code
-download
-content_copy
-expand_less
-if (request.method === "OPTIONS") {
-        return new Response(null, {
-            headers: {
-                "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Max-Age": "86400",
+        // ========================================================
+        // ১. গ্লোবাল CORS বাইপাস (API ব্লক ঠেকানোর জন্য)
+        // ========================================================
+        if (request.method === "OPTIONS") {
+            return new Response(null, {
+                headers: {
+                    "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                    "Access-Control-Allow-Headers": "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Access-Control-Max-Age": "86400",
+                }
+            });
+        }
+
+        // লাইভ স্ট্যাটাস API (অ্যাডমিন প্যানেলের জন্য)
+        if (url.pathname === '/api/live-status') {
+            let targetUrls = [];
+            try {
+                const fsResponse = await fetch(FIRESTORE_URL);
+                if (fsResponse.ok) {
+                    const fsData = await fsResponse.json();
+                    if (fsData?.fields?.targetUrls?.arrayValue?.values) {
+                        targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
+                    }
+                }
+            } catch (e) { }
+
+            let liveUrl = null;
+            for (let target of targetUrls) {
+                try {
+                    let res = await fetchWithTimeout(target, { method: 'GET', timeout: 2000 });
+                    if (res.status < 500) { liveUrl = target; break; }
+                } catch (e) { }
             }
-        });
-    }
+            return new Response(JSON.stringify({ liveUrl: liveUrl }), {
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+            });
+        }
 
-    if (url.pathname === '/api/live-status') {
-        let targetUrls = [];
+        // ফায়ারবেস থেকে কনফিগারেশন লোড (ডিফল্ট টার্গেট 1xbdt.site)
+        let config = {
+            logoUrl: '', loginBannerUrl: '', signupLink: '', targetUrls: ['https://1xbdt.site'], sliderImages: [], gameBanners: {}
+        };
+
         try {
             const fsResponse = await fetch(FIRESTORE_URL);
             if (fsResponse.ok) {
                 const fsData = await fsResponse.json();
-                if (fsData?.fields?.targetUrls?.arrayValue?.values) {
-                    targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
+                if (fsData && fsData.fields) {
+                    if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
+                    if (fsData.fields.loginBannerUrl) config.loginBannerUrl = fsData.fields.loginBannerUrl.stringValue;
+                    if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
+                    if (fsData.fields.targetUrls?.arrayValue?.values) config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
+                    if (fsData.fields.sliderImages?.arrayValue?.values) config.sliderImages = fsData.fields.sliderImages.arrayValue.values.map(v => v.stringValue);
+                    if (fsData.fields.gameBanners?.mapValue?.fields) {
+                        let bMap = fsData.fields.gameBanners.mapValue.fields;
+                        for (let k in bMap) { config.gameBanners[k] = bMap[k].stringValue; }
+                    }
                 }
             }
-        } catch (e) {}
+        } catch (e) { }
 
-        let liveUrl = null;
-        for (let target of targetUrls) {
-            try {
-                let res = await fetchWithTimeout(target, { method: 'GET', timeout: 2000 });
-                if (res.status < 500) { liveUrl = target; break; }
-            } catch (e) {}
-        }
-        return new Response(JSON.stringify({ liveUrl: liveUrl }), {
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
-    }
+        let originUrlObj = new URL(config.targetUrls[0]);
 
-    let config = { 
-        logoUrl: '', loginBannerUrl: '', signupLink: '', targetUrls: ['https://tenx365x.live'], sliderImages: [], gameBanners: {} 
-    };
+        // ========================================================
+        // ২. EXTERNAL IFRAME TUNNEL (Scoreboard Fixer)
+        // ========================================================
+        if (url.pathname.startsWith('/__ext__/')) {
+            let parts = url.pathname.split('/');
+            let proto = parts[2];
+            let host = parts[3];
+            let restPath = parts.slice(4).join('/');
+            let targetExtUrl = `${proto}://${host}/${restPath}${url.search}`;
 
-    try {
-        const fsResponse = await fetch(FIRESTORE_URL);
-        if (fsResponse.ok) {
-            const fsData = await fsResponse.json();
-            if (fsData && fsData.fields) {
-                if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
-                if (fsData.fields.loginBannerUrl) config.loginBannerUrl = fsData.fields.loginBannerUrl.stringValue;
-                if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
-                if (fsData.fields.targetUrls?.arrayValue?.values) config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
-                if (fsData.fields.sliderImages?.arrayValue?.values) config.sliderImages = fsData.fields.sliderImages.arrayValue.values.map(v => v.stringValue);
-                if (fsData.fields.gameBanners?.mapValue?.fields) {
-                    let bMap = fsData.fields.gameBanners.mapValue.fields;
-                    for (let k in bMap) { config.gameBanners[k] = bMap[k].stringValue; }
+            let extHeaders = new Headers();
+            for (let [key, value] of request.headers.entries()) {
+                if (!key.toLowerCase().startsWith('cf-') && key.toLowerCase() !== 'host') {
+                    extHeaders.set(key, value);
                 }
             }
+
+            extHeaders.set('Host', host);
+            extHeaders.set('Referer', originUrlObj.origin + '/');
+            extHeaders.set('Origin', originUrlObj.origin);
+
+            let extRes = await fetchWithTimeout(targetExtUrl, {
+                method: request.method,
+                headers: extHeaders,
+                body: request.body,
+                redirect: 'follow',
+                timeout: 20000
+            });
+
+            let outExtHeaders = new Headers(extRes.headers);
+            outExtHeaders.set('Access-Control-Allow-Origin', '*');
+            outExtHeaders.delete('X-Frame-Options');
+            outExtHeaders.delete('Content-Security-Policy');
+
+            let extType = extRes.headers.get('content-type') || '';
+            if (extType.includes('text/html')) {
+                let text = await extRes.text();
+                let baseTag = `<base href="/__ext__/${proto}/${host}/">`;
+                text = text.replace(/<head>/i, `<head>\n${baseTag}`);
+                return new Response(text, { status: extRes.status, headers: outExtHeaders });
+            }
+            return new Response(extRes.body, { status: extRes.status, headers: outExtHeaders });
         }
-    } catch (e) {}
 
-    let originUrlObj = new URL(config.targetUrls[0]);
+        // ========================================================
+        // ৩. DYNAMIC SUBDOMAIN ROUTER (Live TV & Data Fixer)
+        // ========================================================
+        let targetHostname = request.headers.get('X-Proxy-Target-Host') || originUrlObj.hostname;
+        url.hostname = targetHostname;
+        url.protocol = originUrlObj.protocol;
 
-    // ========================================================
-    // ১. EXTERNAL IFRAME TUNNEL (Scoreboard Fixer)
-    // ========================================================
-    if (url.pathname.startsWith('/__ext__/')) {
-        let parts = url.pathname.split('/');
-        let proto = parts[2];
-        let host = parts[3];
-        let restPath = parts.slice(4).join('/');
-        let targetExtUrl = `${proto}://${host}/${restPath}${url.search}`;
-
-        let extHeaders = new Headers();
+        let upstreamHeaders = new Headers();
         for (let [key, value] of request.headers.entries()) {
-            if (!key.toLowerCase().startsWith('cf-') && key.toLowerCase() !== 'host') {
-                extHeaders.set(key, value);
+            let lowerKey = key.toLowerCase();
+            if (lowerKey.startsWith('cf-') || lowerKey === 'host' || lowerKey === 'x-proxy-target-host') {
+                continue;
+            }
+            upstreamHeaders.set(key, value);
+        }
+
+        upstreamHeaders.set('Host', targetHostname);
+        upstreamHeaders.set('Referer', originUrlObj.origin + '/');
+        upstreamHeaders.set('Origin', originUrlObj.origin);
+
+        let clientIP = request.headers.get('CF-Connecting-IP') || '127.0.0.1';
+        upstreamHeaders.set('X-Forwarded-For', clientIP);
+        upstreamHeaders.set('X-Real-IP', clientIP);
+
+        if (request.headers.get("Upgrade") === "websocket") {
+            let wsTarget = url.searchParams.get('__ws_target__');
+            if (wsTarget) {
+                url.hostname = wsTarget;
+                url.searchParams.delete('__ws_target__');
+            }
+            return fetch(url.toString(), { method: request.method, headers: upstreamHeaders });
+        }
+
+        let response = null;
+        try {
+            response = await fetchWithTimeout(url.toString(), {
+                method: request.method,
+                headers: upstreamHeaders,
+                body: request.body,
+                redirect: 'follow',
+                timeout: 25000
+            });
+        } catch (err) {
+            return new Response("Error: Server Offline.", { status: 502 });
+        }
+
+        let newHeaders = new Headers(response.headers);
+        newHeaders.delete('Content-Security-Policy');
+        newHeaders.delete('X-Frame-Options');
+        newHeaders.delete('Strict-Transport-Security');
+        newHeaders.set('Access-Control-Allow-Origin', '*');
+
+        if (response.headers.has('set-cookie')) {
+            const cookies = response.headers.getSetCookie();
+            newHeaders.delete('set-cookie');
+            for (let cookie of cookies) {
+                let fixedCookie = cookie.replace(/domain=[^;]+;?/gi, '');
+                fixedCookie = fixedCookie.replace(/SameSite=[^;]+;?/gi, '');
+                fixedCookie += '; SameSite=None; Secure; Path=/';
+                newHeaders.append('set-cookie', fixedCookie);
             }
         }
-        
-        // সার্ভারকে বোকা বানিয়ে বোঝানো হচ্ছে যে রিকোয়েস্ট tenx365x থেকে আসছে
-        extHeaders.set('Host', host);
-        extHeaders.set('Referer', originUrlObj.origin + '/');
-        extHeaders.set('Origin', originUrlObj.origin);
 
-        let extRes = await fetchWithTimeout(targetExtUrl, {
-            method: request.method,
-            headers: extHeaders,
-            body: request.body,
-            redirect: 'follow', // ভিডিও বা আইফ্রেমের রিডাইরেক্ট ইন্টারনাল করা হলো
-            timeout: 20000
-        });
+        const contentType = response.headers.get('content-type') || '';
 
-        let outExtHeaders = new Headers(extRes.headers);
-        outExtHeaders.set('Access-Control-Allow-Origin', '*');
-        outExtHeaders.delete('X-Frame-Options');
-        outExtHeaders.delete('Content-Security-Policy');
+        if (contentType.includes('text/html') || contentType.includes('application/javascript')) {
+            let text = await response.text();
+            text = text.replace(/integrity="[^"]+"/gi, '');
 
-        let extType = extRes.headers.get('content-type') || '';
-        if (extType.includes('text/html')) {
-            let text = await extRes.text();
-            // আইফ্রেমের ভেতরের লিংকগুলোকেও টানেলের ভেতর দিয়ে পাঠানো হচ্ছে
-            let baseTag = `<base href="/__ext__/${proto}/${host}/">`;
-            text = text.replace(/<head>/i, `<head>\n${baseTag}`);
-            return new Response(text, { status: extRes.status, headers: outExtHeaders });
-        }
-        return new Response(extRes.body, { status: extRes.status, headers: outExtHeaders });
-    }
+            const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
 
-    // ========================================================
-    // ২. DYNAMIC SUBDOMAIN ROUTER (Live TV Video Fixer)
-    // ========================================================
-    let targetHostname = request.headers.get('X-Proxy-Target-Host') || originUrlObj.hostname;
-    url.hostname = targetHostname;
-    url.protocol = originUrlObj.protocol;
+            // লোগো রিপ্লেস
+            if (config.logoUrl) {
+                text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
+                text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
+                text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:logo|Logo)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return config.logoUrl.replace(/\//g, '\\/'); return config.logoUrl; });
+            }
 
-    let upstreamHeaders = new Headers();
-    for (let [key, value] of request.headers.entries()) {
-        let lowerKey = key.toLowerCase();
-        if (lowerKey.startsWith('cf-') || lowerKey === 'host' || lowerKey === 'x-proxy-target-host') {
-            continue; 
-        }
-        upstreamHeaders.set(key, value);
-    }
+            // লগইন ব্যানার রিপ্লেস
+            let finalLoginBanner = (config.loginBannerUrl && config.loginBannerUrl.trim() !== '') ? config.loginBannerUrl : blankSvg;
+            text = text.replace(/(id="poupppLogo"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
+            text = text.replace(/(class="[^"]*login-head[^"]*"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
+            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:MloginImage)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return finalLoginBanner.replace(/\//g, '\\/'); return finalLoginBanner; });
 
-    upstreamHeaders.set('Host', targetHostname);
-    upstreamHeaders.set('Referer', originUrlObj.origin + '/');
-    upstreamHeaders.set('Origin', originUrlObj.origin);
+            // গেম ব্যানার রিপ্লেস (নিখুঁত ও এরর-ফ্রি করা হয়েছে)
+            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']+\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match) => {
+                let replacement = blankSvg; 
+                if (config.gameBanners) {
+                    for (const key in config.gameBanners) {
+                        if (match.includes(key) && config.gameBanners[key].trim() !== '') {
+                            replacement = config.gameBanners[key];
+                            break;
+                        }
+                    }
+                }
+                if (match.includes('\\/')) return replacement.replace(/\//g, '\\/'); return replacement;
+            });
 
-    let clientIP = request.headers.get('CF-Connecting-IP') || '127.0.0.1';
-    upstreamHeaders.set('X-Forwarded-For', clientIP);
-    upstreamHeaders.set('X-Real-IP', clientIP);
+            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/'); return blankSvg; });
 
-    if (request.headers.get("Upgrade") === "websocket") {
-        let wsTarget = url.searchParams.get('__ws_target__');
-        if (wsTarget) {
-            url.hostname = wsTarget;
-            url.searchParams.delete('__ws_target__');
-        }
-        return fetch(url.toString(), { method: request.method, headers: upstreamHeaders });
-    }
+            // বেসিক রিরাইট যাতে মেইন স্ট্রাকচার না ভাঙে
+            text = text.replace(new RegExp(`https://${originUrlObj.hostname}`, 'gi'), `https://${MY_DOMAIN}`);
 
-    let response = null;
-    try {
-        response = await fetchWithTimeout(url.toString(), {
-            method: request.method,
-            headers: upstreamHeaders,
-            body: request.body,
-            redirect: 'follow', // ভিডিও খণ্ডগুলো যেন সরাসরি প্লে হয়
-            timeout: 25000 
-        });
-    } catch (err) {
-        return new Response("Error: Server Offline.", { status: 502 });
-    }
+            const isHtml = contentType.includes('text/html');
+            const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
 
-    let newHeaders = new Headers(response.headers);
-    newHeaders.delete('Content-Security-Policy');
-    newHeaders.delete('X-Frame-Options');
-    newHeaders.delete('Strict-Transport-Security');
-    newHeaders.set('Access-Control-Allow-Origin', '*');
+            if (isHtml) {
+                text = text.replace(/<head>/i, `<head>\n<meta name="referrer" content="no-referrer">\n`);
 
-    if (response.headers.has('set-cookie')) {
-        const cookies = response.headers.getSetCookie();
-        newHeaders.delete('set-cookie');
-        for (let cookie of cookies) {
-            let fixedCookie = cookie.replace(/domain=[^;]+;?/gi, ''); 
-            fixedCookie = fixedCookie.replace(/SameSite=[^;]+;?/gi, '');
-            fixedCookie += '; SameSite=None; Secure; Path=/'; 
-            newHeaders.append('set-cookie', fixedCookie);
-        }
-    }
-
-    const contentType = response.headers.get('content-type') || '';
-
-    if (contentType.includes('text/html') || contentType.includes('application/javascript')) {
-        let text = await response.text();
-        text = text.replace(/integrity="[^"]+"/gi, '');
-
-        const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
-
-        if (config.logoUrl) {
-            text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
-            text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
-            text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:logo|Logo)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return config.logoUrl.replace(/\//g, '\\/'); return config.logoUrl; });
-        }
-
-        let finalLoginBanner = (config.loginBannerUrl && config.loginBannerUrl.trim() !== '') ? config.loginBannerUrl : blankSvg;
-        text = text.replace(/(id="poupppLogo"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
-        text = text.replace(/(class="[^"]*login-head[^"]*"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
-        text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:MloginImage)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return finalLoginBanner.replace(/\//g, '\\/'); return finalLoginBanner; });
-
-        text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)tenx365\.live-([a-zA-Z0-9_-]+)\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match, keyword) => {
-            let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') ? config.gameBanners[keyword] : blankSvg; 
-            if (match.includes('\\/')) return replacement.replace(/\//g, '\\/'); return replacement;
-        });
-
-        text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/'); return blankSvg; });
-
-        // বেসিক রিরাইট যাতে মেইন স্ট্রাকচার না ভাঙে
-        text = text.replace(new RegExp(`https://${originUrlObj.hostname}`, 'gi'), `https://${MY_DOMAIN}`);
-
-        const isHtml = contentType.includes('text/html');
-        const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
-        
-        if (isHtml) {
-            text = text.replace(/<head>/i, `<head>\n<meta name="referrer" content="no-referrer">\n`);
-
-            // ========================================================
-            // ৩. THE GOD-MODE FRONTEND ENGINE (Iframe & Video Manager)
-            // ========================================================
-            const scriptInjection = `
+                // ========================================================
+                // ৪. THE GOD-MODE FRONTEND ENGINE (Iframe & Video Manager)
+                // ========================================================
+                const scriptInjection = `
               <style>
                 #signupButton, .btn-signup { display: inline-block !important; ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`} }
                 #poupppLogo, img.login-head { content: url("${finalLoginBanner}") !important; ${(!config.loginBannerUrl || config.loginBannerUrl.trim() === '') ? `background: transparent !important; box-shadow: none !important;` : ''} }
@@ -240,7 +249,8 @@ if (request.method === "OPTIONS") {
               </style>
               <script>
                 (function() {
-                  var targetBase = "tenx365x.live";
+                  // অটোমেটিক অরিজিনাল সার্ভারের নাম ট্র্যাক করবে
+                  var targetBase = "${originUrlObj.hostname}";
                   var proxyHost = window.location.host;
 
                   // থার্ড-পার্টি Iframe (স্কোরবোর্ড) কে টানেলের ভেতর দিয়ে নেয়ার ফাংশন
@@ -289,7 +299,6 @@ if (request.method === "OPTIONS") {
                               let u = new URL(reqUrl, window.location.origin);
                               if (u.hostname.includes(targetBase)) {
                                   options.headers = options.headers || {};
-                                  // কোন সাবডোমেইন থেকে ভিডিও আসছে, সেটা ওয়ার্কারকে জানিয়ে দেওয়া হচ্ছে
                                   if (options.headers instanceof Headers) options.headers.set('X-Proxy-Target-Host', u.hostname);
                                   else options.headers['X-Proxy-Target-Host'] = u.hostname;
                                   
@@ -312,7 +321,7 @@ if (request.method === "OPTIONS") {
                       try {
                           let u = new URL(url, window.location.origin);
                           if (u.hostname.includes(targetBase)) {
-                              this._targetHost = u.hostname; // আসল সাবডোমেইন সেভ করে রাখা হচ্ছে
+                              this._targetHost = u.hostname; 
                               u.hostname = proxyHost;
                               url = u.toString();
                           } else if (u.hostname !== proxyHost) {
@@ -330,7 +339,7 @@ if (request.method === "OPTIONS") {
                       return origSend.apply(this, args);
                   };
 
-                  // WebSocket Fix
+                  // WebSocket Protocol Fix (নিখুঁত কানেকশন)
                   var OrigWS = window.WebSocket;
                   window.WebSocket = function(url, protocols) {
                       try {
@@ -344,7 +353,7 @@ if (request.method === "OPTIONS") {
                               url = 'wss://' + proxyHost + '/__ext__/wss/' + u.hostname + u.pathname + u.search;
                           }
                       } catch(e) {}
-                      return protocols ? new OrigWS(url, protocols) : new OrigWS(url);
+                      return protocols !== undefined ? new OrigWS(url, protocols) : new OrigWS(url);
                   };
 
                   // Custom Link
@@ -367,13 +376,12 @@ if (request.method === "OPTIONS") {
                 })();
               </script>
             </body>`;
-            text = text.replace(/<\/body>/i, scriptInjection);
+                text = text.replace(/<\/body>/i, scriptInjection);
+            }
+
+            return new Response(text, { status: response.status, statusText: response.statusText, headers: newHeaders });
         }
 
-        return new Response(text, { status: response.status, statusText: response.statusText, headers: newHeaders });
+        return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
     }
-
-    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
-}
-
 };
