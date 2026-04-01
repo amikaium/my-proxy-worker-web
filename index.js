@@ -4,7 +4,7 @@ const DOCUMENT_ID = 'proxyConfig';
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${DOCUMENT_ID}`;
 
 async function fetchWithTimeout(resource, options = {}) {
-  const { timeout = 10000 } = options; 
+  const { timeout = 15000 } = options; 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   const response = await fetch(resource, { ...options, signal: controller.signal });
@@ -15,13 +15,11 @@ async function fetchWithTimeout(resource, options = {}) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    
-    // ========================================================
-    // ডাইনামিক ডোমেইন হ্যাক (যেকোনো লিংকে ১০০% কাজ করবে)
-    // ========================================================
-    const MY_DOMAIN = url.hostname; 
+    const MY_DOMAIN = url.hostname; // ডাইনামিক ডোমেইন (প্রিভিউ এবং মেইন ডোমেইন সব জায়গায় কাজ করবে)
 
-    // ১. গ্লোবাল CORS এবং Preflight বাইপাস
+    // ========================================================
+    // ১. গ্লোবাল CORS বাইপাস (API ব্লক ঠেকানোর জন্য)
+    // ========================================================
     if (request.method === "OPTIONS") {
         return new Response(null, {
             headers: {
@@ -91,7 +89,9 @@ export default {
 
         let requestHeaders = new Headers(request.headers);
         
-        // রিকোয়েস্ট হেডার স্পুফিং
+        // ========================================================
+        // ২. আল্টিমেট রিকোয়েস্ট স্পুফিং
+        // ========================================================
         requestHeaders.set('Host', originUrlObj.hostname);
         requestHeaders.set('Origin', originUrlObj.origin);
         requestHeaders.set('Referer', originUrlObj.origin + url.pathname + url.search);
@@ -101,12 +101,22 @@ export default {
         requestHeaders.delete('X-Forwarded-For');
         requestHeaders.delete('CF-Connecting-IP');
 
+        // ========================================================
+        // ৩. WebSocket Support (স্পোর্টস লাইভ স্কোরের জন্য ১০০% জরুরি)
+        // ========================================================
+        if (request.headers.get("Upgrade") === "websocket") {
+            return fetch(url.toString(), {
+                method: request.method,
+                headers: requestHeaders
+            });
+        }
+
         let res = await fetchWithTimeout(url.toString(), {
-          method: request.method,
-          headers: requestHeaders,
-          body: request.body,
-          redirect: 'manual',
-          timeout: 10000 
+            method: request.method,
+            headers: requestHeaders,
+            body: request.body,
+            redirect: 'manual',
+            timeout: 15000 
         });
 
         if (res.status < 500) { response = res; break; }
@@ -126,17 +136,17 @@ export default {
     newHeaders.set('Access-Control-Allow-Origin', '*');
 
     // ========================================================
-    // ২. ডাইনামিক কুকি ফরজিং (আপনার বর্তমান ডোমেইন নেবে)
+    // ৪. Aggressive Cookie Stripping (লগ-ইন ও অথোরাইজেশন ফিক্স)
     // ========================================================
     if (response.headers.has('set-cookie')) {
         const cookies = response.headers.getSetCookie();
         newHeaders.delete('set-cookie');
         for (let cookie of cookies) {
-            let fixedCookie = cookie.replace(/domain=[^;]+/gi, `domain=${MY_DOMAIN}`);
-            fixedCookie = fixedCookie.replace(/SameSite=(Lax|Strict)/gi, 'SameSite=None');
-            if (!fixedCookie.toLowerCase().includes('secure')) {
-                fixedCookie += '; Secure';
-            }
+            // ডোমেইন পুরোপুরি রিমুভ করে দেওয়া হচ্ছে, যাতে ব্রাউজার বাই-ডিফল্ট আপনার ডোমেইন ধরে নেয়
+            let fixedCookie = cookie.replace(/domain=[^;]+;?/gi, ''); 
+            // SameSite পলিসি শিথিল করা হচ্ছে
+            fixedCookie = fixedCookie.replace(/SameSite=[^;]+;?/gi, '');
+            fixedCookie += '; SameSite=None; Secure';
             newHeaders.append('set-cookie', fixedCookie);
         }
     }
@@ -225,7 +235,6 @@ export default {
                 }, true);
 
                 var observer = new MutationObserver(function() {
-                  
                   var loginImgs = document.querySelectorAll('#poupppLogo, img.login-head');
                   loginImgs.forEach(function(img) {
                     if (img.src !== forceLoginBannerUrl) {
@@ -281,16 +290,16 @@ export default {
                     }
                   }
                 });
-                
                 observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
-                
               })();
             </script>
           </body>`;
           text = text.replace(/<\/body>/i, scriptInjection);
       }
 
+      // Deep URL Forging: লুকানো ডোমেইন লিংকগুলোকেও কনভার্ট করা
       text = text.replaceAll(originUrlObj.hostname, MY_DOMAIN);
+      text = text.replace(new RegExp(originUrlObj.hostname.replace(/\./g, '\\\\.'), 'g'), MY_DOMAIN);
 
       return new Response(text, { status: response.status, statusText: response.statusText, headers: newHeaders });
     }
