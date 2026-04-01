@@ -54,7 +54,7 @@ export default {
         const fsData = await fsResponse.json();
         if (fsData && fsData.fields) {
           if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
-          if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
+          if (fsData.fields.signupLink) config.signupLink = config.signupLink.stringValue;
           if (fsData.fields.targetUrls?.arrayValue?.values) {
             config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
           }
@@ -118,9 +118,6 @@ export default {
 
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
-      // =========================================================
-      // ফিক্সড স্লাইডার ডিজাইন (অরিজিনাল সাইজ এবং লেআউট)
-      // =========================================================
       const scriptInjection = `
         <style>
           #signupButton, .btn-signup {
@@ -128,20 +125,18 @@ export default {
              ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : ''}
           }
           
-          /* অরিজিনাল স্লাইডার পুরোপুরি হাইড করা */
           #carouselExampleControls, .carousel.slide {
              display: none !important;
              visibility: hidden !important;
           }
           
-          /* কাস্টম স্লাইডার - একদম অরিজিনাল সাইজ অনুযায়ী সেট করা */
           #my-custom-slider {
               width: 100%;
-              height: 100%; /* অরিজিনাল কন্টেইনারের হাইট নেবে */
+              height: 100%; 
               position: relative;
-              z-index: 1; /* z-index কমিয়ে দেওয়া হলো যাতে হেডারের নিচে দিয়ে যায় */
+              z-index: 1; 
               overflow: hidden;
-              margin-top: 2px; /* ওপরের দিকে ২ পিক্সেল মার্জিন */
+              margin-top: 2px; 
           }
           
           .slider-track {
@@ -156,32 +151,14 @@ export default {
               height: 100%;
               flex-shrink: 0;
               display: block;
-              object-fit: fill; /* ইমেজকে কন্টেইনারের মাপে একদম পারফেক্টলি বসাবে */
+              object-fit: fill; 
           }
 
-          /* নেভিগেশন অ্যারো (Arrows) ডিজাইন */
-          .slider-arrow {
-              position: absolute;
-              top: 50%;
-              transform: translateY(-50%);
-              background-color: rgba(0, 0, 0, 0.4);
-              color: white;
-              border: none;
-              cursor: pointer;
-              width: 30px;
-              height: 30px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 14px;
-              border-radius: 50%;
-              z-index: 10;
-              user-select: none;
-              transition: background 0.3s;
+          /* অরিজিনাল অ্যারো বাটনগুলো যাতে ইমেজের ওপরে থাকে তার জন্য */
+          .custom-nav-btn {
+              z-index: 10 !important;
+              opacity: 0.8 !important;
           }
-          .slider-arrow:hover { background-color: rgba(0, 0, 0, 0.8); }
-          .slider-arrow.prev { left: 8px; }
-          .slider-arrow.next { right: 8px; }
         </style>
         
         <script>
@@ -189,7 +166,6 @@ export default {
             var customLink = "${config.signupLink}";
             var sliderImages = ${JSON.stringify(config.sliderImages || [])};
 
-            // সাইন-আপ বাটন ফিক্স
             document.addEventListener('click', function(e) {
               var target = e.target;
               var isSignupClick = false;
@@ -206,7 +182,6 @@ export default {
               }
             }, true);
 
-            // কাস্টম অনুভূমিক স্লাইডার তৈরি
             if (sliderImages && sliderImages.length > 0) {
               var observer = new MutationObserver(function() {
                 var originalSlider = document.querySelector('#carouselExampleControls') || document.querySelector('.carousel.slide');
@@ -228,13 +203,14 @@ export default {
                   customContainer.appendChild(track);
 
                   if (sliderImages.length > 1) {
+                    // অরিজিনাল ওয়েবসাইটের Bootstrap ক্লাসগুলো ব্যবহার করা হয়েছে
                     var prevBtn = document.createElement('button');
-                    prevBtn.className = 'slider-arrow prev';
-                    prevBtn.innerHTML = '&#10094;'; 
+                    prevBtn.className = 'carousel-control-prev custom-nav-btn';
+                    prevBtn.innerHTML = '<span class="carousel-control-prev-icon" aria-hidden="true"></span>';
                     
                     var nextBtn = document.createElement('button');
-                    nextBtn.className = 'slider-arrow next';
-                    nextBtn.innerHTML = '&#10095;'; 
+                    nextBtn.className = 'carousel-control-next custom-nav-btn';
+                    nextBtn.innerHTML = '<span class="carousel-control-next-icon" aria-hidden="true"></span>';
 
                     customContainer.appendChild(prevBtn);
                     customContainer.appendChild(nextBtn);
@@ -272,7 +248,6 @@ export default {
                     startAutoSlide();
                   }
 
-                  // অরিজিনাল স্লাইডারের ঠিক ওপরে বসিয়ে দেওয়া হলো, যাতে এটি অরিজিনাল কন্টেইনারের হাইট ফলো করে
                   originalSlider.parentNode.insertBefore(customContainer, originalSlider);
                 }
               });
