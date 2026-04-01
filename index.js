@@ -17,6 +17,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // অ্যাডমিন প্যানেলের লাইভ চেকার API
     if (url.pathname === '/api/live-status') {
       let targetUrls = [];
       try {
@@ -41,11 +42,13 @@ export default {
       });
     }
 
+    // ফায়ারবেস থেকে আপনার সেটিংস আনা
     let config = { 
         logoUrl: '', 
         signupLink: '', 
         targetUrls: ['https://tenx365x.live'],
-        sliderImages: [] 
+        sliderImages: [],
+        gameBanners: {} // গেম ব্যানারের নতুন কনফিগ
     };
 
     try {
@@ -54,15 +57,16 @@ export default {
         const fsData = await fsResponse.json();
         if (fsData && fsData.fields) {
           if (fsData.fields.logoUrl) config.logoUrl = fsData.fields.logoUrl.stringValue;
-          
-          // এখানে ভুল ছিল, এখন ফিক্স করে দেওয়া হয়েছে!
           if (fsData.fields.signupLink) config.signupLink = fsData.fields.signupLink.stringValue;
-          
           if (fsData.fields.targetUrls?.arrayValue?.values) {
             config.targetUrls = fsData.fields.targetUrls.arrayValue.values.map(v => v.stringValue);
           }
           if (fsData.fields.sliderImages?.arrayValue?.values) {
             config.sliderImages = fsData.fields.sliderImages.arrayValue.values.map(v => v.stringValue);
+          }
+          if (fsData.fields.gameBanners?.mapValue?.fields) {
+            let bMap = fsData.fields.gameBanners.mapValue.fields;
+            for (let k in bMap) { config.gameBanners[k] = bMap[k].stringValue; }
           }
         }
       }
@@ -105,172 +109,127 @@ export default {
     newHeaders.delete('Content-Security-Policy');
     newHeaders.delete('X-Frame-Options');
 
-    const contentType = response.headers.get('content-type');
+    const contentType = response.headers.get('content-type') || '';
     
-    if (contentType && (contentType.includes('text/html') || contentType.includes('application/javascript'))) {
+    // HTML, JS এবং JSON (API Data) সবকিছুর ভেতরে পরিবর্তন করবে! (০ মিলি সেকেন্ড হ্যাক)
+    if (contentType.includes('text/html') || contentType.includes('application/javascript') || contentType.includes('application/json')) {
       let text = await response.text();
       
+      // ১. লোগো রিপ্লেস (JSON এবং HTML উভয় জায়গায়)
       if (config.logoUrl) {
           text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
           text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
-          text = text.replace(/https:\/\/imagedelivery\.net\/[^"']+/gi, (match) => {
-              if(match.toLowerCase().includes('logo')) return config.logoUrl;
-              return match;
+          text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)[^"']*(?:logo|Logo)[^"'\\]*/gi, (match) => {
+              if (match.includes('\\/')) return config.logoUrl.replace(/\//g, '\\/');
+              return config.logoUrl;
           });
       }
 
-      // সাইন আপ লিংক আছে কিনা তার ওপর ভিত্তি করে বাটন ডিজেবল হবে
+      // ২. নির্দিষ্ট গেম ব্যানার রিপ্লেস (API Data ইন্টারসেপ্ট করা হচ্ছে)
+      // যদি অ্যাডমিন লিংক পরিবর্তন করে, তবে "Transparent Pixel" (অদৃশ্য ছবি) বসে যাবে!
+      text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)tenx365\.live-([a-zA-Z0-9_-]+)\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match, keyword) => {
+          let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') 
+                            ? config.gameBanners[keyword] 
+                            : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // Blank image
+          if (match.includes('\\/')) {
+              return replacement.replace(/\//g, '\\/');
+          }
+          return replacement;
+      });
+
+      const isHtml = contentType.includes('text/html');
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
-      const scriptInjection = `
-        <style>
-          #signupButton, .btn-signup {
-             display: inline-block !important;
-             /* যদি লিংক থাকে তবে কালার নরমাল থাকবে, না থাকলে ঘোলা হবে */
-             ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`}
-          }
-          
-          #carouselExampleControls, .carousel.slide {
-             display: none !important;
-             visibility: hidden !important;
-          }
-          
-          #my-custom-slider {
-              width: 100%;
-              height: 100%; 
-              position: relative;
-              z-index: 1; 
-              overflow: hidden;
-              margin-top: 2px; 
-          }
-          
-          .slider-track {
-              display: flex;
-              height: 100%;
-              transition: transform 0.5s ease-in-out;
-              width: 100%;
-          }
-          
-          .slider-track img {
-              width: 100%;
-              height: 100%;
-              flex-shrink: 0;
-              display: block;
-              object-fit: fill; 
-          }
-        </style>
-        
-        <script>
-          (function() {
-            var customLink = "${config.signupLink}";
-            var sliderImages = ${JSON.stringify(config.sliderImages || [])};
-
-            document.addEventListener('click', function(e) {
-              var target = e.target;
-              var isSignupClick = false;
-              while(target && target !== document) {
-                if (target.id === 'signupButton' || (target.className && typeof target.className === 'string' && target.className.includes('btn-signup'))) {
-                  isSignupClick = true; break;
-                }
-                target = target.parentNode;
+      // ৩. শুধুমাত্র HTML পেজের জন্য স্ক্রিপ্ট ইনজেকশন (সাইন-আপ ও স্লাইডার)
+      if (isHtml) {
+          const scriptInjection = `
+            <style>
+              #signupButton, .btn-signup {
+                 display: inline-block !important;
+                 ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`}
               }
-              if (isSignupClick) {
-                e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-                if (customLink && customLink.trim() !== '') { 
-                   window.location.href = customLink; 
-                } 
-                return false; 
-              }
-            }, true);
+              #carouselExampleControls, .carousel.slide { display: none !important; visibility: hidden !important; }
+              #my-custom-slider { width: 100%; height: 100%; position: relative; z-index: 1; overflow: hidden; margin-top: 2px; }
+              .slider-track { display: flex; height: 100%; transition: transform 0.5s ease-in-out; width: 100%; }
+              .slider-track img { width: 100%; height: 100%; flex-shrink: 0; display: block; object-fit: fill; }
+            </style>
+            <script>
+              (function() {
+                var customLink = "${config.signupLink}";
+                var sliderImages = ${JSON.stringify(config.sliderImages || [])};
 
-            if (sliderImages && sliderImages.length > 0) {
-              var observer = new MutationObserver(function() {
-                var originalSlider = document.querySelector('#carouselExampleControls') || document.querySelector('.carousel.slide');
-                
-                if (originalSlider && !document.getElementById('my-custom-slider')) {
-                  
-                  var customContainer = document.createElement('div');
-                  customContainer.id = 'my-custom-slider';
-                  
-                  // অরিজিনাল সাইটের মতো দেখানোর জন্য ক্লাস যোগ করা হলো
-                  customContainer.className = 'carousel';
-
-                  var track = document.createElement('div');
-                  track.className = 'slider-track';
-
-                  sliderImages.forEach(function(imgUrl) {
-                    var img = document.createElement('img');
-                    img.src = imgUrl;
-                    track.appendChild(img);
-                  });
-                  
-                  customContainer.appendChild(track);
-
-                  if (sliderImages.length > 1) {
-                    // হুবহু অরিজিনাল ওয়েবসাইটের HTML ক্লাস এবং স্ট্রাকচার ব্যবহার করা হয়েছে
-                    var prevBtn = document.createElement('button');
-                    prevBtn.className = 'carousel-control-prev';
-                    prevBtn.type = 'button';
-                    prevBtn.style.zIndex = '10'; // যাতে ছবির ওপরে থাকে
-                    prevBtn.style.border = 'none';
-                    prevBtn.style.background = 'transparent';
-                    prevBtn.innerHTML = '<span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span>';
-                    
-                    var nextBtn = document.createElement('button');
-                    nextBtn.className = 'carousel-control-next';
-                    nextBtn.type = 'button';
-                    nextBtn.style.zIndex = '10';
-                    nextBtn.style.border = 'none';
-                    nextBtn.style.background = 'transparent';
-                    nextBtn.innerHTML = '<span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span>';
-
-                    customContainer.appendChild(prevBtn);
-                    customContainer.appendChild(nextBtn);
-
-                    var currentIdx = 0;
-                    var slideInterval;
-
-                    function goToSlide(idx) {
-                        currentIdx = idx;
-                        if (currentIdx < 0) currentIdx = sliderImages.length - 1;
-                        if (currentIdx >= sliderImages.length) currentIdx = 0;
-                        track.style.transform = 'translateX(-' + (currentIdx * 100) + '%)';
+                document.addEventListener('click', function(e) {
+                  var target = e.target;
+                  var isSignupClick = false;
+                  while(target && target !== document) {
+                    if (target.id === 'signupButton' || (target.className && typeof target.className === 'string' && target.className.includes('btn-signup'))) {
+                      isSignupClick = true; break;
                     }
-
-                    function startAutoSlide() {
-                        slideInterval = setInterval(function() {
-                            goToSlide(currentIdx + 1);
-                        }, 3000);
-                    }
-
-                    prevBtn.onclick = function(e) {
-                        e.preventDefault(); e.stopPropagation();
-                        clearInterval(slideInterval);
-                        goToSlide(currentIdx - 1);
-                        startAutoSlide();
-                    };
-
-                    nextBtn.onclick = function(e) {
-                        e.preventDefault(); e.stopPropagation();
-                        clearInterval(slideInterval);
-                        goToSlide(currentIdx + 1);
-                        startAutoSlide();
-                    };
-
-                    startAutoSlide();
+                    target = target.parentNode;
                   }
+                  if (isSignupClick) {
+                    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+                    if (customLink && customLink.trim() !== '') { window.location.href = customLink; } 
+                    return false; 
+                  }
+                }, true);
 
-                  originalSlider.parentNode.insertBefore(customContainer, originalSlider);
+                if (sliderImages && sliderImages.length > 0) {
+                  var observer = new MutationObserver(function() {
+                    var originalSlider = document.querySelector('#carouselExampleControls') || document.querySelector('.carousel.slide');
+                    if (originalSlider && !document.getElementById('my-custom-slider')) {
+                      var customContainer = document.createElement('div');
+                      customContainer.id = 'my-custom-slider';
+                      customContainer.className = 'carousel';
+                      var track = document.createElement('div');
+                      track.className = 'slider-track';
+
+                      sliderImages.forEach(function(imgUrl) {
+                        var img = document.createElement('img');
+                        img.src = imgUrl;
+                        track.appendChild(img);
+                      });
+                      customContainer.appendChild(track);
+
+                      if (sliderImages.length > 1) {
+                        var prevBtn = document.createElement('button');
+                        prevBtn.className = 'carousel-control-prev';
+                        prevBtn.type = 'button';
+                        prevBtn.style.zIndex = '10'; prevBtn.style.border = 'none'; prevBtn.style.background = 'transparent';
+                        prevBtn.innerHTML = '<span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span>';
+                        
+                        var nextBtn = document.createElement('button');
+                        nextBtn.className = 'carousel-control-next';
+                        nextBtn.type = 'button';
+                        nextBtn.style.zIndex = '10'; nextBtn.style.border = 'none'; nextBtn.style.background = 'transparent';
+                        nextBtn.innerHTML = '<span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span>';
+
+                        customContainer.appendChild(prevBtn); customContainer.appendChild(nextBtn);
+
+                        var currentIdx = 0; var slideInterval;
+                        function goToSlide(idx) {
+                            currentIdx = idx;
+                            if (currentIdx < 0) currentIdx = sliderImages.length - 1;
+                            if (currentIdx >= sliderImages.length) currentIdx = 0;
+                            track.style.transform = 'translateX(-' + (currentIdx * 100) + '%)';
+                        }
+                        function startAutoSlide() { slideInterval = setInterval(function() { goToSlide(currentIdx + 1); }, 3000); }
+
+                        prevBtn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); clearInterval(slideInterval); goToSlide(currentIdx - 1); startAutoSlide(); };
+                        nextBtn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); clearInterval(slideInterval); goToSlide(currentIdx + 1); startAutoSlide(); };
+                        startAutoSlide();
+                      }
+                      originalSlider.parentNode.insertBefore(customContainer, originalSlider);
+                    }
+                  });
+                  observer.observe(document.body, { childList: true, subtree: true });
                 }
-              });
-              observer.observe(document.body, { childList: true, subtree: true });
-            }
+              })();
+            </script>
+          </body>`;
+          text = text.replace(/<\/body>/i, scriptInjection);
+      }
 
-          })();
-        </script>
-      </body>`;
-      
-      text = text.replace(/<\/body>/i, scriptInjection);
       text = text.replaceAll(originUrlObj.hostname, MY_DOMAIN);
 
       return new Response(text, { status: response.status, statusText: response.statusText, headers: newHeaders });
