@@ -17,9 +17,6 @@ export default {
         const url = new URL(request.url);
         const MY_DOMAIN = url.host;
 
-        // ========================================================
-        // ১. CORS & Preflight (API ব্লক ঠেকানোর জন্য)
-        // ========================================================
         if (request.method === "OPTIONS") {
             return new Response(null, {
                 headers: {
@@ -87,12 +84,7 @@ export default {
                 url.hostname = originUrlObj.hostname;
                 url.protocol = originUrlObj.protocol;
 
-                // ========================================================
-                // ২. Master Request Header Builder (সার্ভারকে বোকা বানানোর যন্ত্র)
-                // ========================================================
                 let upstreamHeaders = new Headers();
-                
-                // ক্লায়েন্টের হেডারগুলো ফিল্টার করে নিচ্ছি
                 for (let [key, value] of request.headers.entries()) {
                     let lowerKey = key.toLowerCase();
                     if (lowerKey.startsWith('cf-') || lowerKey === 'host' || lowerKey === 'origin' || lowerKey === 'referer') {
@@ -103,7 +95,6 @@ export default {
 
                 upstreamHeaders.set('Host', originUrlObj.hostname);
                 
-                // Referer ও Origin একদম ডাইনামিক করা হলো
                 let clientReferer = request.headers.get('Referer');
                 if (clientReferer) {
                     let refUrl = new URL(clientReferer);
@@ -116,17 +107,13 @@ export default {
                     upstreamHeaders.set('Origin', originUrlObj.origin);
                 }
 
-                // আপনার অরিজিনাল আইপি পাঠানো হচ্ছে (সেশন ব্লক ঠেকানোর প্রধান হাতিয়ার)
                 let clientIP = request.headers.get('CF-Connecting-IP') || '127.0.0.1';
                 upstreamHeaders.set('X-Forwarded-For', clientIP);
                 upstreamHeaders.set('X-Real-IP', clientIP);
                 upstreamHeaders.set('Sec-Fetch-Site', 'same-origin');
 
                 if (request.headers.get("Upgrade") === "websocket") {
-                    return fetch(url.toString(), {
-                        method: request.method,
-                        headers: upstreamHeaders
-                    });
+                    return fetch(url.toString(), { method: request.method, headers: upstreamHeaders });
                 }
 
                 let res = await fetchWithTimeout(url.toString(), {
@@ -144,13 +131,12 @@ export default {
         if (!response) return new Response("Error: Target Server Down or Unreachable.", { status: 502 });
 
         let newHeaders = new Headers(response.headers);
-        
         if (newHeaders.has('location')) {
             let location = newHeaders.get('location');
             newHeaders.set('location', location.replaceAll(originUrlObj.hostname, MY_DOMAIN));
         }
 
-        // সিকিউরিটি হেডারগুলো রিমুভ (নাহলে স্পোর্টস আইফ্রেম ব্লক হবে)
+        // সিকিউরিটি হেডারগুলো রিমুভ (নাহলে থার্ড-পার্টি স্পোর্টস ভিডিও ব্লক হবে)
         newHeaders.delete('Content-Security-Policy');
         newHeaders.delete('X-Frame-Options');
         newHeaders.delete('Strict-Transport-Security');
@@ -158,7 +144,6 @@ export default {
         newHeaders.set('Access-Control-Allow-Origin', request.headers.get("Origin") || "*");
         newHeaders.set('Access-Control-Allow-Credentials', 'true');
 
-        // সেশন কুকি ফিক্স
         if (response.headers.has('set-cookie')) {
             const cookies = response.headers.getSetCookie();
             newHeaders.delete('set-cookie');
@@ -178,13 +163,10 @@ export default {
             contentType.includes('application/json')) {
             
             let text = await response.text();
-            
-            // integrity অ্যাট্রিবিউট ডিলিট
             text = text.replace(/integrity="[^"]+"/gi, '');
 
             const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
 
-            // আপনার ডিজাইনের পরিবর্তনগুলো
             if (config.logoUrl) {
                 text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
                 text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
@@ -213,9 +195,6 @@ export default {
                 return blankSvg;
             });
 
-            // ========================================================
-            // ৩. The Master Text Replacer (ডোমেইনকে টেক্সট লেভেলে ধ্বংস করা)
-            // ========================================================
             let originalHost = originUrlObj.host;
             let escapedHost = originalHost.replace(/\./g, '\\\\.');
             let escapedHost2 = originalHost.replace(/\./g, '%2E');
@@ -230,9 +209,6 @@ export default {
             if (isHtml) {
                 text = text.replace(/<head>/i, `<head>\n<meta name="referrer" content="no-referrer">\n`);
 
-                // ========================================================
-                // ৪. God-Mode JavaScript Interceptor (The Ultimate Bypass)
-                // ========================================================
                 const scriptInjection = `
                   <style>
                     #signupButton, .btn-signup { display: inline-block !important; ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : `opacity: 1 !important; cursor: pointer !important;`} }
@@ -247,19 +223,57 @@ export default {
                       var targetHost = "${originalHost}";
                       var proxyHost = window.location.host;
 
-                      // ১. Fetch API Hijack
+                      // ========================================================
+                      // LIVE TV & SCOREBOARD FIXER (The Missing Magic)
+                      // ========================================================
+                      function fixExternalNode(node) {
+                          if (node.tagName === 'IFRAME') {
+                              // থার্ড-পার্টির কাছে আমাদের প্রক্সি ডোমেইন হাইড করা হচ্ছে
+                              node.setAttribute('referrerpolicy', 'no-referrer');
+                              
+                              if (node.src) {
+                                  try {
+                                      var u = new URL(node.src);
+                                      // যদি এটি থার্ড-পার্টি লাইভ টিভি বা স্কোরের লিংক হয়
+                                      if (u.hostname !== proxyHost && !u.hostname.includes(targetHost)) {
+                                          // ভিডিও লিংকের ভেতরে থাকা প্রক্সি ডোমেইনকে সরিয়ে আবার অরিজিনাল ডোমেইন বসানো হচ্ছে
+                                          var fixedSrc = node.src.replace(new RegExp(proxyHost, 'gi'), targetHost);
+                                          if (node.src !== fixedSrc) { 
+                                              node.src = fixedSrc; 
+                                          }
+                                      }
+                                  } catch(e) {}
+                              }
+                          }
+                      }
+
+                      var observer = new MutationObserver(function(mutations) {
+                          mutations.forEach(function(mutation) {
+                              mutation.addedNodes.forEach(function(node) {
+                                  if (node.nodeType === 1) { 
+                                      fixExternalNode(node);
+                                      node.querySelectorAll('iframe').forEach(fixExternalNode);
+                                  }
+                              });
+                          });
+                      });
+                      observer.observe(document.body, { childList: true, subtree: true });
+
+                      window.addEventListener('DOMContentLoaded', function() {
+                          document.querySelectorAll('iframe').forEach(fixExternalNode);
+                      });
+
+                      // Network Interceptors
                       var origFetch = window.fetch;
                       window.fetch = async function(...args) {
                           if (typeof args[0] === 'string') {
                               args[0] = args[0].replace(new RegExp(targetHost, 'gi'), proxyHost);
                           } else if (args[0] && args[0].url) {
-                              var newUrl = args[0].url.replace(new RegExp(targetHost, 'gi'), proxyHost);
-                              args[0] = new Request(newUrl, args[0]);
+                              args[0] = new Request(args[0].url.replace(new RegExp(targetHost, 'gi'), proxyHost), args[0]);
                           }
                           return origFetch.apply(this, args);
                       };
 
-                      // ২. AJAX (XHR) Hijack
                       var origOpen = XMLHttpRequest.prototype.open;
                       XMLHttpRequest.prototype.open = function(method, url, ...rest) {
                           if (typeof url === 'string') {
@@ -268,7 +282,6 @@ export default {
                           return origOpen.call(this, method, url, ...rest);
                       };
 
-                      // ৩. WebSocket Hijack (For Live Score)
                       var OrigWS = window.WebSocket;
                       window.WebSocket = function(url, protocols) {
                           if (typeof url === 'string') {
@@ -277,7 +290,6 @@ export default {
                           return protocols ? new OrigWS(url, protocols) : new OrigWS(url);
                       };
 
-                      // আপনার কাস্টম লজিক
                       var customLink = "${config.signupLink}";
                       var forceLoginBannerUrl = "${finalLoginBanner}";
                       document.addEventListener('click', function(e) {
@@ -290,10 +302,10 @@ export default {
                         if (isSignupClick) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); if (customLink && customLink.trim() !== '') { window.location.href = customLink; } return false; }
                       }, true);
                       
-                      var observer = new MutationObserver(function() {
+                      var observerImages = new MutationObserver(function() {
                         document.querySelectorAll('#poupppLogo, img.login-head').forEach(function(img) { if (img.src !== forceLoginBannerUrl) { img.src = forceLoginBannerUrl; } });
                       });
-                      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
+                      observerImages.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
                     })();
                   </script>
                 </body>`;
