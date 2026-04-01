@@ -85,7 +85,8 @@ export default {
             let proto = parts[2];
             let host = parts[3];
             let restPath = parts.slice(4).join('/');
-            let targetExtUrl = `${proto}://${host}/${restPath}${url.search}`;
+            // u.hash সাপোর্ট করার জন্য ব্যাকএন্ডেও url.hash যোগ করা হলো
+            let targetExtUrl = `${proto}://${host}/${restPath}${url.search}${url.hash}`;
 
             let extHeaders = new Headers();
             for (let [key, value] of request.headers.entries()) {
@@ -94,7 +95,6 @@ export default {
                 }
             }
             
-            // সার্ভারকে বোকা বানিয়ে বোঝানো হচ্ছে যে রিকোয়েস্ট tenx365x থেকে আসছে
             extHeaders.set('Host', host);
             extHeaders.set('Referer', originUrlObj.origin + '/');
             extHeaders.set('Origin', originUrlObj.origin);
@@ -103,7 +103,7 @@ export default {
                 method: request.method,
                 headers: extHeaders,
                 body: request.body,
-                redirect: 'follow', // ভিডিও বা আইফ্রেমের রিডাইরেক্ট ইন্টারনাল করা হলো
+                redirect: 'follow',
                 timeout: 20000
             });
 
@@ -115,7 +115,6 @@ export default {
             let extType = extRes.headers.get('content-type') || '';
             if (extType.includes('text/html')) {
                 let text = await extRes.text();
-                // আইফ্রেমের ভেতরের লিংকগুলোকেও টানেলের ভেতর দিয়ে পাঠানো হচ্ছে
                 let baseTag = `<base href="/__ext__/${proto}/${host}/">`;
                 text = text.replace(/<head>/i, `<head>\n${baseTag}`);
                 return new Response(text, { status: extRes.status, headers: outExtHeaders });
@@ -162,7 +161,7 @@ export default {
                 method: request.method,
                 headers: upstreamHeaders,
                 body: request.body,
-                redirect: 'follow', // ভিডিও খণ্ডগুলো যেন সরাসরি প্লে হয়
+                redirect: 'follow',
                 timeout: 25000 
             });
         } catch (err) {
@@ -212,7 +211,6 @@ export default {
 
             text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => { if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/'); return blankSvg; });
 
-            // বেসিক রিরাইট যাতে মেইন স্ট্রাকচার না ভাঙে
             text = text.replace(new RegExp(`https://${originUrlObj.hostname}`, 'gi'), `https://${MY_DOMAIN}`);
 
             const isHtml = contentType.includes('text/html');
@@ -242,8 +240,15 @@ export default {
                       function buildExtUrl(originalUrl) {
                           try {
                               let u = new URL(originalUrl);
+                              
+                              // *সমাধান*: স্কোরের ডোমেইনগুলোকে বাইপাস করা হচ্ছে যাতে সরাসরি লোড হয়
+                              if(u.hostname.includes('365cric.com') || u.hostname.includes('score')) {
+                                  return originalUrl; // প্রক্সিতে না পাঠিয়ে অরিজিনাল ইউআরএল রিটার্ন করবে
+                              }
+
                               if (!u.hostname.includes(targetBase) && u.hostname !== proxyHost) {
-                                  return window.location.origin + '/__ext__/' + u.protocol.replace(':','') + '/' + u.hostname + u.pathname + u.search;
+                                  // u.hash যুক্ত করা হলো যাতে অন্যান্য লিংকও ব্রেক না করে
+                                  return window.location.origin + '/__ext__/' + u.protocol.replace(':','') + '/' + u.hostname + u.pathname + u.search + u.hash;
                               }
                           } catch(e) {}
                           return originalUrl;
@@ -284,7 +289,6 @@ export default {
                                   let u = new URL(reqUrl, window.location.origin);
                                   if (u.hostname.includes(targetBase)) {
                                       options.headers = options.headers || {};
-                                      // কোন সাবডোমেইন থেকে ভিডিও আসছে, সেটা ওয়ার্কারকে জানিয়ে দেওয়া হচ্ছে
                                       if (options.headers instanceof Headers) options.headers.set('X-Proxy-Target-Host', u.hostname);
                                       else options.headers['X-Proxy-Target-Host'] = u.hostname;
                                       
@@ -306,8 +310,8 @@ export default {
                           this._extUrl = url;
                           try {
                               let u = new URL(url, window.location.origin);
-                              if (u.hostname.includes(targetBase)) {
-                                  this._targetHost = u.hostname; // আসল সাবডোমেইন সেভ করে রাখা হচ্ছে
+                          if (u.hostname.includes(targetBase)) {
+                                  this._targetHost = u.hostname; 
                                   u.hostname = proxyHost;
                                   url = u.toString();
                               } else if (u.hostname !== proxyHost) {
