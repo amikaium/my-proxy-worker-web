@@ -17,9 +17,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // ==========================================
-    // API: লাইভ স্ট্যাটাস (অ্যাডমিন প্যানেলের জন্য)
-    // ==========================================
     if (url.pathname === '/api/live-status') {
       let targetUrls = [];
       try {
@@ -44,9 +41,6 @@ export default {
       });
     }
 
-    // ==========================================
-    // মূল কনফিগারেশন এবং সাইট আনা
-    // ==========================================
     let config = { 
         logoUrl: '', 
         signupLink: '', 
@@ -125,7 +119,7 @@ export default {
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
       // =========================================================
-      // React-সেফ ইনজেকশন (Independent Custom Slider)
+      // অনুভূমিক (Horizontal) স্লাইডার, ২ পিক্সেল মার্জিন ও অ্যারো
       // =========================================================
       const scriptInjection = `
         <style>
@@ -134,46 +128,73 @@ export default {
              ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : ''}
           }
           
-          /* ১. মূল ওয়েবসাইটের স্লাইডারকে সম্পূর্ণ অদৃশ্য করে দেওয়া */
+          /* মূল স্লাইডার হাইড করা */
           #carouselExampleControls, .carousel.slide {
              display: none !important;
              visibility: hidden !important;
              height: 0 !important;
           }
           
-          /* ২. আমাদের স্বাধীন কাস্টম স্লাইডারের ডিজাইন */
+          /* নতুন স্লাইডার কন্টেইনার */
           #my-custom-slider {
               width: 100%;
               position: relative;
               z-index: 99;
               overflow: hidden;
+              margin: 2px 0; /* ওপরে এবং নিচে ২ পিক্সেল মার্জিন */
           }
-          #my-custom-slider img {
+          
+          /* ইমেজের ট্র্যাক (ডানে-বামে সরার জন্য) */
+          .slider-track {
+              display: flex;
+              transition: transform 0.5s ease-in-out;
               width: 100%;
-              display: none;
-              animation: slideFade 0.6s ease-in-out;
           }
-          #my-custom-slider img.active-slide {
+          
+          .slider-track img {
+              width: 100%;
+              flex-shrink: 0;
               display: block;
+              object-fit: cover;
           }
-          @keyframes slideFade {
-              from { opacity: 0.6; transform: scale(1.02); }
-              to { opacity: 1; transform: scale(1); }
+
+          /* নেভিগেশন অ্যারো (Arrows) ডিজাইন */
+          .slider-arrow {
+              position: absolute;
+              top: 50%;
+              transform: translateY(-50%);
+              background-color: rgba(0, 0, 0, 0.4);
+              color: white;
+              border: none;
+              cursor: pointer;
+              width: 35px;
+              height: 35px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 18px;
+              border-radius: 50%;
+              z-index: 100;
+              user-select: none;
+              transition: background 0.3s;
           }
+          .slider-arrow:hover { background-color: rgba(0, 0, 0, 0.8); }
+          .slider-arrow.prev { left: 10px; }
+          .slider-arrow.next { right: 10px; }
         </style>
+        
         <script>
           (function() {
             var customLink = "${config.signupLink}";
             var sliderImages = ${JSON.stringify(config.sliderImages || [])};
 
-            // ১. সাইন-আপ বাটন ক্লিক হাইজ্যাকার
+            // সাইন-আপ বাটন ফিক্স
             document.addEventListener('click', function(e) {
               var target = e.target;
               var isSignupClick = false;
               while(target && target !== document) {
                 if (target.id === 'signupButton' || (target.className && typeof target.className === 'string' && target.className.includes('btn-signup'))) {
-                  isSignupClick = true;
-                  break;
+                  isSignupClick = true; break;
                 }
                 target = target.parentNode;
               }
@@ -184,45 +205,77 @@ export default {
               }
             }, true);
 
-            // ২. সুপার স্লাইডার হাইজ্যাকার (React-প্রুফ)
+            // কাস্টম অনুভূমিক স্লাইডার তৈরি
             if (sliderImages && sliderImages.length > 0) {
               var observer = new MutationObserver(function() {
-                // মূল স্লাইডারকে খোঁজা হচ্ছে
                 var originalSlider = document.querySelector('#carouselExampleControls') || document.querySelector('.carousel.slide');
                 
-                // যদি মূল স্লাইডার সাইটে লোড হয় এবং আমাদের কাস্টম স্লাইডার এখনো তৈরি না হয়ে থাকে
                 if (originalSlider && !document.getElementById('my-custom-slider')) {
                   
-                  // আমাদের নিজস্ব স্বাধীন স্লাইডার কন্টেইনার তৈরি
                   var customContainer = document.createElement('div');
                   customContainer.id = 'my-custom-slider';
 
-                  // অ্যাডমিন প্যানেল থেকে পাওয়া ইমেজগুলো বসানো
-                  sliderImages.forEach(function(imgUrl, index) {
+                  var track = document.createElement('div');
+                  track.className = 'slider-track';
+
+                  sliderImages.forEach(function(imgUrl) {
                     var img = document.createElement('img');
                     img.src = imgUrl;
-                    if (index === 0) img.className = 'active-slide';
-                    customContainer.appendChild(img);
+                    track.appendChild(img);
                   });
+                  
+                  customContainer.appendChild(track);
 
-                  // মূল স্লাইডারের ঠিক আগে আমাদের স্বাধীন স্লাইডারটি বসিয়ে দেওয়া
-                  originalSlider.parentNode.insertBefore(customContainer, originalSlider);
-
-                  // অটো-স্লাইড লজিক (৩ সেকেন্ড পর পর ছবি বদলাবে)
+                  // যদি ১টার বেশি ইমেজ থাকে, তবেই অ্যারো এবং অটো-স্লাইড কাজ করবে
                   if (sliderImages.length > 1) {
+                    var prevBtn = document.createElement('button');
+                    prevBtn.className = 'slider-arrow prev';
+                    prevBtn.innerHTML = '&#10094;'; // Left Arrow (❮)
+                    
+                    var nextBtn = document.createElement('button');
+                    nextBtn.className = 'slider-arrow next';
+                    nextBtn.innerHTML = '&#10095;'; // Right Arrow (❯)
+
+                    customContainer.appendChild(prevBtn);
+                    customContainer.appendChild(nextBtn);
+
                     var currentIdx = 0;
-                    setInterval(function() {
-                      var imgs = customContainer.getElementsByTagName('img');
-                      if(imgs.length > 0) {
-                        imgs[currentIdx].classList.remove('active-slide');
-                        currentIdx = (currentIdx + 1) % imgs.length;
-                        imgs[currentIdx].classList.add('active-slide');
-                      }
-                    }, 3000); 
+                    var slideInterval;
+
+                    function goToSlide(idx) {
+                        currentIdx = idx;
+                        if (currentIdx < 0) currentIdx = sliderImages.length - 1;
+                        if (currentIdx >= sliderImages.length) currentIdx = 0;
+                        track.style.transform = 'translateX(-' + (currentIdx * 100) + '%)';
+                    }
+
+                    function startAutoSlide() {
+                        slideInterval = setInterval(function() {
+                            goToSlide(currentIdx + 1);
+                        }, 3000); // ৩ সেকেন্ড পর পর স্লাইড হবে
+                    }
+
+                    // অ্যারো বাটনে ক্লিক ইভেন্ট
+                    prevBtn.onclick = function(e) {
+                        e.preventDefault(); e.stopPropagation();
+                        clearInterval(slideInterval);
+                        goToSlide(currentIdx - 1);
+                        startAutoSlide();
+                    };
+
+                    nextBtn.onclick = function(e) {
+                        e.preventDefault(); e.stopPropagation();
+                        clearInterval(slideInterval);
+                        goToSlide(currentIdx + 1);
+                        startAutoSlide();
+                    };
+
+                    startAutoSlide();
                   }
+
+                  originalSlider.parentNode.insertBefore(customContainer, originalSlider);
                 }
               });
-              // পুরো সাইটের ওপর নজর রাখা
               observer.observe(document.body, { childList: true, subtree: true });
             }
 
