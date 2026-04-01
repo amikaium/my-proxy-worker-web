@@ -17,7 +17,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // অ্যাডমিন প্যানেলের লাইভ চেকার API
     if (url.pathname === '/api/live-status') {
       let targetUrls = [];
       try {
@@ -42,13 +41,12 @@ export default {
       });
     }
 
-    // ফায়ারবেস থেকে আপনার সেটিংস আনা
     let config = { 
         logoUrl: '', 
         signupLink: '', 
         targetUrls: ['https://tenx365x.live'],
         sliderImages: [],
-        gameBanners: {} // গেম ব্যানারের নতুন কনফিগ
+        gameBanners: {} 
     };
 
     try {
@@ -111,11 +109,9 @@ export default {
 
     const contentType = response.headers.get('content-type') || '';
     
-    // HTML, JS এবং JSON (API Data) সবকিছুর ভেতরে পরিবর্তন করবে! (০ মিলি সেকেন্ড হ্যাক)
     if (contentType.includes('text/html') || contentType.includes('application/javascript') || contentType.includes('application/json')) {
       let text = await response.text();
       
-      // ১. লোগো রিপ্লেস (JSON এবং HTML উভয় জায়গায়)
       if (config.logoUrl) {
           text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
           text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
@@ -125,12 +121,13 @@ export default {
           });
       }
 
-      // ২. নির্দিষ্ট গেম ব্যানার রিপ্লেস (API Data ইন্টারসেপ্ট করা হচ্ছে)
-      // যদি অ্যাডমিন লিংক পরিবর্তন করে, তবে "Transparent Pixel" (অদৃশ্য ছবি) বসে যাবে!
+      // এখানে মূল সাইজ (348x145) এর একটি ট্রান্সপারেন্ট SVG ছবি দেওয়া হলো যাতে বক্সের সাইজ একদম পারফেক্ট থাকে
+      const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
+
       text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)tenx365\.live-([a-zA-Z0-9_-]+)\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match, keyword) => {
           let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') 
                             ? config.gameBanners[keyword] 
-                            : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // Blank image
+                            : blankSvg; 
           if (match.includes('\\/')) {
               return replacement.replace(/\//g, '\\/');
           }
@@ -140,7 +137,6 @@ export default {
       const isHtml = contentType.includes('text/html');
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
-      // ৩. শুধুমাত্র HTML পেজের জন্য স্ক্রিপ্ট ইনজেকশন (সাইন-আপ ও স্লাইডার)
       if (isHtml) {
           const scriptInjection = `
             <style>
