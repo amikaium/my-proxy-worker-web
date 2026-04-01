@@ -1,6 +1,6 @@
 export default {
   async fetch(request) {
-    const targetDomain = "vellki247.com";
+    const targetDomain = "velkebdt.com";
     // আপনার ওয়েবসাইটের প্রক্সি ডোমেইন বের করা
     const proxyHost = new URL(request.url).host;
     const url = new URL(request.url);
