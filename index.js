@@ -119,7 +119,7 @@ export default {
       const isSignupDisabled = (!config.signupLink || config.signupLink.trim() === '');
       
       // =========================================================
-      // অনুভূমিক (Horizontal) স্লাইডার, ২ পিক্সেল মার্জিন ও অ্যারো
+      // ফিক্সড স্লাইডার ডিজাইন (অরিজিনাল সাইজ এবং লেআউট)
       // =========================================================
       const scriptInjection = `
         <style>
@@ -128,34 +128,35 @@ export default {
              ${isSignupDisabled ? `opacity: 0.5 !important; cursor: not-allowed !important;` : ''}
           }
           
-          /* মূল স্লাইডার হাইড করা */
+          /* অরিজিনাল স্লাইডার পুরোপুরি হাইড করা */
           #carouselExampleControls, .carousel.slide {
              display: none !important;
              visibility: hidden !important;
-             height: 0 !important;
           }
           
-          /* নতুন স্লাইডার কন্টেইনার */
+          /* কাস্টম স্লাইডার - একদম অরিজিনাল সাইজ অনুযায়ী সেট করা */
           #my-custom-slider {
               width: 100%;
+              height: 100%; /* অরিজিনাল কন্টেইনারের হাইট নেবে */
               position: relative;
-              z-index: 99;
+              z-index: 1; /* z-index কমিয়ে দেওয়া হলো যাতে হেডারের নিচে দিয়ে যায় */
               overflow: hidden;
-              margin: 2px 0; /* ওপরে এবং নিচে ২ পিক্সেল মার্জিন */
+              margin-top: 2px; /* ওপরের দিকে ২ পিক্সেল মার্জিন */
           }
           
-          /* ইমেজের ট্র্যাক (ডানে-বামে সরার জন্য) */
           .slider-track {
               display: flex;
+              height: 100%;
               transition: transform 0.5s ease-in-out;
               width: 100%;
           }
           
           .slider-track img {
               width: 100%;
+              height: 100%;
               flex-shrink: 0;
               display: block;
-              object-fit: cover;
+              object-fit: fill; /* ইমেজকে কন্টেইনারের মাপে একদম পারফেক্টলি বসাবে */
           }
 
           /* নেভিগেশন অ্যারো (Arrows) ডিজাইন */
@@ -167,20 +168,20 @@ export default {
               color: white;
               border: none;
               cursor: pointer;
-              width: 35px;
-              height: 35px;
+              width: 30px;
+              height: 30px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 18px;
+              font-size: 14px;
               border-radius: 50%;
-              z-index: 100;
+              z-index: 10;
               user-select: none;
               transition: background 0.3s;
           }
           .slider-arrow:hover { background-color: rgba(0, 0, 0, 0.8); }
-          .slider-arrow.prev { left: 10px; }
-          .slider-arrow.next { right: 10px; }
+          .slider-arrow.prev { left: 8px; }
+          .slider-arrow.next { right: 8px; }
         </style>
         
         <script>
@@ -226,15 +227,14 @@ export default {
                   
                   customContainer.appendChild(track);
 
-                  // যদি ১টার বেশি ইমেজ থাকে, তবেই অ্যারো এবং অটো-স্লাইড কাজ করবে
                   if (sliderImages.length > 1) {
                     var prevBtn = document.createElement('button');
                     prevBtn.className = 'slider-arrow prev';
-                    prevBtn.innerHTML = '&#10094;'; // Left Arrow (❮)
+                    prevBtn.innerHTML = '&#10094;'; 
                     
                     var nextBtn = document.createElement('button');
                     nextBtn.className = 'slider-arrow next';
-                    nextBtn.innerHTML = '&#10095;'; // Right Arrow (❯)
+                    nextBtn.innerHTML = '&#10095;'; 
 
                     customContainer.appendChild(prevBtn);
                     customContainer.appendChild(nextBtn);
@@ -252,10 +252,9 @@ export default {
                     function startAutoSlide() {
                         slideInterval = setInterval(function() {
                             goToSlide(currentIdx + 1);
-                        }, 3000); // ৩ সেকেন্ড পর পর স্লাইড হবে
+                        }, 3000);
                     }
 
-                    // অ্যারো বাটনে ক্লিক ইভেন্ট
                     prevBtn.onclick = function(e) {
                         e.preventDefault(); e.stopPropagation();
                         clearInterval(slideInterval);
@@ -273,6 +272,7 @@ export default {
                     startAutoSlide();
                   }
 
+                  // অরিজিনাল স্লাইডারের ঠিক ওপরে বসিয়ে দেওয়া হলো, যাতে এটি অরিজিনাল কন্টেইনারের হাইট ফলো করে
                   originalSlider.parentNode.insertBefore(customContainer, originalSlider);
                 }
               });
