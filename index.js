@@ -4,8 +4,9 @@ const COLLECTION_NAME = 'settings';
 const DOCUMENT_ID = 'proxyConfig';
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${DOCUMENT_ID}`;
 
+// API রিকোয়েস্টের জন্য টাইমআউট একটু বাড়িয়ে দেওয়া হলো (৮ সেকেন্ড)
 async function fetchWithTimeout(resource, options = {}) {
-  const { timeout = 3000 } = options;
+  const { timeout = 8000 } = options; 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   const response = await fetch(resource, { ...options, signal: controller.signal });
@@ -17,6 +18,22 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // ========================================================
+    // ১. CORS Preflight Bypass (API এরর এবং Authorization ফিক্স)
+    // ========================================================
+    if (request.method === "OPTIONS") {
+        return new Response(null, {
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Max-Age": "86400",
+            }
+        });
+    }
+
+    // অ্যাডমিন প্যানেলের লাইভ চেকার
     if (url.pathname === '/api/live-status') {
       let targetUrls = [];
       try {
@@ -41,6 +58,7 @@ export default {
       });
     }
 
+    // কনফিগারেশন লোড
     let config = { 
         logoUrl: '', 
         loginBannerUrl: '',
@@ -83,15 +101,21 @@ export default {
 
         let requestHeaders = new Headers(request.headers);
         requestHeaders.set('Host', originUrlObj.hostname);
-        requestHeaders.set('Referer', target);
-        requestHeaders.delete('Origin'); 
+        
+        // ========================================================
+        // ২. Strict Header Spoofing (মেইন সাইটকে ধোঁকা দেওয়া)
+        // ========================================================
+        requestHeaders.set('Origin', originUrlObj.origin);
+        requestHeaders.set('Referer', originUrlObj.origin + url.pathname + url.search);
+        requestHeaders.delete('X-Forwarded-Host');
+        requestHeaders.delete('X-Forwarded-Proto');
 
         let res = await fetchWithTimeout(url.toString(), {
           method: request.method,
           headers: requestHeaders,
           body: request.body,
           redirect: 'manual',
-          timeout: 5000 
+          timeout: 8000 
         });
 
         if (res.status < 500) { response = res; break; }
@@ -106,8 +130,24 @@ export default {
       newHeaders.set('location', location.replace(originUrlObj.hostname, MY_DOMAIN));
     }
     
+    // ব্রাউজারের সিকিউরিটি ব্লক সরানো হলো
     newHeaders.delete('Content-Security-Policy');
     newHeaders.delete('X-Frame-Options');
+    newHeaders.set('Access-Control-Allow-Origin', '*');
+
+    // ========================================================
+    // ৩. Cookie Domain Rewriting (সেশন এবং অথোরাইজেশন ফিক্স)
+    // ========================================================
+    if (response.headers.has('set-cookie')) {
+        newHeaders.delete('set-cookie');
+        // Cloudflare-এর getSetCookie() দিয়ে সব কুকি আলাদা করে আনা হলো
+        const cookies = response.headers.getSetCookie();
+        for (let cookie of cookies) {
+            // অরিজিনাল ডোমেইন মুছে আপনার ডোমেইন বসানো হলো, যাতে ব্রাউজার কুকি সেভ করে রাখে
+            let fixedCookie = cookie.replace(/domain=[^;]+/gi, `domain=${MY_DOMAIN}`);
+            newHeaders.append('set-cookie', fixedCookie);
+        }
+    }
 
     const contentType = response.headers.get('content-type') || '';
     
@@ -117,10 +157,9 @@ export default {
       const blankSvg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20348%20145%22%3E%3C%2Fsvg%3E';
 
       // ========================================================
-      // DEEP SCRUBBING: রুট লেভেল থেকে অরিজিনাল ইমেজ মুছে ফেলা
+      // DEEP SCRUBBING
       // ========================================================
 
-      // ১. লোগো চিরতরে মুছে নিজের লোগো বসানো
       if (config.logoUrl) {
           text = text.replace(/(id="headLogo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
           text = text.replace(/(class="top-logo"[^>]*src=")([^"]+)(")/gi, `$1${config.logoUrl}$3`);
@@ -130,7 +169,6 @@ export default {
           });
       }
 
-      // ২. লগইন ব্যানার রিপ্লেস
       let finalLoginBanner = (config.loginBannerUrl && config.loginBannerUrl.trim() !== '') ? config.loginBannerUrl : blankSvg;
       text = text.replace(/(id="poupppLogo"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
       text = text.replace(/(class="[^"]*login-head[^"]*"[^>]*src=")([^"]+)(")/gi, `$1${finalLoginBanner}$3`);
@@ -139,7 +177,6 @@ export default {
           return finalLoginBanner;
       });
 
-      // ৩. গেম ব্যানার রিপ্লেস
       text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:\\\/|\/)tenx365\.live-([a-zA-Z0-9_-]+)\.webp(?:\\\/|\/)MainImage[^"'\\]*/gi, (match, keyword) => {
           let replacement = (config.gameBanners && config.gameBanners[keyword] && config.gameBanners[keyword].trim() !== '') 
                             ? config.gameBanners[keyword] 
@@ -148,7 +185,6 @@ export default {
           return replacement;
       });
 
-      // ৪. "NUKE": অরিজিনাল স্লাইডার, পপআপ এবং যেকোনো প্রোমোশনাল ব্যানার কোড থেকে পুরোপুরি মুছে ফেলা!
       text = text.replace(/https:(?:\\\/\\\/|\/\/)imagedelivery\.net(?:\\\/|\/)[^"']+(?:Slider|Banner|Promo|popup|Popup)[^"'\\]*/gi, (match) => {
           if (match.includes('\\/')) return blankSvg.replace(/\//g, '\\/');
           return blankSvg;
