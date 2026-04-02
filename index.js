@@ -14,24 +14,22 @@ async function handleRequest(request) {
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
-        'Access-Control-Allow-Origin': request.headers.get('Origin') || '*',
+        'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': request.headers.get('Access-Control-Request-Headers') || '*',
-        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Headers': '*',
         'Access-Control-Max-Age': '86400',
       }
     });
   }
 
-  // ২. External Proxy (365cric.com Scoreboard Iframe এর জন্য)
+  // ২. External Proxy (Scoreboard Iframe ও Video M3U8 এর জন্য)
   if (url.pathname.startsWith(PROXY_PREFIX)) {
     return handleExternalProxy(request, url);
   }
 
-  // ৩. Main Domain Request
+  // ৩. Main Site Request
   url.hostname = TARGET_DOMAIN;
   const headers = new Headers(request.headers);
-  
   headers.set('Host', TARGET_DOMAIN);
   if (headers.has('Origin')) headers.set('Origin', TARGET_URL);
   if (headers.has('Referer')) headers.set('Referer', TARGET_URL + '/');
@@ -51,45 +49,53 @@ async function handleRequest(request) {
   return processResponse(response, proxyOrigin, false, null);
 }
 
-// এক্সটার্নাল API এবং Scoreboard Iframe প্রক্সি ফাংশন
+// এক্সটার্নাল রিকোয়েস্ট হ্যান্ডেলার
 async function handleExternalProxy(request, url) {
-  const actualUrlStr = url.pathname.replace(PROXY_PREFIX, '') + url.search;
-  if (!actualUrlStr.startsWith('http')) {
-    return new Response('Invalid proxy URL', { status: 400 });
+  let targetUrlStr = url.searchParams.get('url'); // Base64 URL for iframes
+  
+  if (targetUrlStr) {
+    // Iframe এর Base64 ডিকোড করা
+    targetUrlStr = atob(targetUrlStr);
+  } else {
+    // Live TV / M3U8 এর জন্য পাথ ফিক্স (URL Normalization fix)
+    targetUrlStr = url.pathname.replace(PROXY_PREFIX, '') + url.search;
+    if (targetUrlStr.startsWith('https:/') && !targetUrlStr.startsWith('https://')) {
+      targetUrlStr = targetUrlStr.replace('https:/', 'https://');
+    }
   }
 
-  const actualUrl = new URL(actualUrlStr);
+  if (!targetUrlStr.startsWith('http')) {
+    return new Response('Invalid target URL', { status: 400 });
+  }
+
+  const targetUrl = new URL(targetUrlStr);
   const headers = new Headers(request.headers);
   
-  // সবচেয়ে গুরুত্বপূর্ণ: 365cric সার্ভারকে বোঝানো যে রিকোয়েস্ট মূল সাইট থেকে আসছে
-  headers.set('Host', actualUrl.hostname);
+  // 365cric সার্ভারকে ধোঁকা দেওয়ার জন্য অরিজিনাল সাইটের নাম পাঠানো
+  headers.set('Host', targetUrl.hostname);
   headers.set('Origin', TARGET_URL);
   headers.set('Referer', TARGET_URL + '/');
-  
   headers.delete('X-Forwarded-For');
   headers.delete('CF-Connecting-IP');
 
-  const modifiedRequest = new Request(actualUrl.toString(), {
+  const response = await fetch(new Request(targetUrl.toString(), {
     method: request.method,
     headers: headers,
     body: request.body,
     redirect: 'follow'
-  });
+  }));
 
-  const response = await fetch(modifiedRequest);
-  return processResponse(response, url.origin, true, actualUrl);
+  return processResponse(response, url.origin, true, targetUrl);
 }
 
-// Response Modification
+// Response প্রসেসিং ও মডিফিকেশন
 async function processResponse(response, proxyOrigin, isExternal, externalUrl) {
   const newHeaders = new Headers(response.headers);
 
-  // Security headers রিমুভ যাতে Iframe ব্লক না হয়
+  // Iframe ব্লক যেন না হয় সেজন্য সিকিউরিটি হেডার মুছে ফেলা
   newHeaders.delete('X-Frame-Options');
   newHeaders.delete('Content-Security-Policy');
-
-  newHeaders.set('Access-Control-Allow-Origin', proxyOrigin);
-  newHeaders.set('Access-Control-Allow-Credentials', 'true');
+  newHeaders.set('Access-Control-Allow-Origin', '*');
 
   const cookies = newHeaders.getSetCookie();
   if (cookies && cookies.length > 0) {
@@ -101,82 +107,77 @@ async function processResponse(response, proxyOrigin, isExternal, externalUrl) {
 
   const contentType = response.headers.get('content-type') || '';
 
+  // Live TV (M3U8) ফিক্স (যেহেতু এটি আগে কাজ করেছিল, তাই আগের নিয়মেই রাখা হলো)
   if (contentType.includes('application/vnd.apple.mpegurl') || contentType.includes('application/x-mpegURL')) {
     let text = await response.text();
     text = text.replace(/(https?:\/\/[^\s]+)/g, `${proxyOrigin}${PROXY_PREFIX}$1`);
     return new Response(text, { status: response.status, headers: newHeaders });
   }
 
-  // HTML পেজে Advanced JS Inject করা
+  // HTML পেজ
   if (contentType.includes('text/html')) {
     let rewriter = new HTMLRewriter().on('head', {
       element(e) {
+        // যদি এটি Scoreboard এর ভেতরের HTML হয়, তবে Base URL সেট করা
+        // যাতে এর ভেতরের CSS/JS ফাইলগুলো কোনো এরর ছাড়াই 365cric থেকে লোড হয়
         if (isExternal && externalUrl) {
-          let baseUrl = `${externalUrl.origin}${externalUrl.pathname}`;
-          if (!baseUrl.endsWith('/')) baseUrl += '/';
-          e.prepend(`<base href="${proxyOrigin}${PROXY_PREFIX}${baseUrl}">`, { html: true });
+          e.prepend(`<base href="${externalUrl.origin}/">`, { html: true });
         }
 
-        // এই স্ক্রিপ্টটি Angular এর ডায়নামিক Iframe তৈরিকে ইন্টারসেপ্ট করবে
-        e.append(`
-          <script>
-            (function() {
-              const proxyPrefix = "${proxyOrigin}${PROXY_PREFIX}";
-              
-              function rewriteIframeUrl(url) {
-                if (!url || url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('javascript:')) return url;
-                try {
-                  // যদি লিংকটি 365cric.com এর হয়, তাহলে প্রক্সিতে কনভার্ট করো
-                  if (url.includes('365cric.com')) {
-                    if (url.startsWith('http')) return proxyPrefix + url;
-                    if (url.startsWith('//')) return proxyPrefix + 'https:' + url;
-                  }
-                } catch(e) {}
-                return url;
-              }
-
-              // ১. Intercept Iframe attribute changes (Angular uses this)
-              const originalSetAttribute = Element.prototype.setAttribute;
-              Element.prototype.setAttribute = function(name, value) {
-                if (name === 'src' && this.tagName === 'IFRAME') {
-                  value = rewriteIframeUrl(value);
-                }
-                return originalSetAttribute.call(this, name, value);
-              };
-
-              // ২. Intercept Iframe src property assignment
-              const iframeDesc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
-              if (iframeDesc) {
-                Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
-                  set: function(val) {
-                    return iframeDesc.set.call(this, rewriteIframeUrl(val));
-                  },
-                  get: iframeDesc.get
-                });
-              }
-
-              // ৩. Fallback: MutationObserver (যদি উপরোক্ত ২ টা পদ্ধতি ফেইল করে)
-              const observer = new MutationObserver(mutations => {
-                mutations.forEach(mutation => {
-                  mutation.addedNodes.forEach(node => {
-                    if (node.tagName === 'IFRAME' && node.src) {
-                      const newSrc = rewriteIframeUrl(node.src);
-                      if (newSrc !== node.src) node.src = newSrc;
+        // মেইন পেজের Iframe ইন্টারসেপ্ট করার স্ক্রিপ্ট (Live TV কে ডিস্টার্ব করবে না)
+        if (!isExternal) {
+          e.append(`
+            <script>
+              (function() {
+                const proxyPrefix = "${proxyOrigin}${PROXY_PREFIX}";
+                
+                function encodeIframeUrl(url) {
+                  if (!url || url.includes(proxyPrefix) || url.startsWith('blob:') || url.startsWith('data:')) return url;
+                  try {
+                    const u = new URL(url, window.location.origin);
+                    // শুধুমাত্র 365cric এর স্কোরবোর্ড Iframe প্রক্সি করবে
+                    if (u.hostname.includes('365cric')) {
+                      let hash = u.hash; // #/score1/35436387 অংশটুকু আলাদা করা
+                      u.hash = ''; // এনকোড করার আগে Hash মুছে ফেলা
+                      let base64 = btoa(u.href);
+                      // প্রক্সির লিংকের শেষে Hash বসিয়ে দেওয়া যাতে Angular App কাজ করে
+                      return proxyPrefix + "?url=" + base64 + hash;
                     }
+                  } catch(e) {}
+                  return url;
+                }
+
+                // Angular ডাইনামিক Iframe তৈরি করা ধরবে
+                const observer = new MutationObserver(mutations => {
+                  mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                      if (node.tagName === 'IFRAME' && node.src) {
+                        const newSrc = encodeIframeUrl(node.src);
+                        if (newSrc !== node.src) node.src = newSrc;
+                      }
+                    });
                   });
                 });
-              });
-              
-              document.addEventListener("DOMContentLoaded", function() {
-                 observer.observe(document.body, { childList: true, subtree: true });
-              });
+                
+                document.addEventListener("DOMContentLoaded", () => {
+                   observer.observe(document.body, { childList: true, subtree: true });
+                });
 
-            })();
-          </script>
-        `, { html: true });
+                const origSetAttr = Element.prototype.setAttribute;
+                Element.prototype.setAttribute = function(name, value) {
+                  if (name === 'src' && this.tagName === 'IFRAME') {
+                    value = encodeIframeUrl(value);
+                  }
+                  return origSetAttr.call(this, name, value);
+                };
+              })();
+            </script>
+          `, { html: true });
+        }
       }
     });
 
+    // মেইন সাইটের লিংক কনভার্ট
     rewriter = rewriter
       .on('[href]', new AttributeRewriter('href', proxyOrigin))
       .on('[src]', new AttributeRewriter('src', proxyOrigin));
@@ -202,8 +203,6 @@ class AttributeRewriter {
     try {
       if (attribute.includes(TARGET_DOMAIN)) {
         element.setAttribute(this.attributeName, attribute.replace(new RegExp(`https?://${TARGET_DOMAIN}`, 'g'), this.proxyOrigin));
-      } else if (attribute.includes('365cric.com') && attribute.startsWith('http')) {
-        element.setAttribute(this.attributeName, `${this.proxyOrigin}${PROXY_PREFIX}${attribute}`);
       }
     } catch (e) { }
   }
