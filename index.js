@@ -1,6 +1,6 @@
 const TARGET_DOMAIN = 'tenx365x.live';
 const TARGET_URL = 'https://' + TARGET_DOMAIN;
-const PROXY_PREFIX = '/ext-proxy/';
+const PROXY_PREFIX = '/p/';
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -10,24 +10,49 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   const proxyOrigin = url.origin;
 
-  // ১. CORS Preflight
+  // ১. CORS Preflight (সবকিছুর জন্য অ্যালাউ করা)
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': '*',
         'Access-Control-Allow-Headers': '*',
         'Access-Control-Max-Age': '86400',
       }
     });
   }
 
-  // ২. External Proxy (Scoreboard Iframe ও Video M3U8 এর জন্য)
+  // ২. External Proxy (Scoreboard Iframe এবং ৩য় পক্ষের API/Video এর জন্য)
   if (url.pathname.startsWith(PROXY_PREFIX)) {
-    return handleExternalProxy(request, url);
+    // /p/ এর পরের মূল লিংকটি বের করে আনা
+    const actualUrlStr = request.url.substring(request.url.indexOf(PROXY_PREFIX) + PROXY_PREFIX.length);
+    
+    if (!actualUrlStr.startsWith('http')) {
+      return new Response('Invalid URL', { status: 400 });
+    }
+    
+    const actualUrl = new URL(actualUrlStr);
+    const headers = new Headers(request.headers);
+    
+    // ৩য় পক্ষের সার্ভারকে ধোঁকা দিয়ে মূল সাইটের নাম পাঠানো
+    headers.set('Host', actualUrl.hostname);
+    headers.set('Origin', TARGET_URL);
+    headers.set('Referer', TARGET_URL + '/');
+    headers.delete('X-Forwarded-For');
+    headers.delete('CF-Connecting-IP');
+
+    const modifiedReq = new Request(actualUrl.toString(), {
+      method: request.method,
+      headers: headers,
+      body: request.body,
+      redirect: 'follow'
+    });
+
+    const response = await fetch(modifiedReq);
+    return processResponse(response, proxyOrigin, true, actualUrlStr);
   }
 
-  // ৩. Main Site Request
+  // ৩. Main Domain Request (tenx365x.live এর জন্য)
   url.hostname = TARGET_DOMAIN;
   const headers = new Headers(request.headers);
   headers.set('Host', TARGET_DOMAIN);
@@ -38,61 +63,22 @@ async function handleRequest(request) {
     return fetch(url.toString(), { method: request.method, headers: headers });
   }
 
-  const modifiedRequest = new Request(url.toString(), {
+  const modifiedReq = new Request(url.toString(), {
     method: request.method,
     headers: headers,
     body: request.body,
     redirect: 'manual'
   });
 
-  const response = await fetch(modifiedRequest);
-  return processResponse(response, proxyOrigin, false, null);
+  const response = await fetch(modifiedReq);
+  return processResponse(response, proxyOrigin, false, request.url);
 }
 
-// এক্সটার্নাল রিকোয়েস্ট হ্যান্ডেলার
-async function handleExternalProxy(request, url) {
-  let targetUrlStr = url.searchParams.get('url'); // Base64 URL for iframes
-  
-  if (targetUrlStr) {
-    // Iframe এর Base64 ডিকোড করা
-    targetUrlStr = atob(targetUrlStr);
-  } else {
-    // Live TV / M3U8 এর জন্য পাথ ফিক্স (URL Normalization fix)
-    targetUrlStr = url.pathname.replace(PROXY_PREFIX, '') + url.search;
-    if (targetUrlStr.startsWith('https:/') && !targetUrlStr.startsWith('https://')) {
-      targetUrlStr = targetUrlStr.replace('https:/', 'https://');
-    }
-  }
-
-  if (!targetUrlStr.startsWith('http')) {
-    return new Response('Invalid target URL', { status: 400 });
-  }
-
-  const targetUrl = new URL(targetUrlStr);
-  const headers = new Headers(request.headers);
-  
-  // 365cric সার্ভারকে ধোঁকা দেওয়ার জন্য অরিজিনাল সাইটের নাম পাঠানো
-  headers.set('Host', targetUrl.hostname);
-  headers.set('Origin', TARGET_URL);
-  headers.set('Referer', TARGET_URL + '/');
-  headers.delete('X-Forwarded-For');
-  headers.delete('CF-Connecting-IP');
-
-  const response = await fetch(new Request(targetUrl.toString(), {
-    method: request.method,
-    headers: headers,
-    body: request.body,
-    redirect: 'follow'
-  }));
-
-  return processResponse(response, url.origin, true, targetUrl);
-}
-
-// Response প্রসেসিং ও মডিফিকেশন
-async function processResponse(response, proxyOrigin, isExternal, externalUrl) {
+// রেসপন্স মডিফাই করার ফাংশন
+async function processResponse(response, proxyOrigin, isExternal, originalUrlStr) {
   const newHeaders = new Headers(response.headers);
-
-  // Iframe ব্লক যেন না হয় সেজন্য সিকিউরিটি হেডার মুছে ফেলা
+  
+  // Iframe যেন ব্লক না হয়
   newHeaders.delete('X-Frame-Options');
   newHeaders.delete('Content-Security-Policy');
   newHeaders.set('Access-Control-Allow-Origin', '*');
@@ -107,80 +93,104 @@ async function processResponse(response, proxyOrigin, isExternal, externalUrl) {
 
   const contentType = response.headers.get('content-type') || '';
 
-  // Live TV (M3U8) ফিক্স (যেহেতু এটি আগে কাজ করেছিল, তাই আগের নিয়মেই রাখা হলো)
+  // Video Streaming (M3U8) লিংক রিপ্লেসমেন্ট
   if (contentType.includes('application/vnd.apple.mpegurl') || contentType.includes('application/x-mpegURL')) {
     let text = await response.text();
     text = text.replace(/(https?:\/\/[^\s]+)/g, `${proxyOrigin}${PROXY_PREFIX}$1`);
     return new Response(text, { status: response.status, headers: newHeaders });
   }
 
-  // HTML পেজ
+  // HTML পেজ মডিফিকেশন
   if (contentType.includes('text/html')) {
     let rewriter = new HTMLRewriter().on('head', {
       element(e) {
-        // যদি এটি Scoreboard এর ভেতরের HTML হয়, তবে Base URL সেট করা
-        // যাতে এর ভেতরের CSS/JS ফাইলগুলো কোনো এরর ছাড়াই 365cric থেকে লোড হয়
-        if (isExternal && externalUrl) {
-          e.prepend(`<base href="${externalUrl.origin}/">`, { html: true });
+        // Iframe এর ভেতরের ফাইলগুলো যেন ঠিকমতো লোড হয়
+        if (isExternal) {
+          try {
+            let u = new URL(originalUrlStr);
+            e.prepend(`<base href="${u.origin}/">`, { html: true });
+          } catch(err){}
         }
 
-        // মেইন পেজের Iframe ইন্টারসেপ্ট করার স্ক্রিপ্ট (Live TV কে ডিস্টার্ব করবে না)
-        if (!isExternal) {
-          e.append(`
-            <script>
-              (function() {
-                const proxyPrefix = "${proxyOrigin}${PROXY_PREFIX}";
-                
-                function encodeIframeUrl(url) {
-                  if (!url || url.includes(proxyPrefix) || url.startsWith('blob:') || url.startsWith('data:')) return url;
-                  try {
-                    const u = new URL(url, window.location.origin);
-                    // শুধুমাত্র 365cric এর স্কোরবোর্ড Iframe প্রক্সি করবে
-                    if (u.hostname.includes('365cric')) {
-                      let hash = u.hash; // #/score1/35436387 অংশটুকু আলাদা করা
-                      u.hash = ''; // এনকোড করার আগে Hash মুছে ফেলা
-                      let base64 = btoa(u.href);
-                      // প্রক্সির লিংকের শেষে Hash বসিয়ে দেওয়া যাতে Angular App কাজ করে
-                      return proxyPrefix + "?url=" + base64 + hash;
-                    }
-                  } catch(e) {}
-                  return url;
-                }
+        // মাস্টার JS Injector (Live TV এবং Scoreboard উভয়ের জন্য)
+        e.append(`
+          <script>
+            (function() {
+              const proxyPrefix = "${proxyOrigin}${PROXY_PREFIX}";
+              const targetDomain = "${TARGET_DOMAIN}";
 
-                // Angular ডাইনামিক Iframe তৈরি করা ধরবে
-                const observer = new MutationObserver(mutations => {
-                  mutations.forEach(mutation => {
-                    mutation.addedNodes.forEach(node => {
-                      if (node.tagName === 'IFRAME' && node.src) {
-                        const newSrc = encodeIframeUrl(node.src);
-                        if (newSrc !== node.src) node.src = newSrc;
-                      }
-                    });
+              // লিংক প্রক্সিতে কনভার্ট করার ফাংশন
+              function rewrite(url) {
+                if (!url || typeof url !== 'string') return url;
+                if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('javascript:')) return url;
+                if (url.includes(proxyPrefix)) return url; // আগে থেকেই প্রক্সি করা থাকলে বাদ
+
+                try {
+                  const u = new URL(url, window.location.origin);
+                  // যদি এক্সটার্নাল লিংক হয় (যেমন 365cric বা Video API)
+                  if (u.hostname !== window.location.hostname && !u.hostname.includes(targetDomain)) {
+                     return proxyPrefix + u.href;
+                  }
+                } catch(e) {}
+                return url;
+              }
+
+              // ১. Fetch API Intercept (Live TV এর জন্য জরুরি)
+              const origFetch = window.fetch;
+              window.fetch = async function() {
+                if (typeof arguments[0] === 'string') {
+                  arguments[0] = rewrite(arguments[0]);
+                } else if (arguments[0] instanceof Request) {
+                  arguments[0] = new Request(rewrite(arguments[0].url), arguments[0]);
+                }
+                return origFetch.apply(this, arguments);
+              };
+
+              // ২. Ajax Intercept (Live TV এবং ডাটা লোডের জন্য জরুরি)
+              const origOpen = XMLHttpRequest.prototype.open;
+              XMLHttpRequest.prototype.open = function(method, url) {
+                arguments[1] = rewrite(url);
+                return origOpen.apply(this, arguments);
+              };
+
+              // ৩. Iframe তৈরি হওয়া Intercept (Scoreboard এর জন্য জরুরি)
+              const origSetAttr = Element.prototype.setAttribute;
+              Element.prototype.setAttribute = function(name, value) {
+                if (name === 'src' && this.tagName === 'IFRAME') {
+                  value = rewrite(value);
+                }
+                return origSetAttr.call(this, name, value);
+              };
+
+              // ৪. Angular ডায়নামিক Iframe Intercept
+              const observer = new MutationObserver(mutations => {
+                mutations.forEach(m => {
+                  m.addedNodes.forEach(node => {
+                    if (node.tagName === 'IFRAME' && node.src) {
+                      const newSrc = rewrite(node.src);
+                      if (newSrc !== node.src) node.src = newSrc;
+                    }
                   });
                 });
-                
-                document.addEventListener("DOMContentLoaded", () => {
-                   observer.observe(document.body, { childList: true, subtree: true });
-                });
+              });
+              document.addEventListener("DOMContentLoaded", () => {
+                observer.observe(document.body, { childList: true, subtree: true });
+              });
 
-                const origSetAttr = Element.prototype.setAttribute;
-                Element.prototype.setAttribute = function(name, value) {
-                  if (name === 'src' && this.tagName === 'IFRAME') {
-                    value = encodeIframeUrl(value);
-                  }
-                  return origSetAttr.call(this, name, value);
-                };
-              })();
-            </script>
-          `, { html: true });
-        }
+              // ৫. জাভাস্ক্রিপ্টে ফেইক Referrer সেট করা
+              try {
+                Object.defineProperty(document, 'referrer', { get: () => "https://" + targetDomain + "/" });
+              } catch(e){}
+
+            })();
+          </script>
+        `, { html: true });
       }
     });
 
-    // মেইন সাইটের লিংক কনভার্ট
     rewriter = rewriter
-      .on('[href]', new AttributeRewriter('href', proxyOrigin))
-      .on('[src]', new AttributeRewriter('src', proxyOrigin));
+      .on('[href]', new AttributeRewriter('href', proxyOrigin, PROXY_PREFIX))
+      .on('[src]', new AttributeRewriter('src', proxyOrigin, PROXY_PREFIX));
 
     return rewriter.transform(new Response(response.body, {
       status: response.status,
@@ -192,9 +202,10 @@ async function processResponse(response, proxyOrigin, isExternal, externalUrl) {
 }
 
 class AttributeRewriter {
-  constructor(attributeName, proxyOrigin) {
+  constructor(attributeName, proxyOrigin, proxyPrefix) {
     this.attributeName = attributeName;
     this.proxyOrigin = proxyOrigin;
+    this.proxyPrefix = proxyPrefix;
   }
   element(element) {
     const attribute = element.getAttribute(this.attributeName);
@@ -202,7 +213,9 @@ class AttributeRewriter {
 
     try {
       if (attribute.includes(TARGET_DOMAIN)) {
-        element.setAttribute(this.attributeName, attribute.replace(new RegExp(`https?://${TARGET_DOMAIN}`, 'g'), this.proxyOrigin));
+         element.setAttribute(this.attributeName, attribute.replace(new RegExp(`https?://${TARGET_DOMAIN}`, 'g'), this.proxyOrigin));
+      } else if (attribute.startsWith('http') && !attribute.includes(this.proxyOrigin)) {
+         element.setAttribute(this.attributeName, `${this.proxyOrigin}${this.proxyPrefix}${attribute}`);
       }
     } catch (e) { }
   }
