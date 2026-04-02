@@ -4,7 +4,7 @@ addEventListener('fetch', event => {
 
 async function handleRequest(request) {
   // এখানে আপনার মেইন সাইটের লিংকটি বসান (যেমন: https://tenx365x.live)
-  const TARGET_URL = 'https://example.com'; 
+  const TARGET_URL = 'https://tenx365x.live'; 
   const targetUrlObj = new URL(TARGET_URL);
 
   // রিকোয়েস্ট থেকে বর্তমান ডাইনামিক ইউআরএল (প্রিভিউ লিংক বা আপনার ডোমেইন) বের করা
