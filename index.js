@@ -3,60 +3,97 @@ addEventListener('fetch', event => {
 })
 
 async function handleRequest(request) {
+  const TARGET_DOMAIN = 'tenx365x.live';
+  const TARGET_URL = 'https://' + TARGET_DOMAIN;
+
   const url = new URL(request.url);
+  const proxyOrigin = url.origin;
 
-  // আপনার দেওয়া মূল সাইটের লিংক
-  const targetBase = 'https://tenx365x.live';
+  // রিকোয়েস্টের হোস্টনেম পরিবর্তন করে মেইন সাইটে পাঠানো
+  url.hostname = TARGET_DOMAIN;
+
+  const headers = new Headers(request.headers);
+  headers.set('Host', TARGET_DOMAIN);
   
-  // ব্যবহারকারী যে পাথে (path) ভিজিট করবে, আইফ্রেমে সেই পেজটিই লোড হবে
-  let targetUrl = targetBase + url.pathname + url.search;
-
-  // যদি কেউ সরাসরি আপনার মূল ডোমেইনে (যেমন: yourdomain.com/) প্রবেশ করে, 
-  // তবে তাকে ডিফল্টভাবে ইন-প্লে পেজটি দেখানো হবে
-  if (url.pathname === '/') {
-    targetUrl = targetBase + '/exchange/member/Matches/Inplay';
+  // API ব্লক যেন না হয়, সেজন্য Origin এবং Referer হেডার অরিজিনাল সাইটের মতো করে দেওয়া
+  if (headers.has('Origin')) {
+    headers.set('Origin', TARGET_URL);
+  }
+  if (headers.has('Referer')) {
+    let referer = headers.get('Referer');
+    headers.set('Referer', referer.replace(proxyOrigin, TARGET_URL));
   }
 
-  // ফুল-স্ক্রিন আইফ্রেম সহ এইচটিএমএল (HTML) পেজ তৈরি
-  const html = `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-      <title>Sports Live</title>
-      <style>
-          /* পেজের মার্জিন সরিয়ে আইফ্রেমকে সম্পূর্ণ স্ক্রিন জুড়ে দেওয়া হয়েছে */
-          body, html {
-              margin: 0;
-              padding: 0;
-              height: 100%;
-              width: 100%;
-              overflow: hidden;
-              background-color: #000; /* লোড হওয়ার আগে কালো ব্যাকগ্রাউন্ড দেখাবে */
-          }
-          iframe {
-              width: 100%;
-              height: 100%;
-              border: none;
-          }
-      </style>
-  </head>
-  <body>
-      <iframe 
-          src="${targetUrl}" 
-          allow="autoplay; fullscreen; encrypted-media" 
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation"
-          allowfullscreen>
-      </iframe>
-  </body>
-  </html>
-  `;
+  // লাইভ টিভি এবং স্কোর আপডেটের জন্য WebSocket কানেকশন বাইপাস করা (খুবই গুরুত্বপূর্ণ)
+  if (request.headers.get("Upgrade") === "websocket") {
+    return fetch(url.toString(), {
+      method: request.method,
+      headers: headers,
+    });
+  }
 
-  // ব্রাউজারকে HTML পেজ হিসেবে রেসপন্স পাঠানো
-  return new Response(html, {
-    headers: {
-      "Content-Type": "text/html;charset=UTF-8",
-    },
+  const modifiedRequest = new Request(url.toString(), {
+    method: request.method,
+    headers: headers,
+    body: request.body,
+    redirect: 'manual'
   });
+
+  const response = await fetch(modifiedRequest);
+  const newHeaders = new Headers(response.headers);
+
+  // ব্রাউজার যাতে সাইটটিকে ব্লক না করে সেজন্য সিকিউরিটি হেডারগুলো ডিলিট করা
+  newHeaders.delete('X-Frame-Options');
+  newHeaders.delete('Content-Security-Policy');
+  newHeaders.delete('Clear-Site-Data');
+  
+  // API যেন আপনার ডোমেইনে কাজ করে সেজন্য CORS পারমিশন দেওয়া
+  newHeaders.set('Access-Control-Allow-Origin', '*');
+  newHeaders.set('Access-Control-Allow-Methods', '*');
+  newHeaders.set('Access-Control-Allow-Headers', '*');
+
+  // লগইন বা সেশন যেন ডিসকানেক্ট না হয়, সেজন্য কুকি (Cookie) ফিক্স করা
+  const cookies = newHeaders.get('Set-Cookie');
+  if (cookies) {
+     // মেইন সাইটের ডোমেইন রেস্ট্রিকশন মুছে ফেলা যাতে কুকি আপনার ডোমেইনে কাজ করে
+     newHeaders.set('Set-Cookie', cookies.replace(/Domain=[^;]+;/gi, ''));
+  }
+
+  // পেজের ভেতরের সব লিংক আপনার ডোমেইনে কনভার্ট করা
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('text/html')) {
+    return new HTMLRewriter()
+      .on('[href]', new AttributeRewriter('href', TARGET_DOMAIN, proxyOrigin))
+      .on('[src]', new AttributeRewriter('src', TARGET_DOMAIN, proxyOrigin))
+      .on('[action]', new AttributeRewriter('action', TARGET_DOMAIN, proxyOrigin))
+      .transform(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      }));
+  }
+
+  // অন্যান্য ফাইল (ছবি, ভিডিও, সিএসএস) সরাসরি রিটার্ন করা
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  });
+}
+
+// লিংক রিপ্লেস করার ক্লাস
+class AttributeRewriter {
+  constructor(attributeName, targetDomain, proxyOrigin) {
+    this.attributeName = attributeName;
+    this.targetDomain = targetDomain;
+    this.proxyOrigin = proxyOrigin;
+  }
+  element(element) {
+    const attribute = element.getAttribute(this.attributeName);
+    // যদি লিংকের ভেতরে মেইন ডোমেইনের নাম থাকে, তবে সেটি পরিবর্তন করে আপনার ডোমেইন বসিয়ে দেবে
+    if (attribute && attribute.includes(this.targetDomain)) {
+      const newAttribute = attribute.replace(new RegExp(`https?://${this.targetDomain}`, 'g'), this.proxyOrigin);
+      element.setAttribute(this.attributeName, newAttribute);
+    }
+  }
 }
