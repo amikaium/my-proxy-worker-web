@@ -5,31 +5,32 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const TARGET_DOMAIN = 'tenx365x.live';
   const TARGET_URL = 'https://' + TARGET_DOMAIN;
-
   const url = new URL(request.url);
   const proxyOrigin = url.origin;
 
-  // রিকোয়েস্টের হোস্টনেম পরিবর্তন করে মেইন সাইটে পাঠানো
-  url.hostname = TARGET_DOMAIN;
+  // ভিডিও স্ট্রিমিং এবং API এর জন্য CORS Preflight রিকোয়েস্ট বাইপাস করা
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Max-Age': '86400',
+      }
+    });
+  }
 
+  // রিকোয়েস্ট টার্গেট সাইটে পাঠানো
+  url.hostname = TARGET_DOMAIN;
   const headers = new Headers(request.headers);
   headers.set('Host', TARGET_DOMAIN);
   
-  // API ব্লক যেন না হয়, সেজন্য Origin এবং Referer হেডার অরিজিনাল সাইটের মতো করে দেওয়া
-  if (headers.has('Origin')) {
-    headers.set('Origin', TARGET_URL);
-  }
-  if (headers.has('Referer')) {
-    let referer = headers.get('Referer');
-    headers.set('Referer', referer.replace(proxyOrigin, TARGET_URL));
-  }
+  if (headers.has('Origin')) headers.set('Origin', TARGET_URL);
+  if (headers.has('Referer')) headers.set('Referer', TARGET_URL);
 
-  // লাইভ টিভি এবং স্কোর আপডেটের জন্য WebSocket কানেকশন বাইপাস করা (খুবই গুরুত্বপূর্ণ)
+  // লাইভ স্কোর আপডেটের জন্য WebSocket পারমিশন
   if (request.headers.get("Upgrade") === "websocket") {
-    return fetch(url.toString(), {
-      method: request.method,
-      headers: headers,
-    });
+    return fetch(url.toString(), { method: request.method, headers: headers });
   }
 
   const modifiedRequest = new Request(url.toString(), {
@@ -42,27 +43,32 @@ async function handleRequest(request) {
   const response = await fetch(modifiedRequest);
   const newHeaders = new Headers(response.headers);
 
-  // ব্রাউজার যাতে সাইটটিকে ব্লক না করে সেজন্য সিকিউরিটি হেডারগুলো ডিলিট করা
+  // ব্রাউজার রেস্ট্রিকশন সরানো
   newHeaders.delete('X-Frame-Options');
   newHeaders.delete('Content-Security-Policy');
-  newHeaders.delete('Clear-Site-Data');
   
-  // API যেন আপনার ডোমেইনে কাজ করে সেজন্য CORS পারমিশন দেওয়া
+  // স্ট্রিমিং যেন না আটকায় সেজন্য CORS অ্যালাউ করা
   newHeaders.set('Access-Control-Allow-Origin', '*');
-  newHeaders.set('Access-Control-Allow-Methods', '*');
   newHeaders.set('Access-Control-Allow-Headers', '*');
 
-  // লগইন বা সেশন যেন ডিসকানেক্ট না হয়, সেজন্য কুকি (Cookie) ফিক্স করা
+  // সেশন ও কুকি ফিক্স
   const cookies = newHeaders.get('Set-Cookie');
   if (cookies) {
-     // মেইন সাইটের ডোমেইন রেস্ট্রিকশন মুছে ফেলা যাতে কুকি আপনার ডোমেইনে কাজ করে
      newHeaders.set('Set-Cookie', cookies.replace(/Domain=[^;]+;/gi, ''));
   }
 
-  // পেজের ভেতরের সব লিংক আপনার ডোমেইনে কনভার্ট করা
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('text/html')) {
+  const contentType = response.headers.get('content-type') || '';
+  
+  // HTML পেজ হলে কিছু স্পেশাল মডিফিকেশন করা
+  if (contentType.includes('text/html')) {
     return new HTMLRewriter()
+      // স্কোরবোর্ড আইফ্রেমের (365cric.com) কাছে আপনার ডোমেইন হাইড করার জন্য মেটা ট্যাগ ইনজেক্ট করা
+      .on('head', {
+        element(e) {
+          e.append('<meta name="referrer" content="no-referrer" />', { html: true });
+        }
+      })
+      // সাইটের ভেতরের লিংকগুলো আপনার ডোমেইনে কনভার্ট করা
       .on('[href]', new AttributeRewriter('href', TARGET_DOMAIN, proxyOrigin))
       .on('[src]', new AttributeRewriter('src', TARGET_DOMAIN, proxyOrigin))
       .on('[action]', new AttributeRewriter('action', TARGET_DOMAIN, proxyOrigin))
@@ -73,7 +79,6 @@ async function handleRequest(request) {
       }));
   }
 
-  // অন্যান্য ফাইল (ছবি, ভিডিও, সিএসএস) সরাসরি রিটার্ন করা
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -81,7 +86,6 @@ async function handleRequest(request) {
   });
 }
 
-// লিংক রিপ্লেস করার ক্লাস
 class AttributeRewriter {
   constructor(attributeName, targetDomain, proxyOrigin) {
     this.attributeName = attributeName;
@@ -90,7 +94,6 @@ class AttributeRewriter {
   }
   element(element) {
     const attribute = element.getAttribute(this.attributeName);
-    // যদি লিংকের ভেতরে মেইন ডোমেইনের নাম থাকে, তবে সেটি পরিবর্তন করে আপনার ডোমেইন বসিয়ে দেবে
     if (attribute && attribute.includes(this.targetDomain)) {
       const newAttribute = attribute.replace(new RegExp(`https?://${this.targetDomain}`, 'g'), this.proxyOrigin);
       element.setAttribute(this.attributeName, newAttribute);
