@@ -1,6 +1,5 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
-const SCORE_TARGET = 'score1.365cric.com'; // স্কোরবোর্ডের অরিজিনাল সার্ভার
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -9,7 +8,6 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
-  const refererHeader = request.headers.get('Referer') || '';
 
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -22,40 +20,18 @@ async function handleRequest(request) {
   }
 
   let targetHost = MAIN_TARGET;
-  let isScoreRequest = false;
   
-  // ম্যাজিক চেকার: URL বা Referer এর মধ্যে আমাদের গোপন কোড আছে কি না
-  const isScoreQuery = url.searchParams.has('__score_proxy__');
-  const isScoreReferer = refererHeader.includes('__score_proxy__=1');
-
-  // ১. ভিডিও প্রক্সি
   if (url.pathname.startsWith('/__video_proxy__')) {
     targetHost = STREAM_TARGET;
     url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
-  }
-  // ২. স্কোরবোর্ড প্রক্সি (কালো স্ক্রিন দূর করার জাদুকরী লজিক)
-  else if (isScoreQuery || isScoreReferer) {
-    targetHost = SCORE_TARGET;
-    isScoreRequest = true;
-    
-    // স্কোর সার্ভারে পাঠানোর আগে আমাদের গোপন কোডটি মুছে দিচ্ছি, যাতে তারা সন্দেহ না করে
-    url.searchParams.delete('__score_proxy__');
   }
 
   url.hostname = targetHost;
 
   const proxyReqHeaders = new Headers(request.headers);
   proxyReqHeaders.set('Host', targetHost);
-  
-  // ৩. হেডার স্পুফিং: আমরা স্কোর সার্ভারকে বোকা বানাবো যেন সে ভাবে সরাসরি ভিজিট হচ্ছে
-  if (isScoreRequest) {
-     proxyReqHeaders.set('Origin', `https://${SCORE_TARGET}`);
-     proxyReqHeaders.set('Referer', `https://${SCORE_TARGET}/`);
-  } else {
-     proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
-     proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
-  }
-  
+  proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
+  proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
   proxyReqHeaders.delete('Accept-Encoding');
 
   const proxyRequest = new Request(url.toString(), {
@@ -79,31 +55,20 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ==========================================
-  // SCOREBOARD HTML FIX (যাতে সব ডিজাইন ঠিকমতো পায়)
-  // ==========================================
-  if (contentType.includes('text/html') && isScoreRequest) {
-    let text = await response.text();
-    // আইফ্রেম যেন তার অরিজিনাল ডাটা ঠিকমতো পায়, তাই কিছু সিকিউরিটি ট্যাগ রিমুভ করছি
-    text = text.replace(/<meta[^>]*name=["']referrer["'][^>]*>/gi, '');
-    text = text.replace(new RegExp(`https://${SCORE_TARGET}`, 'g'), `https://${myDomain}`);
-    
-    return new Response(text, { status: response.status, headers: responseHeaders });
-  }
-
-  // ==========================================
-  // MAIN SITE INJECTOR (আপনার ওয়েবসাইটে আইফ্রেম বসানো)
-  // ==========================================
-  if (contentType.includes('text/html') && !isScoreRequest && targetHost !== STREAM_TARGET) {
+  if (contentType.includes('text/html')) {
     let text = await response.text();
 
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
+    // ==========================================
+    // THE MASTER FIX: Base64 Null Origin Iframe
+    // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
 
+      // অরিজিনাল স্কোরবোর্ড হাইড করা
       if (!document.getElementById('hide-original-score')) {
         const style = document.createElement('style');
         style.id = 'hide-original-score';
@@ -143,10 +108,17 @@ async function handleRequest(request) {
               
               myIsconBox.innerHTML = ''; 
               
-              const iframe = document.createElement('iframe');
+              const targetUrl = "https://score1.365cric.com/#/score1/" + newMatchId;
               
-              // 🔴 দ্য মাস্টার স্ট্রোক: সাবফোল্ডার ব্যবহার না করে শুধু ?__score_proxy__=1 যুক্ত করা হলো
-              iframe.src = "/?__score_proxy__=1#/score1/" + newMatchId;
+              // ১. লোকাল HTML এর মতো হুবহু একটি কোড তৈরি করা
+              const innerHtml = '<!DOCTYPE html><html><head><meta name="referrer" content="no-referrer"><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;background-color:#172832;}</style></head><body><iframe src="' + targetUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>';
+              
+              // ২. সেই কোডটিকে Base64 এ রূপান্তর করা (এটাই সেই জাদু যা ডোমেইন নাম মুছে ফেলে!)
+              const base64Html = window.btoa(innerHtml);
+              
+              const iframe = document.createElement('iframe');
+              // ৩. আইফ্রেমকে বলা হচ্ছে সে যেন কোনো লিংক নয়, বরং এই Base64 কোডটিকে লোকাল ফাইল হিসেবে লোড করে
+              iframe.src = "data:text/html;base64," + base64Html;
               iframe.style.cssText = 'width: 100% !important; height: 100% !important; border: none !important; overflow: hidden !important;';
               
               myIsconBox.appendChild(iframe);
