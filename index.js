@@ -1,7 +1,5 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
-const SCORE_TARGET = 'score1.365cric.com';    
-const LMT_TARGET = 'live.ckex.xyz';
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -10,7 +8,6 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
-  const referer = request.headers.get('Referer') || '';
 
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -24,34 +21,17 @@ async function handleRequest(request) {
   }
 
   let targetHost = MAIN_TARGET;
-  let isScore = false;
   let isStream = false;
-  let isLmt = false;
 
-  if (url.pathname.startsWith('/__score_proxy__')) {
-    targetHost = SCORE_TARGET;
-    isScore = true;
-    url.pathname = url.pathname.replace('/__score_proxy__', '') || '/';
-  } else if (url.pathname.startsWith('/__video_proxy__')) {
+  // ভিডিওর জন্য প্রক্সি (যেহেতু ভিডিও প্রক্সি ছাড়া চলে না)
+  if (url.pathname.startsWith('/__video_proxy__')) {
     targetHost = STREAM_TARGET;
     isStream = true;
     url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
-  } else if (url.pathname.startsWith('/__lmt_proxy__')) {
-    targetHost = LMT_TARGET;
-    isLmt = true;
-    url.pathname = url.pathname.replace('/__lmt_proxy__', '') || '/';
-  }
-  else if (referer) {
-    if (referer.includes('/__score_proxy__')) {
-      targetHost = SCORE_TARGET;
-      isScore = true;
-    } else if (referer.includes('/__video_proxy__')) {
-      targetHost = STREAM_TARGET;
-      isStream = true;
-    } else if (referer.includes('/__lmt_proxy__')) {
-      targetHost = LMT_TARGET;
-      isLmt = true;
-    }
+  } 
+  else if (request.headers.get('Referer') && request.headers.get('Referer').includes('/__video_proxy__')) {
+    targetHost = STREAM_TARGET;
+    isStream = true;
   }
 
   url.hostname = targetHost;
@@ -60,10 +40,11 @@ async function handleRequest(request) {
   proxyReqHeaders.set('Host', targetHost);
   proxyReqHeaders.set('Origin', `https://${targetHost}`);
   
-  if (isScore) proxyReqHeaders.set('Referer', `https://${SCORE_TARGET}/`);
-  else if (isStream) proxyReqHeaders.set('Referer', `https://${STREAM_TARGET}/`);
-  else if (isLmt) proxyReqHeaders.set('Referer', `https://${LMT_TARGET}/`);
-  else proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
+  if (isStream) {
+      proxyReqHeaders.set('Referer', `https://${STREAM_TARGET}/`);
+  } else {
+      proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
+  }
 
   proxyReqHeaders.delete('Accept-Encoding');
 
@@ -86,11 +67,10 @@ async function handleRequest(request) {
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
+  // রিডাইরেক্ট 
   if ([301, 302, 303, 307, 308].includes(response.status)) {
     let location = responseHeaders.get('Location');
     if (location) {
-        location = location.replace(`https://${SCORE_TARGET}`, `https://${myDomain}/__score_proxy__/`);
-        location = location.replace(`https://${LMT_TARGET}`, `https://${myDomain}/__lmt_proxy__/`);
         location = location.replace(`https://${MAIN_TARGET}`, `https://${myDomain}`);
         responseHeaders.set('Location', location);
         return new Response(null, { status: response.status, headers: responseHeaders });
@@ -99,29 +79,25 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // HTML মডিফিকেশন এবং বক্স ওপেনার স্ক্রিপ্ট
+  // HTML মডিফিকেশন 
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
     text = text.replace(/integrity="[^"]*"/ig, '');
     text = text.replace(/crossorigin="[^"]*"/ig, '');
+    
+    // এই মেটা ট্যাগটি আসল সার্ভারকে আপনার ডোমেইনের নাম দেখতে দেবে না (Not Authorized ঠেকানোর জন্য)
     text = text.replace(/<meta[^>]*name="referrer"[^>]*>/ig, '');
-    text = text.replace('<head>', '<head><meta name="referrer" content="unsafe-url">');
+    text = text.replace('<head>', '<head><meta name="referrer" content="no-referrer">');
 
+    // মেইন সাইট এবং ভিডিও লিংক রিপ্লেসমেন্ট
     text = text.replace(new RegExp(`https://${MAIN_TARGET}/?`, 'g'), `https://${myDomain}/`);
     text = text.replace(new RegExp(`//${MAIN_TARGET}/?`, 'g'), `//${myDomain}/`);
-
-    text = text.replace(new RegExp(`https://${SCORE_TARGET}/?`, 'g'), `https://${myDomain}/__score_proxy__/`);
-    text = text.replace(new RegExp(`//${SCORE_TARGET}/?`, 'g'), `//${myDomain}/__score_proxy__/`);
-
     text = text.replace(new RegExp(`https://${STREAM_TARGET}/?`, 'g'), `https://${myDomain}/__video_proxy__/`);
     text = text.replace(new RegExp(`//${STREAM_TARGET}/?`, 'g'), `//${myDomain}/__video_proxy__/`);
 
-    text = text.replace(new RegExp(`https://${LMT_TARGET}/?`, 'g'), `https://${myDomain}/__lmt_proxy__/`);
-    text = text.replace(new RegExp(`//${LMT_TARGET}/?`, 'g'), `//${myDomain}/__lmt_proxy__/`);
-
     // ==========================================
-    // FINAL FIX: Strict Match ID Extractor
+    // আপনার চাওয়া লজিক: Direct Original Link + Match ID
     // ==========================================
     const dynamicScoreScript = `
     <script>
@@ -131,12 +107,12 @@ async function handleRequest(request) {
           const pathArray = window.location.pathname.split('/').filter(Boolean);
           const matchId = pathArray[pathArray.length - 1]; 
           
-          // চেক করা হচ্ছে এটা আসলেই শুধুমাত্র সংখ্যা (Match ID) কিনা
           if (matchId && /^\\d+$/.test(matchId)) {
-            const myDomain = window.location.hostname;
-            const correctUrl = 'https://' + myDomain + '/__score_proxy__/#/score1/' + matchId;
             
-            // ২. লুকানো বক্সটাকে খুঁজে বের করা
+            // ২. একদম হুবহু আসল লিংক তৈরি করা (কোনো প্রক্সি ছাড়া)
+            const correctUrl = 'https://score1.365cric.com/#/score1/' + matchId;
+            
+            // ৩. লুকানো বক্সটাকে খুঁজে বের করা
             const scoreArea = document.querySelector('.score_area') || 
                               document.getElementById('animScore') || 
                               document.querySelector('.center-m');
@@ -147,7 +123,7 @@ async function handleRequest(request) {
               scoreArea.style.minHeight = '190px'; 
             }
 
-            // ৩. আইফ্রেম খুঁজে বের করা বা নতুন তৈরি করা
+            // ৪. আইফ্রেম খুঁজে বের করা বা তৈরি করা
             let iframe = document.getElementById('myIframe');
             
             if (!iframe && scoreArea) {
@@ -169,10 +145,10 @@ async function handleRequest(request) {
                  iframe.parentElement.style.setProperty('display', 'block', 'important');
               }
 
-              // ৪. সঠিক ম্যাচ আইডির লিংক বসানো
+              // ৫. আসল লিংকটি বসিয়ে দেওয়া
               if (iframe.src !== correctUrl) {
                 iframe.src = correctUrl;
-                console.log('✅ 100% Perfect Match ID Injected:', matchId);
+                console.log('✅ Injected Exact Original Link:', correctUrl);
               }
             }
           }
@@ -192,15 +168,8 @@ async function handleRequest(request) {
 
     text = text.replace(new RegExp(`https://${MAIN_TARGET}`, 'g'), `https://${myDomain}`);
     text = text.replace(new RegExp(`//${MAIN_TARGET}`, 'g'), `//${myDomain}`);
-
-    text = text.replace(new RegExp(`https://${SCORE_TARGET}`, 'g'), `https://${myDomain}/__score_proxy__`);
-    text = text.replace(new RegExp(`//${SCORE_TARGET}`, 'g'), `//${myDomain}/__score_proxy__`);
-
     text = text.replace(new RegExp(`https://${STREAM_TARGET}`, 'g'), `https://${myDomain}/__video_proxy__`);
     text = text.replace(new RegExp(`//${STREAM_TARGET}`, 'g'), `//${myDomain}/__video_proxy__`);
-
-    text = text.replace(new RegExp(`https://${LMT_TARGET}`, 'g'), `https://${myDomain}/__lmt_proxy__`);
-    text = text.replace(new RegExp(`//${LMT_TARGET}`, 'g'), `//${myDomain}/__lmt_proxy__`);
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
