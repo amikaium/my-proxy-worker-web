@@ -62,42 +62,53 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // আপনার লজিক: Hide old iframe & Create "myIscon" box
+    // THE MASTER FIX: Empty Gray Box Creator
     // ==========================================
-    const customBoxScript = `
+    const emptyBoxScript = `
     <script>
       setInterval(() => {
-        // ১. শুধুমাত্র পুরোনো myIframe আইডিটাকে হাইড করা হচ্ছে
+        // ১. পুরোনো myIframe আইডিটা থাকলে সেটাকে রিমুভ করে দেওয়া
         const oldIframe = document.getElementById('myIframe');
         if (oldIframe) {
-          oldIframe.style.setProperty('display', 'none', 'important');
+          oldIframe.remove();
         }
 
-        // ২. score_area দৃশ্যমান রাখা হচ্ছে
+        // ২. score_area খুঁজে বের করা
         const scoreArea = document.querySelector('.score_area') || document.getElementById('animScore');
         if (scoreArea) {
           scoreArea.style.setProperty('display', 'block', 'important');
           scoreArea.style.setProperty('visibility', 'visible', 'important');
 
-          // ৩. 'myIscon' নামে নতুন আইডি বক্স তৈরি করা হচ্ছে (যদি আগে থেকে না থাকে)
-          if (!document.getElementById('myIscon')) {
-            const myIsconBox = document.createElement('div');
+          // ৩. 'myIscon' আইডি বক্স চেক করা
+          let myIsconBox = document.getElementById('myIscon');
+          
+          if (!myIsconBox) {
+            myIsconBox = document.createElement('div');
             myIsconBox.id = 'myIscon';
             
-            // আপনার দেওয়া ডাইমেনশন ও কালার
+            // স্টাইল সেট করা
             myIsconBox.style.setProperty('width', '100%', 'important');
             myIsconBox.style.setProperty('height', '178px', 'important');
             myIsconBox.style.setProperty('background-color', 'gray', 'important');
+            myIsconBox.style.setProperty('display', 'block', 'important');
             
-            // বক্সটিকে score_area এর ভেতরে যুক্ত করা হলো
+            // নিশ্চিত করা হচ্ছে যে ভেতরে কিছু নেই
+            myIsconBox.innerHTML = ''; 
+            
+            scoreArea.innerHTML = ''; // পুরোনো যা আছে সব পরিষ্কার
             scoreArea.appendChild(myIsconBox);
+          } else {
+            // যদি বক্স থাকে কিন্তু ভেতরে কিছু চলে আসে, তবে সেটা পরিষ্কার রাখা
+            if (myIsconBox.innerHTML !== '') {
+              myIsconBox.innerHTML = '';
+            }
           }
         }
-      }, 500); // সাইটের নিজস্ব স্ক্রিপ্ট যেন এটাকে আবার চেঞ্জ না করতে পারে তাই লুপ রাখা হয়েছে
+      }, 300); // দ্রুত চেক করবে যেন কোনো লেখা ভেসে না উঠতে পারে
     </script>
     `;
 
-    text = text.replace('</body>', customBoxScript + '</body>');
+    text = text.replace('</body>', emptyBoxScript + '</body>');
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
