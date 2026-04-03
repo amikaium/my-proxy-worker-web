@@ -1,6 +1,5 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
-const SCORE_TARGET = 'score1.365cric.com'; // নতুন: স্কোরবোর্ড আনব্লক করার জন্য
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -9,7 +8,6 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
-  const refererHeader = request.headers.get('Referer') || '';
 
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -23,35 +21,17 @@ async function handleRequest(request) {
 
   let targetHost = MAIN_TARGET;
   
-  // ১. ভিডিও প্রক্সি হ্যান্ডেল
   if (url.pathname.startsWith('/__video_proxy__')) {
     targetHost = STREAM_TARGET;
     url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
-  }
-  
-  // ২. স্কোরবোর্ড প্রক্সি হ্যান্ডেল (The Master Fix for Authorization Error)
-  // এটি আইফ্রেমের সিকিউরিটি বাইপাস করবে
-  else if (url.pathname.startsWith('/__score_proxy__') || refererHeader.includes('/__score_proxy__')) {
-    targetHost = SCORE_TARGET;
-    if (url.pathname.startsWith('/__score_proxy__')) {
-        url.pathname = url.pathname.replace('/__score_proxy__', '') || '/';
-    }
   }
 
   url.hostname = targetHost;
 
   const proxyReqHeaders = new Headers(request.headers);
   proxyReqHeaders.set('Host', targetHost);
-  
-  // যার কাছে রিকোয়েস্ট পাঠাচ্ছি, তাকে তার নিজের ঠিকানাই দেখাচ্ছি যেন সে ব্লক না করে
-  if (targetHost === SCORE_TARGET) {
-     proxyReqHeaders.set('Origin', `https://${SCORE_TARGET}`);
-     proxyReqHeaders.set('Referer', `https://${SCORE_TARGET}/`);
-  } else {
-     proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
-     proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
-  }
-  
+  proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
+  proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
   proxyReqHeaders.delete('Accept-Encoding');
 
   const proxyRequest = new Request(url.toString(), {
@@ -75,21 +55,20 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // শুধুমাত্র মেইন সাইটের HTML-এ আমাদের স্ক্রিপ্ট ইনজেক্ট করব
-  if (contentType.includes('text/html') && targetHost !== SCORE_TARGET) {
+  if (contentType.includes('text/html')) {
     let text = await response.text();
 
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // INJECTOR SCRIPT: Clean & Secure Placement
+    // FINAL FIX: Direct Iframe with No-Referrer
     // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
 
-      // অরিজিনাল স্কোরবোর্ড হাইড করা
+      // ১. অরিজিনাল স্কোরবোর্ড হাইড করা
       if (!document.getElementById('hide-original-score')) {
         const style = document.createElement('style');
         style.id = 'hide-original-score';
@@ -105,44 +84,48 @@ async function handleRequest(request) {
       }
 
       setInterval(() => {
+        // URL থেকে ID নেওয়া
         const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
 
         if (!newMatchId) return;
 
-        // DIRECT URL এর বদলে আমাদের WORKER PROXY ব্যবহার করা হচ্ছে
-        const iframeSrc = "/__score_proxy__/#/score1/" + newMatchId;
-
-        // Scoreboard এবং Live TV ট্যাবের এরিয়া খুঁজে বের করা
+        // ২. Scoreboard এবং Live TV ট্যাবের এরিয়া খুঁজে বের করা
         const tabsContainer = document.querySelector('ul.nav-tabs.scrtv') || document.querySelector('#newdivscoretv');
         
         if (tabsContainer && tabsContainer.parentNode) {
           
-          let myIsconBox = document.getElementById('myIsconSecure');
+          let myIsconBox = document.getElementById('myIsconFinal');
           
           if (!myIsconBox) {
             myIsconBox = document.createElement('div');
-            myIsconBox.id = 'myIsconSecure';
-            myIsconBox.style.cssText = 'width: 100% !important; height: 210.6px !important; background-color: #172832 !important; display: block !important; margin-bottom: 5px !important;';
+            myIsconBox.id = 'myIsconFinal';
+            // ব্যাকগ্রাউন্ড ডার্ক রাখা হয়েছে যেন লোড হওয়ার সময় সাদা ফ্ল্যাশ না করে
+            myIsconBox.style.cssText = 'width: 100% !important; height: 210.6px !important; background-color: #172832 !important; display: block !important;';
             
             // ঠিক ট্যাবের নিচে বসিয়ে দেওয়া হচ্ছে
             tabsContainer.parentNode.insertBefore(myIsconBox, tabsContainer.nextSibling);
           }
 
+          // ৩. নতুন ম্যাচ ওপেন হলে আইফ্রেম আপডেট করা
           if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
               currentMatchId = newMatchId;
               
-              myIsconBox.innerHTML = ''; 
+              myIsconBox.innerHTML = ''; // পুরোনোটা ক্লিয়ার
               
               const iframe = document.createElement('iframe');
+              // এই দুটি অ্যাট্রিবিউটই "Not Authorized" এররটিকে চিরতরে মুছে দেবে
               iframe.setAttribute('referrerpolicy', 'no-referrer');
-              iframe.src = iframeSrc;
+              iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups');
+              
+              // সরাসরি অরিজিনাল লিংক ব্যবহার করা হচ্ছে
+              iframe.src = "https://score1.365cric.com/#/score1/" + newMatchId;
               iframe.style.cssText = 'width: 100% !important; height: 100% !important; border: none !important; overflow: hidden !important;';
               
               myIsconBox.appendChild(iframe);
           }
         }
-      }, 500);
+      }, 500); // প্রতি আধা সেকেন্ডে চেক করবে যেন পেজ চেঞ্জ হলে আপডেট হয়
     </script>
     `;
 
