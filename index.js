@@ -62,10 +62,12 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // THE MASTER FIX: Empty Gray Box Creator
+    // THE MASTER FIX: Dynamic Iframe Injector
     // ==========================================
     const emptyBoxScript = `
     <script>
+      let currentMatchId = null; // Track current ID to prevent reloading the iframe unnecessarily
+
       setInterval(() => {
         // ১. পুরোনো myIframe আইডিটা থাকলে সেটাকে রিমুভ করে দেওয়া
         const oldIframe = document.getElementById('myIframe');
@@ -73,13 +75,17 @@ async function handleRequest(request) {
           oldIframe.remove();
         }
 
+        // Extract Dynamic Match ID from URL (always takes the last segment)
+        const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
+        const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
+
         // ২. score_area খুঁজে বের করা
         const scoreArea = document.querySelector('.score_area') || document.getElementById('animScore');
         if (scoreArea) {
           scoreArea.style.setProperty('display', 'block', 'important');
           scoreArea.style.setProperty('visibility', 'visible', 'important');
 
-          // ৩. 'myIscon' আইডি বক্স চেক করা
+          // ৩. 'myIscon' আইডি বক্স চেক বা তৈরি করা
           let myIsconBox = document.getElementById('myIscon');
           
           if (!myIsconBox) {
@@ -92,16 +98,37 @@ async function handleRequest(request) {
             myIsconBox.style.setProperty('background-color', '#172832', 'important');
             myIsconBox.style.setProperty('display', 'block', 'important');
             
-            // নিশ্চিত করা হচ্ছে যে ভেতরে কিছু নেই
-            myIsconBox.innerHTML = ''; 
-            
             scoreArea.innerHTML = ''; // পুরোনো যা আছে সব পরিষ্কার
             scoreArea.appendChild(myIsconBox);
-          } else {
-            // যদি বক্স থাকে কিন্তু ভেতরে কিছু চলে আসে, তবে সেটা পরিষ্কার রাখা
-            if (myIsconBox.innerHTML !== '') {
-              myIsconBox.innerHTML = '';
+          }
+
+          // ৪. ডাইনামিক আইফ্রেম ইনজেক্ট করা (Auto-update on navigation without reload)
+          if (newMatchId) {
+            // URL পরিবর্তন হলে অথবা iframe না থাকলে নতুন করে বসাবে
+            if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
+              currentMatchId = newMatchId;
+              
+              // পুরোনো আইফ্রেম ক্লিয়ার করে নতুন আইফ্রেম বসানো (Prevent Duplication & Flickering)
+              myIsconBox.innerHTML = ''; 
+              
+              const newIframe = document.createElement('iframe');
+              newIframe.src = "https://score1.365cric.com/#/score1/" + newMatchId;
+              newIframe.style.setProperty('width', '100%', 'important');
+              newIframe.style.setProperty('height', '100%', 'important');
+              newIframe.style.setProperty('border', 'none', 'important');
+              newIframe.style.setProperty('overflow', 'hidden', 'important');
+              
+              myIsconBox.appendChild(newIframe);
             }
+          }
+
+          // ৫. বক্স পরিষ্কার রাখা (আমাদের Iframe ছাড়া অন্য কোনো script/element এলে রিমুভ করবে)
+          if (myIsconBox) {
+            Array.from(myIsconBox.children).forEach(child => {
+              if (child.tagName !== 'IFRAME') {
+                child.remove();
+              }
+            });
           }
         }
       }, 300); // দ্রুত চেক করবে যেন কোনো লেখা ভেসে না উঠতে পারে
