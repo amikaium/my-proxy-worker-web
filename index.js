@@ -1,6 +1,6 @@
 const MAIN_TARGET = '7wickets.live'; 
-const STREAM_TARGET = 'n11-production.click'; // লাইভ টিভির সার্ভার
-const SCORE_TARGET = 'score1.365cric.com';    // স্কোরবোর্ডের সার্ভার
+const STREAM_TARGET = 'n11-production.click'; 
+const SCORE_TARGET = 'score1.365cric.com';    
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -9,8 +9,10 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
+  
+  // ব্রাউজার কোথা থেকে রিকোয়েস্ট পাঠাচ্ছে সেটা চেক করা
+  const referer = request.headers.get('Referer') || '';
 
-  // ১. CORS Preflight বাইপাস
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -22,42 +24,44 @@ async function handleRequest(request) {
     });
   }
 
-  // ২. রাউটিং লজিক: রিকোয়েস্টটি কার কাছে যাবে তা নির্ধারণ করা
+  // রাউটিং লজিক: ফাইলগুলো কার কাছে যাবে?
   let targetHost = MAIN_TARGET;
   
-  if (url.pathname.startsWith('/__video_proxy__/')) {
-    // ভিডিওর রিকোয়েস্ট হলে
+  // ১. ভিডিওর রিকোয়েস্ট ট্র্যাকিং
+  if (url.pathname.includes('/__video_proxy__') || referer.includes('/__video_proxy__')) {
     targetHost = STREAM_TARGET;
     url.hostname = STREAM_TARGET;
     url.pathname = url.pathname.replace('/__video_proxy__', ''); 
-  } else if (url.pathname.startsWith('/__score_proxy__/')) {
-    // স্কোরবোর্ডের রিকোয়েস্ট হলে
+  } 
+  // ২. স্কোরবোর্ডের রিকোয়েস্ট ট্র্যাকিং (যাতে ফাঁকা না দেখায়)
+  else if (url.pathname.includes('/__score_proxy__') || referer.includes('/__score_proxy__')) {
     targetHost = SCORE_TARGET;
     url.hostname = SCORE_TARGET;
     url.pathname = url.pathname.replace('/__score_proxy__', ''); 
-  } else {
-    // সাধারণ সাইটের রিকোয়েস্ট হলে
+  } 
+  // ৩. মেইন সাইটের রিকোয়েস্ট
+  else {
     url.hostname = MAIN_TARGET;
   }
 
   const proxyRequest = new Request(url.toString(), request);
   
-  // ৩. সব সার্ভারকেই ধোঁকা দেওয়ার জন্য হেডার সেট করা (যাতে Unauthorized না দেখায়)
+  // আসল সার্ভারগুলোকে বোকা বানানোর জন্য হেডার সেট করা
   proxyRequest.headers.set('Host', targetHost);
-  proxyRequest.headers.set('Origin', `https://${MAIN_TARGET}`);
-  proxyRequest.headers.set('Referer', `https://${MAIN_TARGET}/`);
+  proxyRequest.headers.set('Origin', `https://${targetHost}`);
+  proxyRequest.headers.set('Referer', `https://${targetHost}/`);
 
   let response = await fetch(proxyRequest);
   let responseHeaders = new Headers(response.headers);
 
-  // ৪. সব ধরনের সিকিউরিটি পলিসি মুছে ফেলা (iframe সাপোর্ট করার জন্য X-Frame-Options মাস্ট ডিলিট করতে হবে)
+  // ব্রাউজারের সিকিউরিটি ব্লক মুছে ফেলা
   responseHeaders.delete('Content-Security-Policy');
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ৫. কন্টেন্টের ভেতর লিংক রিপ্লেস করা
+  // কন্টেন্টের লিংকগুলো পাল্টে দেওয়া
   if (contentType.includes('text/') || 
       contentType.includes('application/json') || 
       contentType.includes('application/javascript') ||
@@ -65,19 +69,13 @@ async function handleRequest(request) {
       
     let text = await response.text();
     
-    // মেইন সাইটের নাম রিপ্লেস করা
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
-    
-    // ভিডিও সার্ভারের নাম পেলে সেখানে আমাদের স্পেশাল ভিডিও পাথ বসিয়ে দেওয়া
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
-
-    // স্কোরবোর্ডের নাম পেলে সেখানে আমাদের স্পেশাল স্কোর পাথ বসিয়ে দেওয়া
     text = text.replace(new RegExp(SCORE_TARGET, 'g'), `${myDomain}/__score_proxy__`);
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
   }
 
-  // ৬. বাইনারি ফাইল সরাসরি স্ট্রিম করে দেওয়া
   return new Response(response.body, { status: response.status, headers: responseHeaders });
 }
