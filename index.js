@@ -62,13 +62,13 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // THE MASTER FIX: Safe Iframe Injector
+    // THE MASTER FIX: Multi-Location Test Injector
     // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
 
-      // ১. সাইটের অরিজিনাল স্কোরবোর্ড হাইড করার জন্য CSS ইনজেক্ট করা (যাতে সাইটের কোড ব্রেক না করে)
+      // অরিজিনাল স্কোরবোর্ড হাইড করার CSS
       if (!document.getElementById('hide-original-score')) {
         const style = document.createElement('style');
         style.id = 'hide-original-score';
@@ -84,57 +84,60 @@ async function handleRequest(request) {
       }
 
       setInterval(() => {
-        // পুরোনো myIframe আইডিটা থাকলে রিমুভ করে দেওয়া
-        const oldIframe = document.getElementById('myIframe');
-        if (oldIframe) {
-          oldIframe.remove();
-        }
-
         // URL থেকে ID নেওয়া
         const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
 
-        // ২. Scoreboard এবং Live TV এর ট্যাব মেনু খুঁজে বের করা (আপনার স্ক্রিনশট অনুযায়ী)
-        const tabsContainer = document.querySelector('ul.nav-tabs.scrtv');
-        
-        if (tabsContainer && tabsContainer.parentNode) {
-          
-          // ৩. আমাদের সম্পূর্ণ আলাদা 'myIscon' বক্স তৈরি করা
-          let myIsconBox = document.getElementById('myIscon');
-          
-          if (!myIsconBox) {
-            myIsconBox = document.createElement('div');
-            myIsconBox.id = 'myIscon';
-            
-            // স্টাইল সেট করা (201.6px height)
-            myIsconBox.style.setProperty('width', '100%', 'important');
-            myIsconBox.style.setProperty('height', '201.6px', 'important');
-            myIsconBox.style.setProperty('background-color', '#172832', 'important');
-            myIsconBox.style.setProperty('display', 'block', 'important');
-            
-            // সবথেকে গুরুত্বপূর্ণ: Tabs এর ঠিক "নিচে" বসানো (insertBefore with nextSibling)
-            tabsContainer.parentNode.insertBefore(myIsconBox, tabsContainer.nextSibling);
-          }
+        if (!newMatchId) return;
 
-          // ৪. ডাইনামিক আইফ্রেম ইনজেক্ট করা
-          if (newMatchId) {
-            if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
-              currentMatchId = newMatchId;
-              
-              myIsconBox.innerHTML = ''; 
-              
-              const newIframe = document.createElement('iframe');
-              newIframe.src = "https://score1.365cric.com/#/score1/" + newMatchId;
-              newIframe.style.setProperty('width', '100%', 'important');
-              newIframe.style.setProperty('height', '100%', 'important');
-              newIframe.style.setProperty('border', 'none', 'important');
-              newIframe.style.setProperty('overflow', 'hidden', 'important');
-              
-              myIsconBox.appendChild(newIframe);
+        const iframeSrc = "https://score1.365cric.com/#/score1/" + newMatchId;
+
+        // ইনজেকশন হেল্পার ফাংশন (নিরাপদভাবে বসানোর জন্য)
+        function injectTestBox(targetSelector, position, boxId, color, labelText) {
+          const target = document.querySelector(targetSelector);
+          if (target && target.parentNode && !document.getElementById(boxId)) {
+            const box = document.createElement('div');
+            box.id = boxId;
+            box.style.cssText = \`width: 100% !important; height: 230px !important; background-color: #172832 !important; display: block !important; border: 4px solid \${color} !important; margin-bottom: 10px !important;\`;
+            
+            // Label for identification
+            const label = document.createElement('div');
+            label.style.cssText = \`background: \${color}; color: white; text-align: center; font-weight: bold; padding: 5px;\`;
+            label.innerText = labelText;
+            box.appendChild(label);
+
+            // Iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = iframeSrc;
+            iframe.style.cssText = "width: 100% !important; height: 200px !important; border: none !important; overflow: hidden !important;";
+            box.appendChild(iframe);
+
+            if (position === 'before') {
+              target.parentNode.insertBefore(box, target);
+            } else if (position === 'after') {
+              target.parentNode.insertBefore(box, target.nextSibling);
+            } else if (position === 'prepend') {
+              target.insertBefore(box, target.firstChild);
             }
           }
         }
-      }, 300);
+
+        // ==========================================
+        // 📌 টেস্ট লোকেশন ১: লাল বক্স (সবচেয়ে বাইরে, mainWrap এর আগে)
+        // ==========================================
+        injectTestBox('#mainWrap', 'before', 'testBox1_red', 'red', 'TEST 1: RED BOX (Outside Main Wrap)');
+
+        // ==========================================
+        // 📌 টেস্ট লোকেশন ২: সবুজ বক্স (Tabs এর ঠিক উপরে)
+        // ==========================================
+        injectTestBox('#newdivscoretv', 'before', 'testBox2_green', 'green', 'TEST 2: GREEN BOX (Above Tabs)');
+
+        // ==========================================
+        // 📌 টেস্ট লোকেশন ৩: নীল বক্স (Tabs এবং বাটনের নিচে, Odds এর আগে)
+        // ==========================================
+        injectTestBox('#marketBetsWrapOdds', 'before', 'testBox3_blue', 'blue', 'TEST 3: BLUE BOX (Below Match Buttons)');
+
+      }, 1000); // লোড কমানোর জন্য 1000ms (১ সেকেন্ড) করে দিয়েছি
     </script>
     `;
 
