@@ -86,10 +86,12 @@ async function handleRequest(request) {
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
+  // রিডাইরেক্ট সমস্যার চূড়ান্ত সমাধান
   if ([301, 302, 303, 307, 308].includes(response.status)) {
     let location = responseHeaders.get('Location');
     if (location) {
         location = location.replace(`https://${SCORE_TARGET}`, `https://${myDomain}/__score_proxy__/`);
+        location = location.replace(`https://${LMT_TARGET}`, `https://${myDomain}/__lmt_proxy__/`); // LMT রিডাইরেক্ট ফিক্স
         location = location.replace(`https://${MAIN_TARGET}`, `https://${myDomain}`);
         responseHeaders.set('Location', location);
         return new Response(null, { status: response.status, headers: responseHeaders });
@@ -98,7 +100,7 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // HTML ফাইলের মডিফিকেশন এবং বক্স ওপেনার স্ক্রিপ্ট ইনজেকশন
+  // HTML মডিফিকেশন এবং বক্স ওপেনার স্ক্রিপ্ট
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
@@ -120,65 +122,62 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(`//${LMT_TARGET}/?`, 'g'), `//${myDomain}/__lmt_proxy__/`);
 
     // ==========================================
-    // THE MASTER FIX: Auto Box Opener & Match ID Forcer
+    // THE MASTER FIX: Smart ID Extractor & Injector
     // ==========================================
     const dynamicScoreScript = `
     <script>
       setInterval(() => {
         try {
-          const urlParts = window.location.pathname.split('/');
-          const matchId = urlParts[urlParts.length - 1]; 
+          // ১. এই জাদুকরী কোডটি পুরো ইউআরএল থেকে শুধু ৭ থেকে ১০ ডিজিটের আসল ম্যাচ আইডিটাই খুঁজবে
+          const urlMatch = window.location.href.match(/\\d{7,10}/);
+          const matchId = urlMatch ? urlMatch[0] : null; 
           
-          if (matchId && !isNaN(matchId)) {
+          if (matchId) {
             const myDomain = window.location.hostname;
             const correctUrl = 'https://' + myDomain + '/__score_proxy__/#/score1/' + matchId;
             
-            // ১. লুকানো বক্সটাকে (Parent Container) খুঁজে বের করা
+            // ২. লুকানো বক্সটাকে খুঁজে বের করা
             const scoreArea = document.querySelector('.score_area') || 
                               document.getElementById('animScore') || 
-                              document.querySelector('.center-m') || 
-                              document.querySelector('.match_odds');
+                              document.querySelector('.center-m');
 
-            // ২. বক্সটাকে জোর করে দৃশ্যমান (Visible) করা
             if (scoreArea) {
               scoreArea.style.setProperty('display', 'block', 'important');
               scoreArea.style.setProperty('visibility', 'visible', 'important');
+              scoreArea.style.minHeight = '190px'; // বক্স যেন চুপসে না যায়
             }
 
             // ৩. আইফ্রেম খুঁজে বের করা
             let iframe = document.getElementById('myIframe');
             
-            // যদি আইফ্রেম বক্সের ভেতর না থাকে, তবে নতুন করে তৈরি করে বসানো
             if (!iframe && scoreArea) {
                 iframe = document.createElement('iframe');
                 iframe.id = 'myIframe';
                 iframe.setAttribute('allowfullscreen', 'true');
-                scoreArea.prepend(iframe); // বক্সের একদম উপরে বসিয়ে দেওয়া
+                scoreArea.prepend(iframe); 
             }
 
-            // ৪. আইফ্রেমের স্টাইল ফিক্স করা এবং লিংক বসানো
             if (iframe) {
               iframe.style.setProperty('display', 'block', 'important');
               iframe.style.setProperty('visibility', 'visible', 'important');
               iframe.style.setProperty('width', '100%', 'important');
               iframe.style.setProperty('height', '190px', 'important'); 
               iframe.style.setProperty('border', 'none', 'important');
-              iframe.style.setProperty('background-color', '#fff', 'important'); // কালো বক্স সাদা করার জন্য
+              iframe.style.setProperty('background-color', '#fff', 'important'); 
               
-              // প্যারেন্ট ডিভ হিডেন থাকলে সেটাও আনহাইড করা
               if (iframe.parentElement) {
                  iframe.parentElement.style.setProperty('display', 'block', 'important');
               }
 
-              // লিংক আপডেট করা
-              if (iframe.src !== correctUrl) {
+              // ৪. সঠিক ম্যাচ আইডির লিংক বসানো (আগের ভুল লিংক পাল্টে দেবে)
+              if (!iframe.src || !iframe.src.includes(matchId) || !iframe.src.includes('__score_proxy__')) {
                 iframe.src = correctUrl;
-                console.log('🔥 Forcefully Opened Box & Injected Score for ID:', matchId);
+                console.log('🔥 Perfect Match ID Injected:', matchId);
               }
             }
           }
         } catch(e) {}
-      }, 500); // প্রতি হাফ সেকেন্ড পর পর চেক করবে যাতে বক্স গায়েব না হতে পারে
+      }, 500); 
     </script>
     `;
 
