@@ -1,4 +1,7 @@
 const MAIN_TARGET = '7wickets.live'; 
+const STREAM_TARGET = 'n11-production.click'; 
+const SCORE_TARGET = 'score1.365cric.com';    
+const LMT_TARGET = 'live.ckex.xyz';
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -7,6 +10,7 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
+  const referer = request.headers.get('Referer') || '';
 
   // ১. ব্রাউজার সিকিউরিটি বাইপাস
   if (request.method === 'OPTIONS') {
@@ -20,15 +24,51 @@ async function handleRequest(request) {
     });
   }
 
-  // আমরা শুধুমাত্র মেইন ডোমেইনকেই প্রক্সি করবো
-  url.hostname = MAIN_TARGET;
+  let targetHost = MAIN_TARGET;
+  let isScore = false;
+  let isStream = false;
+  let isLmt = false;
+
+  // ২. পাথ রাউটিং (Path Routing)
+  if (url.pathname.startsWith('/__score_proxy__')) {
+    targetHost = SCORE_TARGET;
+    isScore = true;
+    url.pathname = url.pathname.replace('/__score_proxy__', '') || '/';
+  } else if (url.pathname.startsWith('/__video_proxy__')) {
+    targetHost = STREAM_TARGET;
+    isStream = true;
+    url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
+  } else if (url.pathname.startsWith('/__lmt_proxy__')) {
+    targetHost = LMT_TARGET;
+    isLmt = true;
+    url.pathname = url.pathname.replace('/__lmt_proxy__', '') || '/';
+  }
+  // ৩. রেফারার রাউটিং (Iframe এর ভেতরের ফাইলগুলোর জন্য)
+  else if (referer) {
+    if (referer.includes('/__score_proxy__')) {
+      targetHost = SCORE_TARGET;
+      isScore = true;
+    } else if (referer.includes('/__video_proxy__')) {
+      targetHost = STREAM_TARGET;
+      isStream = true;
+    } else if (referer.includes('/__lmt_proxy__')) {
+      targetHost = LMT_TARGET;
+      isLmt = true;
+    }
+  }
+
+  url.hostname = targetHost;
 
   const proxyReqHeaders = new Headers(request.headers);
-  proxyReqHeaders.set('Host', MAIN_TARGET);
-  proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
-  proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
+  proxyReqHeaders.set('Host', targetHost);
+  proxyReqHeaders.set('Origin', `https://${targetHost}`);
   
-  // সার্ভার থেকে ফ্রেশ ফাইল আনার জন্য
+  if (isScore) proxyReqHeaders.set('Referer', `https://${SCORE_TARGET}/`);
+  else if (isStream) proxyReqHeaders.set('Referer', `https://${STREAM_TARGET}/`);
+  else if (isLmt) proxyReqHeaders.set('Referer', `https://${LMT_TARGET}/`);
+  else proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
+
+  // সার্ভার যেন সংকুচিত (ZIP) ফাইল না পাঠায়, তা নিশ্চিত করা
   proxyReqHeaders.delete('Accept-Encoding');
 
   const proxyRequest = new Request(url.toString(), {
@@ -46,15 +86,15 @@ async function handleRequest(request) {
   }
 
   let responseHeaders = new Headers(response.headers);
-  // Iframe যেন ব্লক না হয় তার জন্য সব সিকিউরিটি রিমুভ করা হলো
   responseHeaders.delete('Content-Security-Policy');
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
-  // রিডাইরেক্ট ঠিক করা
+  // রিডাইরেক্ট হ্যান্ডলিং
   if ([301, 302, 303, 307, 308].includes(response.status)) {
     let location = responseHeaders.get('Location');
     if (location) {
+        location = location.replace(`https://${SCORE_TARGET}`, `https://${myDomain}/__score_proxy__/`);
         location = location.replace(`https://${MAIN_TARGET}`, `https://${myDomain}`);
         responseHeaders.set('Location', location);
         return new Response(null, { status: response.status, headers: responseHeaders });
@@ -63,16 +103,49 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ২. লিংক মডিফিকেশন (শুধুমাত্র মেইন ওয়েবসাইটের লিংকগুলো পরিবর্তন হবে, স্কোরবোর্ড অক্ষত থাকবে)
-  if (contentType.includes('text/html') || contentType.includes('application/javascript') || contentType.includes('application/json')) {
-    
+  // ৪. HTML ফাইলের জন্য স্পেশাল ফিক্স (SRI রিমুভ ও ট্রেইলিং স্লাশ)
+  if (contentType.includes('text/html')) {
     let text = await response.text();
 
-    // শুধুমাত্র 7wickets.live লিংকগুলো আপনার ডোমেইনে কনভার্ট হবে
+    // ব্রাউজারের সিকিউরিটি ব্লক (SRI) মুছে ফেলা হচ্ছে
+    text = text.replace(/integrity="[^"]*"/ig, '');
+    text = text.replace(/crossorigin="[^"]*"/ig, '');
+    // রেফারার পলিসি ফিক্স করা হচ্ছে যেন Iframe ঠিকমতো কাজ করে
+    text = text.replace(/<meta[^>]*name="referrer"[^>]*>/ig, '');
+    text = text.replace('<head>', '<head><meta name="referrer" content="unsafe-url">');
+
+    // লিংক রিপ্লেসমেন্ট (/? ব্যবহার করে স্লাশ ঠিক রাখা হয়েছে)
     text = text.replace(new RegExp(`https://${MAIN_TARGET}/?`, 'g'), `https://${myDomain}/`);
     text = text.replace(new RegExp(`//${MAIN_TARGET}/?`, 'g'), `//${myDomain}/`);
 
-    // (বিঃদ্রঃ আমরা স্কোর এবং ভিডিওর লিংক পাল্টাবো না, যাতে সেগুলো তাদের অরিজিনাল সার্ভার থেকে সরাসরি লোড হতে পারে এবং ক্র্যাশ না করে)
+    text = text.replace(new RegExp(`https://${SCORE_TARGET}/?`, 'g'), `https://${myDomain}/__score_proxy__/`);
+    text = text.replace(new RegExp(`//${SCORE_TARGET}/?`, 'g'), `//${myDomain}/__score_proxy__/`);
+
+    text = text.replace(new RegExp(`https://${STREAM_TARGET}/?`, 'g'), `https://${myDomain}/__video_proxy__/`);
+    text = text.replace(new RegExp(`//${STREAM_TARGET}/?`, 'g'), `//${myDomain}/__video_proxy__/`);
+
+    text = text.replace(new RegExp(`https://${LMT_TARGET}/?`, 'g'), `https://${myDomain}/__lmt_proxy__/`);
+    text = text.replace(new RegExp(`//${LMT_TARGET}/?`, 'g'), `//${myDomain}/__lmt_proxy__/`);
+
+    responseHeaders.delete('Content-Length');
+    return new Response(text, { status: response.status, headers: responseHeaders });
+  }
+
+  // ৫. JS/JSON ফাইলের লিংক রিপ্লেসমেন্ট
+  else if (contentType.includes('application/javascript') || contentType.includes('text/javascript') || contentType.includes('application/json')) {
+    let text = await response.text();
+
+    text = text.replace(new RegExp(`https://${MAIN_TARGET}`, 'g'), `https://${myDomain}`);
+    text = text.replace(new RegExp(`//${MAIN_TARGET}`, 'g'), `//${myDomain}`);
+
+    text = text.replace(new RegExp(`https://${SCORE_TARGET}`, 'g'), `https://${myDomain}/__score_proxy__`);
+    text = text.replace(new RegExp(`//${SCORE_TARGET}`, 'g'), `//${myDomain}/__score_proxy__`);
+
+    text = text.replace(new RegExp(`https://${STREAM_TARGET}`, 'g'), `https://${myDomain}/__video_proxy__`);
+    text = text.replace(new RegExp(`//${STREAM_TARGET}`, 'g'), `//${myDomain}/__video_proxy__`);
+
+    text = text.replace(new RegExp(`https://${LMT_TARGET}`, 'g'), `https://${myDomain}/__lmt_proxy__`);
+    text = text.replace(new RegExp(`//${LMT_TARGET}`, 'g'), `//${myDomain}/__lmt_proxy__`);
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
