@@ -24,22 +24,22 @@ async function handleRequest(request) {
   let targetHost = MAIN_TARGET;
   let isScoreRequest = false;
   
+  // ম্যাজিক চেকার: URL বা Referer এর মধ্যে আমাদের গোপন কোড আছে কি না
+  const isScoreQuery = url.searchParams.has('__score_proxy__');
+  const isScoreReferer = refererHeader.includes('__score_proxy__=1');
+
   // ১. ভিডিও প্রক্সি
   if (url.pathname.startsWith('/__video_proxy__')) {
     targetHost = STREAM_TARGET;
     url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
   }
-  // ২. স্কোরবোর্ড প্রক্সি (HTML লোড করার জন্য)
-  else if (url.pathname.startsWith('/__score_proxy__')) {
-    targetHost = SCORE_TARGET;
-    url.pathname = url.pathname.replace('/__score_proxy__', '') || '/';
-    isScoreRequest = true;
-  }
-  // ৩. দ্য ম্যাজিক ফিক্স: কালো স্ক্রিন দূর করার জন্য!
-  // যদি কোনো রিকোয়েস্ট (CSS/JS/API) স্কোরবোর্ডের ভেতর থেকে আসে, তবে তাকেও স্কোর সার্ভারে পাঠানো হবে
-  else if (refererHeader.includes('/__score_proxy__') || refererHeader.includes(SCORE_TARGET)) {
+  // ২. স্কোরবোর্ড প্রক্সি (কালো স্ক্রিন দূর করার জাদুকরী লজিক)
+  else if (isScoreQuery || isScoreReferer) {
     targetHost = SCORE_TARGET;
     isScoreRequest = true;
+    
+    // স্কোর সার্ভারে পাঠানোর আগে আমাদের গোপন কোডটি মুছে দিচ্ছি, যাতে তারা সন্দেহ না করে
+    url.searchParams.delete('__score_proxy__');
   }
 
   url.hostname = targetHost;
@@ -47,10 +47,10 @@ async function handleRequest(request) {
   const proxyReqHeaders = new Headers(request.headers);
   proxyReqHeaders.set('Host', targetHost);
   
-  // ৪. হেডার স্পুফিং: আমরা স্কোর সার্ভারকে বোকা বানাবো যেন সে ভাবে মেইন সাইট থেকেই রিকোয়েস্ট আসছে
+  // ৩. হেডার স্পুফিং: আমরা স্কোর সার্ভারকে বোকা বানাবো যেন সে ভাবে সরাসরি ভিজিট হচ্ছে
   if (isScoreRequest) {
-     proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
-     proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
+     proxyReqHeaders.set('Origin', `https://${SCORE_TARGET}`);
+     proxyReqHeaders.set('Referer', `https://${SCORE_TARGET}/`);
   } else {
      proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
      proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
@@ -79,21 +79,31 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // শুধুমাত্র মেইন বেটিং সাইটের HTML এ আমাদের কোড ইনজেক্ট হবে
+  // ==========================================
+  // SCOREBOARD HTML FIX (যাতে সব ডিজাইন ঠিকমতো পায়)
+  // ==========================================
+  if (contentType.includes('text/html') && isScoreRequest) {
+    let text = await response.text();
+    // আইফ্রেম যেন তার অরিজিনাল ডাটা ঠিকমতো পায়, তাই কিছু সিকিউরিটি ট্যাগ রিমুভ করছি
+    text = text.replace(/<meta[^>]*name=["']referrer["'][^>]*>/gi, '');
+    text = text.replace(new RegExp(`https://${SCORE_TARGET}`, 'g'), `https://${myDomain}`);
+    
+    return new Response(text, { status: response.status, headers: responseHeaders });
+  }
+
+  // ==========================================
+  // MAIN SITE INJECTOR (আপনার ওয়েবসাইটে আইফ্রেম বসানো)
+  // ==========================================
   if (contentType.includes('text/html') && !isScoreRequest && targetHost !== STREAM_TARGET) {
     let text = await response.text();
 
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
-    // ==========================================
-    // INJECTOR SCRIPT
-    // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
 
-      // অরিজিনাল স্কোরবোর্ড হাইড করা
       if (!document.getElementById('hide-original-score')) {
         const style = document.createElement('style');
         style.id = 'hide-original-score';
@@ -114,7 +124,6 @@ async function handleRequest(request) {
 
         if (!newMatchId) return;
 
-        // Scoreboard এবং Live TV ট্যাবের এরিয়া খুঁজে বের করা
         const tabsContainer = document.querySelector('ul.nav-tabs.scrtv') || document.querySelector('#newdivscoretv');
         
         if (tabsContainer && tabsContainer.parentNode) {
@@ -135,8 +144,9 @@ async function handleRequest(request) {
               myIsconBox.innerHTML = ''; 
               
               const iframe = document.createElement('iframe');
-              // আমাদের প্রক্সি রুট ব্যবহার করা হচ্ছে
-              iframe.src = "/__score_proxy__/#/score1/" + newMatchId;
+              
+              // 🔴 দ্য মাস্টার স্ট্রোক: সাবফোল্ডার ব্যবহার না করে শুধু ?__score_proxy__=1 যুক্ত করা হলো
+              iframe.src = "/?__score_proxy__=1#/score1/" + newMatchId;
               iframe.style.cssText = 'width: 100% !important; height: 100% !important; border: none !important; overflow: hidden !important;';
               
               myIsconBox.appendChild(iframe);
