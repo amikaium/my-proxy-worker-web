@@ -8,7 +8,6 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
 
-  // ১. ব্রাউজার সিকিউরিটি বাইপাস
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -20,16 +19,13 @@ async function handleRequest(request) {
     });
   }
 
-  // আমরা শুধুমাত্র মেইন ডোমেইনকেই প্রক্সি করবো
   url.hostname = MAIN_TARGET;
 
   const proxyReqHeaders = new Headers(request.headers);
   proxyReqHeaders.set('Host', MAIN_TARGET);
   proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
   proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
-  
-  // সার্ভার থেকে ফ্রেশ ফাইল আনার জন্য
-  proxyReqHeaders.delete('Accept-Encoding');
+  proxyReqHeaders.delete('Accept-Encoding'); // ফাইল ক্লিয়ার পাওয়ার জন্য
 
   const proxyRequest = new Request(url.toString(), {
     method: request.method,
@@ -46,12 +42,10 @@ async function handleRequest(request) {
   }
 
   let responseHeaders = new Headers(response.headers);
-  // Iframe যেন ব্লক না হয় তার জন্য সব সিকিউরিটি রিমুভ করা হলো
   responseHeaders.delete('Content-Security-Policy');
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
-  // রিডাইরেক্ট ঠিক করা
   if ([301, 302, 303, 307, 308].includes(response.status)) {
     let location = responseHeaders.get('Location');
     if (location) {
@@ -63,17 +57,50 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ২. লিংক মডিফিকেশন (শুধুমাত্র মেইন ওয়েবসাইটের লিংকগুলো পরিবর্তন হবে, স্কোরবোর্ড অক্ষত থাকবে)
-  if (contentType.includes('text/html') || contentType.includes('application/javascript') || contentType.includes('application/json')) {
-    
+  // HTML মডিফিকেশন এবং অটো-ফিক্সার ইনজেকশন
+  if (contentType.includes('text/html')) {
     let text = await response.text();
 
-    // শুধুমাত্র 7wickets.live লিংকগুলো আপনার ডোমেইনে কনভার্ট হবে
-    text = text.replace(new RegExp(`https://${MAIN_TARGET}/?`, 'g'), `https://${myDomain}/`);
-    text = text.replace(new RegExp(`//${MAIN_TARGET}/?`, 'g'), `//${myDomain}/`);
+    text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
 
-    // (বিঃদ্রঃ আমরা স্কোর এবং ভিডিওর লিংক পাল্টাবো না, যাতে সেগুলো তাদের অরিজিনাল সার্ভার থেকে সরাসরি লোড হতে পারে এবং ক্র্যাশ না করে)
+    // ==========================================
+    // THE MASTER FIX: Auto Iframe Corrector
+    // ==========================================
+    const iframeFixScript = `
+    <script>
+      setInterval(() => {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+          let currentSrc = iframe.src || '';
+          
+          // যদি Iframe এর লিংকে ভুল করে আপনার ডোমেইন বা পুরোনো প্রক্সি কোড চলে আসে
+          if (currentSrc.includes('${myDomain}') && currentSrc.includes('score1')) {
+            // লিংকের শেষ থেকে ম্যাচ আইডিটি (যেমন: 35404287) আলাদা করা
+            let matchId = currentSrc.split('/').pop();
+            // জোর করে অরিজিনাল স্কোরবোর্ডের লিংক বসিয়ে দেওয়া
+            let correctUrl = 'https://score1.365cric.com/#/score1/' + matchId;
+            
+            if (iframe.src !== correctUrl) {
+              iframe.src = correctUrl;
+              console.log('✅ Scoreboard Link Auto-Fixed!');
+            }
+          }
+        });
+      }, 500); // প্রতি আধা সেকেন্ড পরপর চেক করবে
+    </script>
+    `;
 
+    // ওয়েবসাইটের </body> ট্যাগের ঠিক আগে আমাদের স্ক্রিপ্টটি বসিয়ে দেওয়া হচ্ছে
+    text = text.replace('</body>', iframeFixScript + '</body>');
+
+    responseHeaders.delete('Content-Length');
+    return new Response(text, { status: response.status, headers: responseHeaders });
+  } 
+  
+  // JS বা JSON ফাইলগুলোর জন্য
+  else if (contentType.includes('application/javascript') || contentType.includes('application/json')) {
+    let text = await response.text();
+    text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
   }
