@@ -9,7 +9,6 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
 
-  // ১. ব্রাউজার সিকিউরিটি বাইপাস
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -21,12 +20,9 @@ async function handleRequest(request) {
   }
 
   let targetHost = MAIN_TARGET;
-  let isStream = false;
-
-  // ভিডিও প্রক্সি (এটি রেখেছি যাতে সাইটের লাইভ টিভি অপশনটা সচল থাকে)
+  
   if (url.pathname.startsWith('/__video_proxy__')) {
     targetHost = STREAM_TARGET;
-    isStream = true;
     url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
   }
 
@@ -34,8 +30,8 @@ async function handleRequest(request) {
 
   const proxyReqHeaders = new Headers(request.headers);
   proxyReqHeaders.set('Host', targetHost);
-  proxyReqHeaders.set('Origin', `https://${targetHost}`);
-  proxyReqHeaders.set('Referer', `https://${targetHost}/`);
+  proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
+  proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
   proxyReqHeaders.delete('Accept-Encoding');
 
   const proxyRequest = new Request(url.toString(), {
@@ -59,51 +55,49 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ২. HTML মডিফিকেশন এবং বক্স হাইড করার স্ক্রিপ্ট ইনজেকশন
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
-    // ডোমেইন রিপ্লেসমেন্ট
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // THE CLEANER: Hide myIframe & Score Area
+    // আপনার লজিক: Hide old iframe & Create "myIscon" box
     // ==========================================
-    const hideBoxScript = `
+    const customBoxScript = `
     <script>
-      // পেজ লোড হওয়ার সাথে সাথে এবং লোড হওয়ার পরেও বারবার চেক করবে যেন বক্সটি না আসে
-      const hideAllScoreBoxes = () => {
-        const selectors = [
-          '#myIframe',          // আপনার বলা সেই আইডি
-          '.score_area',        // স্কোরবোর্ডের মূল বক্স
-          '#animScore',         // অ্যানিমেশন এরিয়া
-          'iframe[src*="score1.365cric.com"]' // স্কোরবোর্ডের যেকোনো আইফ্রেম
-        ];
-        
-        selectors.forEach(selector => {
-          document.querySelectorAll(selector).forEach(el => {
-            el.style.setProperty('display', 'none', 'important');
-            el.style.setProperty('visibility', 'hidden', 'important');
-            el.style.setProperty('height', '0px', 'important');
-            el.style.setProperty('margin', '0px', 'important');
-          });
-        });
-      };
+      setInterval(() => {
+        // ১. শুধুমাত্র পুরোনো myIframe আইডিটাকে হাইড করা হচ্ছে
+        const oldIframe = document.getElementById('myIframe');
+        if (oldIframe) {
+          oldIframe.style.setProperty('display', 'none', 'important');
+        }
 
-      // সাথে সাথে রান করবে
-      hideAllScoreBoxes();
-      // পরবর্তী ৫ সেকেন্ড পর্যন্ত বারবার চেক করবে (যাতে সাইটের নিজস্ব JS ওটা ওপেন করতে না পারে)
-      let count = 0;
-      let interval = setInterval(() => {
-        hideAllScoreBoxes();
-        if (count++ > 20) clearInterval(interval);
-      }, 250);
+        // ২. score_area দৃশ্যমান রাখা হচ্ছে
+        const scoreArea = document.querySelector('.score_area') || document.getElementById('animScore');
+        if (scoreArea) {
+          scoreArea.style.setProperty('display', 'block', 'important');
+          scoreArea.style.setProperty('visibility', 'visible', 'important');
+
+          // ৩. 'myIscon' নামে নতুন আইডি বক্স তৈরি করা হচ্ছে (যদি আগে থেকে না থাকে)
+          if (!document.getElementById('myIscon')) {
+            const myIsconBox = document.createElement('div');
+            myIsconBox.id = 'myIscon';
+            
+            // আপনার দেওয়া ডাইমেনশন ও কালার
+            myIsconBox.style.setProperty('width', '100%', 'important');
+            myIsconBox.style.setProperty('height', '178px', 'important');
+            myIsconBox.style.setProperty('background-color', 'gray', 'important');
+            
+            // বক্সটিকে score_area এর ভেতরে যুক্ত করা হলো
+            scoreArea.appendChild(myIsconBox);
+          }
+        }
+      }, 500); // সাইটের নিজস্ব স্ক্রিপ্ট যেন এটাকে আবার চেঞ্জ না করতে পারে তাই লুপ রাখা হয়েছে
     </script>
     `;
 
-    // </body> ট্যাগের ঠিক আগে স্ক্রিপ্টটি ঢুকিয়ে দেওয়া হচ্ছে
-    text = text.replace('</body>', hideBoxScript + '</body>');
+    text = text.replace('</body>', customBoxScript + '</body>');
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
