@@ -62,11 +62,12 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // FINAL FIX: Direct Iframe with No-Referrer
+    // THE ULTIMATE BYPASS: BLOB DOUBLE IFRAME
     // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
+      let blobUrl = null;
 
       // ১. অরিজিনাল স্কোরবোর্ড হাইড করা
       if (!document.getElementById('hide-original-score')) {
@@ -84,7 +85,6 @@ async function handleRequest(request) {
       }
 
       setInterval(() => {
-        // URL থেকে ID নেওয়া
         const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
 
@@ -95,37 +95,59 @@ async function handleRequest(request) {
         
         if (tabsContainer && tabsContainer.parentNode) {
           
-          let myIsconBox = document.getElementById('myIsconFinal');
+          let myIsconBox = document.getElementById('myIsconMaster');
           
           if (!myIsconBox) {
             myIsconBox = document.createElement('div');
-            myIsconBox.id = 'myIsconFinal';
-            // ব্যাকগ্রাউন্ড ডার্ক রাখা হয়েছে যেন লোড হওয়ার সময় সাদা ফ্ল্যাশ না করে
-            myIsconBox.style.cssText = 'width: 100% !important; height: 210.6px !important; background-color: #172832 !important; display: block !important;';
+            myIsconBox.id = 'myIsconMaster';
+            myIsconBox.style.cssText = 'width: 100% !important; height: 210.6px !important; background-color: #172832 !important; display: block !important; margin-bottom: 5px !important;';
             
-            // ঠিক ট্যাবের নিচে বসিয়ে দেওয়া হচ্ছে
             tabsContainer.parentNode.insertBefore(myIsconBox, tabsContainer.nextSibling);
           }
 
-          // ৩. নতুন ম্যাচ ওপেন হলে আইফ্রেম আপডেট করা
+          // ৩. নতুন ম্যাচ ওপেন হলে Blob (ভার্চুয়াল ফাইল) তৈরি করা
           if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
               currentMatchId = newMatchId;
-              
               myIsconBox.innerHTML = ''; // পুরোনোটা ক্লিয়ার
               
-              const iframe = document.createElement('iframe');
-              // এই দুটি অ্যাট্রিবিউটই "Not Authorized" এররটিকে চিরতরে মুছে দেবে
-              iframe.setAttribute('referrerpolicy', 'no-referrer');
-              iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups');
+              // পুরোনো Blob মেমরি থেকে ক্লিয়ার করা
+              if (blobUrl) {
+                  URL.revokeObjectURL(blobUrl);
+              }
+
+              // অরিজিনাল টার্গেট লিংক
+              const targetUrl = "https://score1.365cric.com/#/score1/" + newMatchId;
               
-              // সরাসরি অরিজিনাল লিংক ব্যবহার করা হচ্ছে
-              iframe.src = "https://score1.365cric.com/#/score1/" + newMatchId;
+              // আপনার সেই লোকাল HTML এর মতো করে একটি "ভার্চুয়াল HTML" তৈরি
+              const wrapperHtml = \`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="referrer" content="no-referrer">
+                  <style>
+                    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #172832; }
+                  </style>
+                </head>
+                <body>
+                  <iframe src="\${targetUrl}" style="width: 100%; height: 100%; border: none;" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+                </body>
+                </html>
+              \`;
+
+              // HTML টিকে একটি File/Blob এ রূপান্তর করা
+              const blob = new Blob([wrapperHtml], { type: 'text/html' });
+              blobUrl = URL.createObjectURL(blob);
+              
+              // সেই ভার্চুয়াল ফাইলটিকে এখন মেইন আইফ্রেমে লোড করানো
+              const iframe = document.createElement('iframe');
+              iframe.src = blobUrl;
               iframe.style.cssText = 'width: 100% !important; height: 100% !important; border: none !important; overflow: hidden !important;';
               
               myIsconBox.appendChild(iframe);
           }
         }
-      }, 500); // প্রতি আধা সেকেন্ডে চেক করবে যেন পেজ চেঞ্জ হলে আপডেট হয়
+      }, 500); 
     </script>
     `;
 
