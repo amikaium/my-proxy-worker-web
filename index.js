@@ -88,7 +88,7 @@ async function handleRequest(request) {
             
             // স্টাইল সেট করা
             myIsconBox.style.setProperty('width', '100%', 'important');
-            myIsconBox.style.setProperty('height', '178px', 'important');
+            myIsconBox.style.setProperty('height', '201.6px', 'important');
             myIsconBox.style.setProperty('background-color', '#172832', 'important');
             myIsconBox.style.setProperty('display', 'block', 'important');
             
