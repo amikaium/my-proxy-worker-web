@@ -68,7 +68,6 @@ async function handleRequest(request) {
   else if (isLmt) proxyReqHeaders.set('Referer', `https://${LMT_TARGET}/`);
   else proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
 
-  // সার্ভার যেন সংকুচিত (ZIP) ফাইল না পাঠায়, তা নিশ্চিত করা
   proxyReqHeaders.delete('Accept-Encoding');
 
   const proxyRequest = new Request(url.toString(), {
@@ -103,18 +102,15 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ৪. HTML ফাইলের জন্য স্পেশাল ফিক্স (SRI রিমুভ ও ট্রেইলিং স্লাশ)
+  // ৪. HTML ফাইলের জন্য স্পেশাল ফিক্স এবং আপনার ম্যাজিক স্ক্রিপ্ট ইনজেকশন
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
-    // ব্রাউজারের সিকিউরিটি ব্লক (SRI) মুছে ফেলা হচ্ছে
     text = text.replace(/integrity="[^"]*"/ig, '');
     text = text.replace(/crossorigin="[^"]*"/ig, '');
-    // রেফারার পলিসি ফিক্স করা হচ্ছে যেন Iframe ঠিকমতো কাজ করে
     text = text.replace(/<meta[^>]*name="referrer"[^>]*>/ig, '');
     text = text.replace('<head>', '<head><meta name="referrer" content="unsafe-url">');
 
-    // লিংক রিপ্লেসমেন্ট (/? ব্যবহার করে স্লাশ ঠিক রাখা হয়েছে)
     text = text.replace(new RegExp(`https://${MAIN_TARGET}/?`, 'g'), `https://${myDomain}/`);
     text = text.replace(new RegExp(`//${MAIN_TARGET}/?`, 'g'), `//${myDomain}/`);
 
@@ -126,6 +122,45 @@ async function handleRequest(request) {
 
     text = text.replace(new RegExp(`https://${LMT_TARGET}/?`, 'g'), `https://${myDomain}/__lmt_proxy__/`);
     text = text.replace(new RegExp(`//${LMT_TARGET}/?`, 'g'), `//${myDomain}/__lmt_proxy__/`);
+
+    // ==========================================
+    // আপনার আইডিয়া: Auto Match ID Finder & Fixer
+    // ==========================================
+    const dynamicScoreScript = `
+    <script>
+      setInterval(() => {
+        try {
+          // ১. বর্তমান পেজের লিংক থেকে ম্যাচ আইডি বের করা
+          // উদাহরণ: url যদি /exchange/match/cricket/35422778 হয়, তাহলে 35422778 বের করবে
+          const urlParts = window.location.pathname.split('/');
+          const matchId = urlParts[urlParts.length - 1]; 
+          
+          // চেক করা হচ্ছে এটা আসলেই কোনো নাম্বার (ম্যাচ আইডি) কিনা
+          if (matchId && !isNaN(matchId)) {
+            const myDomain = window.location.hostname;
+            // আমাদের প্রক্সি করা নতুন নিখুঁত লিংক তৈরি করা
+            const correctUrl = 'https://' + myDomain + '/__score_proxy__/#/score1/' + matchId;
+            
+            // ২. আইফ্রেম খুঁজে বের করা (id="myIframe" অথবা যেকোনো iframe)
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+              // আমরা শুধু স্কোরবোর্ডের আইফ্রেমটাকেই টার্গেট করব
+              if (iframe.id === 'myIframe' || iframe.src.includes('score') || iframe.src.includes('__score_proxy__')) {
+                // লিংক যদি আগে থেকেই ঠিক না থাকে, তবেই আপডেট করবে (লুপ ঠেকানোর জন্য)
+                if (iframe.src !== correctUrl) {
+                  iframe.src = correctUrl;
+                  console.log('🔥 Scoreboard ID Matched & Proxied Successfully: ', matchId);
+                }
+              }
+            });
+          }
+        } catch(e) {}
+      }, 1000); // প্রতি ১ সেকেন্ড পর পর চেক করবে
+    </script>
+    `;
+
+    // পেজের একদম শেষে আমাদের স্ক্রিপ্ট বসিয়ে দেওয়া হচ্ছে
+    text = text.replace('</body>', dynamicScoreScript + '</body>');
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
