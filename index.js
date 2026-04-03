@@ -86,12 +86,11 @@ async function handleRequest(request) {
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
-  // রিডাইরেক্ট সমস্যার চূড়ান্ত সমাধান
   if ([301, 302, 303, 307, 308].includes(response.status)) {
     let location = responseHeaders.get('Location');
     if (location) {
         location = location.replace(`https://${SCORE_TARGET}`, `https://${myDomain}/__score_proxy__/`);
-        location = location.replace(`https://${LMT_TARGET}`, `https://${myDomain}/__lmt_proxy__/`); // LMT রিডাইরেক্ট ফিক্স
+        location = location.replace(`https://${LMT_TARGET}`, `https://${myDomain}/__lmt_proxy__/`);
         location = location.replace(`https://${MAIN_TARGET}`, `https://${myDomain}`);
         responseHeaders.set('Location', location);
         return new Response(null, { status: response.status, headers: responseHeaders });
@@ -122,17 +121,18 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(`//${LMT_TARGET}/?`, 'g'), `//${myDomain}/__lmt_proxy__/`);
 
     // ==========================================
-    // THE MASTER FIX: Smart ID Extractor & Injector
+    // FINAL FIX: Strict Match ID Extractor
     // ==========================================
     const dynamicScoreScript = `
     <script>
       setInterval(() => {
         try {
-          // ১. এই জাদুকরী কোডটি পুরো ইউআরএল থেকে শুধু ৭ থেকে ১০ ডিজিটের আসল ম্যাচ আইডিটাই খুঁজবে
-          const urlMatch = window.location.href.match(/\\d{7,10}/);
-          const matchId = urlMatch ? urlMatch[0] : null; 
+          // ১. ইউআরএল এর একদম শেষের অংশ (স্ল্যাশের পরের অংশ) বের করা
+          const pathArray = window.location.pathname.split('/').filter(Boolean);
+          const matchId = pathArray[pathArray.length - 1]; 
           
-          if (matchId) {
+          // চেক করা হচ্ছে এটা আসলেই শুধুমাত্র সংখ্যা (Match ID) কিনা
+          if (matchId && /^\\d+$/.test(matchId)) {
             const myDomain = window.location.hostname;
             const correctUrl = 'https://' + myDomain + '/__score_proxy__/#/score1/' + matchId;
             
@@ -144,10 +144,10 @@ async function handleRequest(request) {
             if (scoreArea) {
               scoreArea.style.setProperty('display', 'block', 'important');
               scoreArea.style.setProperty('visibility', 'visible', 'important');
-              scoreArea.style.minHeight = '190px'; // বক্স যেন চুপসে না যায়
+              scoreArea.style.minHeight = '190px'; 
             }
 
-            // ৩. আইফ্রেম খুঁজে বের করা
+            // ৩. আইফ্রেম খুঁজে বের করা বা নতুন তৈরি করা
             let iframe = document.getElementById('myIframe');
             
             if (!iframe && scoreArea) {
@@ -169,10 +169,10 @@ async function handleRequest(request) {
                  iframe.parentElement.style.setProperty('display', 'block', 'important');
               }
 
-              // ৪. সঠিক ম্যাচ আইডির লিংক বসানো (আগের ভুল লিংক পাল্টে দেবে)
-              if (!iframe.src || !iframe.src.includes(matchId) || !iframe.src.includes('__score_proxy__')) {
+              // ৪. সঠিক ম্যাচ আইডির লিংক বসানো
+              if (iframe.src !== correctUrl) {
                 iframe.src = correctUrl;
-                console.log('🔥 Perfect Match ID Injected:', matchId);
+                console.log('✅ 100% Perfect Match ID Injected:', matchId);
               }
             }
           }
