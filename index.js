@@ -1,6 +1,6 @@
 /**
- * Ultimate HLS & SPA Reverse Proxy
- * Fixes: Empty Network Tab, CORS Block, WebSocket issues, and Video Domain Locks.
+ * Ultimate Stealth Proxy for React SPA & Live Streaming
+ * Features: Client-Side Fetch/XHR Interceptor, WebSocket Proxy, Iframe Catcher
  */
 
 const TARGET_DOMAIN = "vellki247.com";
@@ -8,7 +8,11 @@ const TARGET_URL = `https://${TARGET_DOMAIN}`;
 
 export default {
     async fetch(request) {
-        // 1. CORS Preflight Bypass (ভিডিও API যেন ব্লক না হয় তার জন্য)
+        const url = new URL(request.url);
+
+        // ==========================================
+        // 1. CORS Preflight Bypass
+        // ==========================================
         if (request.method === "OPTIONS") {
             return new Response(null, {
                 headers: {
@@ -20,52 +24,68 @@ export default {
             });
         }
 
-        const url = new URL(request.url);
+        // ==========================================
+        // 2. Third-Party Video Stream Proxy (CORS Fixer)
+        // ==========================================
+        // ভিডিও প্লেয়ার যদি অন্য কোনো ডোমেইন থেকে স্ট্রিম আনে, সেটা ব্রাউজার ব্লক করে দেয়।
+        // তাই আমরা সেটাকে আমাদের Worker এর মাধ্যমে প্রক্সি করে নিবো।
+        if (url.pathname.startsWith('/___stream_proxy___/')) {
+            const targetStreamUrl = url.searchParams.get('url');
+            if (!targetStreamUrl) return new Response('Missing stream URL', { status: 400 });
+
+            const streamReq = new Request(targetStreamUrl, {
+                method: request.method,
+                headers: request.headers
+            });
+            // HLS ভিডিও সার্ভারকে ধোঁকা দেওয়ার জন্য অরিজিনাল সাইটের Referer সেট করা
+            streamReq.headers.set('Origin', TARGET_URL);
+            streamReq.headers.set('Referer', TARGET_URL + '/');
+            streamReq.headers.delete('Host');
+
+            const streamRes = await fetch(streamReq);
+            const streamHeaders = new Headers(streamRes.headers);
+            streamHeaders.set('Access-Control-Allow-Origin', '*');
+
+            return new Response(streamRes.body, { status: streamRes.status, headers: streamHeaders });
+        }
+
+        // ==========================================
+        // 3. Main Reverse Proxy Routing
+        // ==========================================
         const proxyUrl = new URL(request.url);
         proxyUrl.hostname = TARGET_DOMAIN;
 
-        // 2. Request Clone & Hardcore Spoofing
         const proxyRequest = new Request(proxyUrl.toString(), {
             method: request.method,
             headers: new Headers(request.headers),
-            // GET/HEAD মেথডে body থাকলে error দেয়, তাই চেক করে নিচ্ছি
             body: (request.method !== 'GET' && request.method !== 'HEAD') ? request.body : null,
             redirect: 'manual'
         });
 
-        // অরিজিনাল সার্ভারকে ধোকা দেওয়ার জন্য Headers সেট করা
+        // Headers Spoofing
         proxyRequest.headers.set("Host", TARGET_DOMAIN);
         proxyRequest.headers.set("Origin", TARGET_URL);
         proxyRequest.headers.set("Referer", TARGET_URL);
-        
-        // Cloudflare এর নিজস্ব হেডারগুলো রিমুভ করছি, যাতে অরিজিন সার্ভার বুঝতে না পারে এটি প্রক্সি
-        ['cf-connecting-ip', 'cf-ipcountry', 'cf-ray', 'x-forwarded-for', 'x-real-ip'].forEach(h => proxyRequest.headers.delete(h));
-        
-        // Response body এডিট করার জন্য Encoding রিমুভ করা বাধ্যতামূলক
-        proxyRequest.headers.delete("Accept-Encoding"); 
+        proxyRequest.headers.delete("Accept-Encoding"); // Text edit করার জন্য
 
         try {
-            // Fetch from Original Server
             const response = await fetch(proxyRequest);
             const responseHeaders = new Headers(response.headers);
 
-            // 3. Strip Security & Unlock Browser Blocks
+            // Strip Security Blocks
             ['content-security-policy', 'x-frame-options', 'strict-transport-security', 'x-content-type-options'].forEach(h => responseHeaders.delete(h));
-            
-            // Forcefully allow our proxy domain to read the data
             responseHeaders.set("Access-Control-Allow-Origin", "*");
 
-            // 4. Session & Cookie Rewrite
+            // Session & Cookie Domain Rewrite
             const setCookies = responseHeaders.getSetCookie();
             if (setCookies && setCookies.length > 0) {
                 responseHeaders.delete('Set-Cookie');
                 for (let cookie of setCookies) {
-                    let modifiedCookie = cookie.replace(new RegExp(TARGET_DOMAIN, 'gi'), url.hostname);
-                    responseHeaders.append('Set-Cookie', modifiedCookie);
+                    responseHeaders.append('Set-Cookie', cookie.replace(new RegExp(TARGET_DOMAIN, 'gi'), url.hostname));
                 }
             }
 
-            // 5. Handle Redirects gracefully
+            // Redirect Handler
             if (responseHeaders.has('Location')) {
                 let location = responseHeaders.get('Location');
                 location = location.replace(TARGET_URL, url.origin);
@@ -73,57 +93,111 @@ export default {
                 return new Response(null, { status: response.status, headers: responseHeaders });
             }
 
-            // 6. Deep Body Modification (The Magic Part)
+            // ==========================================
+            // 4. Inject "Stealth Agent" into HTML ONLY
+            // ==========================================
             const contentType = responseHeaders.get("content-type") || "";
             
-            if (contentType.includes("text/html") || 
-                contentType.includes("application/javascript") || 
-                contentType.includes("text/javascript") || 
-                contentType.includes("application/json")) {
+            // আমরা ভুলেও .js বা .json ফাইল এডিট করবো না, যাতে React ক্র্যাশ না করে। 
+            // শুধুমাত্র HTML-এ আমাদের Agent ঢুকিয়ে দিবো।
+            if (contentType.includes("text/html")) {
+                let html = await response.text();
                 
-                let body = await response.text();
-                
-                // A. Rewrite Absolute URLs
-                body = body.replace(new RegExp(TARGET_URL, 'g'), url.origin);
-                
-                // B. Rewrite WebSockets (লাইভ স্কোর এবং ভিডিও টোকেনের জন্য)
-                body = body.replace(new RegExp(`wss://${TARGET_DOMAIN}`, 'g'), `wss://${url.hostname}`);
-                body = body.replace(new RegExp(`ws://${TARGET_DOMAIN}`, 'g'), `ws://${url.hostname}`);
-                
-                // C. Rewrite Bare Domain Strings inside JS/JSON
-                body = body.replace(new RegExp(TARGET_DOMAIN, 'g'), url.hostname);
+                // HTML-এর বডিতে থাকা বেসিক URL রিপ্লেস
+                html = html.replace(new RegExp(TARGET_URL, 'g'), url.origin);
 
-                // D. Client-Side Domain Lock Bypass (JS Inject)
-                if (contentType.includes("text/html")) {
-                    const scriptInject = `
-                    <script>
-                        // Bypass strict JS domain checks for video players
-                        window.ORIGINAL_DOMAIN = "${TARGET_DOMAIN}";
-                        try {
-                            Object.defineProperty(document, "domain", {
-                                get: function() { return window.location.hostname; },
-                                set: function(v) {}
+                // 🔥 The Stealth Agent (Client-Side Interceptor)
+                const injectScript = `
+                <script>
+                (function() {
+                    const TARGET = '${TARGET_DOMAIN}';
+                    const MY_DOMAIN = window.location.host;
+
+                    // 1. Intercept Fetch API
+                    const origFetch = window.fetch;
+                    window.fetch = async function(...args) {
+                        let req = args[0];
+                        let fetchUrl = typeof req === 'string' ? req : (req && req.url ? req.url : '');
+                        
+                        if (fetchUrl) {
+                            // Route API calls to our proxy domain
+                            if (fetchUrl.includes(TARGET)) {
+                                fetchUrl = fetchUrl.replace(new RegExp('https?://' + TARGET, 'gi'), window.location.origin);
+                            }
+                            // Route HLS Video (.m3u8/.ts) to stream proxy to bypass CORS
+                            if ((fetchUrl.includes('.m3u8') || fetchUrl.includes('.ts')) && fetchUrl.startsWith('http') && !fetchUrl.includes(MY_DOMAIN)) {
+                                fetchUrl = '/___stream_proxy___/?url=' + encodeURIComponent(fetchUrl);
+                            }
+                            
+                            if (typeof req === 'string') {
+                                args[0] = fetchUrl;
+                            } else if (req instanceof Request) {
+                                args[0] = new Request(fetchUrl, req);
+                            }
+                        }
+                        return origFetch.apply(this, args);
+                    };
+
+                    // 2. Intercept XMLHttpRequest (XHR)
+                    const origOpen = XMLHttpRequest.prototype.open;
+                    XMLHttpRequest.prototype.open = function(method, xhrUrl, ...rest) {
+                        if (typeof xhrUrl === 'string') {
+                            if (xhrUrl.includes(TARGET)) {
+                                xhrUrl = xhrUrl.replace(new RegExp('https?://' + TARGET, 'gi'), window.location.origin);
+                            }
+                            if ((xhrUrl.includes('.m3u8') || xhrUrl.includes('.ts')) && xhrUrl.startsWith('http') && !xhrUrl.includes(MY_DOMAIN)) {
+                                xhrUrl = '/___stream_proxy___/?url=' + encodeURIComponent(xhrUrl);
+                            }
+                        }
+                        return origOpen.call(this, method, xhrUrl, ...rest);
+                    };
+
+                    // 3. Intercept WebSockets (Live Score & Video Tokens)
+                    const OrigWebSocket = window.WebSocket;
+                    window.WebSocket = function(wsUrl, protocols) {
+                        if (typeof wsUrl === 'string' && wsUrl.includes(TARGET)) {
+                            wsUrl = wsUrl.replace(new RegExp('wss?://' + TARGET, 'gi'), 'wss://' + MY_DOMAIN);
+                        }
+                        return new OrigWebSocket(wsUrl, protocols);
+                    };
+                    window.WebSocket.prototype = OrigWebSocket.prototype;
+
+                    // 4. Catch dynamically loaded Iframes (React Video Players)
+                    const observer = new MutationObserver(mutations => {
+                        mutations.forEach(mutation => {
+                            mutation.addedNodes.forEach(node => {
+                                if (node.tagName === 'IFRAME' && node.src && node.src.includes(TARGET)) {
+                                    node.src = node.src.replace(new RegExp('https?://' + TARGET, 'gi'), window.location.origin);
+                                }
                             });
-                        } catch(e) {}
-                    </script>
-                    `;
-                    body = body.replace('<head>', '<head>' + scriptInject);
-                }
+                        });
+                    });
+                    document.addEventListener('DOMContentLoaded', () => {
+                        observer.observe(document.body, { childList: true, subtree: true });
+                    });
+                })();
+                </script>
+                <meta name="referrer" content="no-referrer">
+                `;
+                
+                // HTML Head এর ঠিক পরে স্ক্রিপ্ট বসিয়ে দিচ্ছি
+                html = html.replace('<head>', '<head>' + injectScript);
 
-                return new Response(body, {
+                return new Response(html, {
                     status: response.status,
                     headers: responseHeaders
                 });
             }
 
-            // 7. Video (.ts, .m3u8) & Assets direct pass-through (Fast Loading)
+            // HTML বাদে বাকি সব ফাইল (JS, JSON, CSS, Images) হুবুহু অরিজিনালটাই সেন্ড হবে। 
+            // এতে React এর কোনো কোড ব্রেক করবে না।
             return new Response(response.body, {
                 status: response.status,
                 headers: responseHeaders
             });
 
         } catch (err) {
-            return new Response(`Error: ${err.message}`, { status: 500 });
+            return new Response(`Worker Error: ${err.message}`, { status: 500 });
         }
     }
 };
