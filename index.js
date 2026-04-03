@@ -1,7 +1,7 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
 const SCORE_TARGET = 'score1.365cric.com';    
-const LMT_TARGET = 'live.ckex.xyz'; // আপনার খুঁজে বের করা নতুন স্কোর সার্ভার
+const LMT_TARGET = 'live.ckex.xyz';
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -10,9 +10,8 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const myDomain = url.hostname;
-  const referer = request.headers.get('Referer') || '';
 
-  // ১. ব্রাউজার সিকিউরিটি বাইপাস
+  // ১. ব্রাউজারের সিকিউরিটি ব্লক সরানো
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -24,75 +23,100 @@ async function handleRequest(request) {
     });
   }
 
-  // ২. রাউটিং: রিকোয়েস্ট কোন সার্ভারে যাবে?
-  let targetHost = MAIN_TARGET;
-  
-  if (url.searchParams.has('__proxy_host')) {
-    targetHost = url.searchParams.get('__proxy_host');
-  } else if (referer) {
-    try {
-      const refUrl = new URL(referer);
-      if (refUrl.searchParams.has('__proxy_host')) {
-        targetHost = refUrl.searchParams.get('__proxy_host');
-      }
-    } catch(e) {}
-  }
-
+  // ২. লাইভ ভিডিও বাইপাস
   if (url.pathname.includes('/__video_proxy__/')) {
-    targetHost = STREAM_TARGET;
+    url.hostname = STREAM_TARGET;
     url.pathname = url.pathname.replace('/__video_proxy__', ''); 
+    return proxyRequest(request, url, STREAM_TARGET, myDomain, false);
   }
 
-  url.hostname = targetHost;
-  url.searchParams.delete('__proxy_host');
+  // ৩. ডাইনামিক হোস্ট ট্র্যাকিং (স্কোরবোর্ডের API এবং WebSockets এর জন্য)
+  if (url.searchParams.has('__proxy_host')) {
+    const target = url.searchParams.get('__proxy_host');
+    url.hostname = target;
+    url.searchParams.delete('__proxy_host');
+    return proxyRequest(request, url, target, myDomain, true);
+  }
 
-  const proxyRequest = new Request(url.toString(), request);
+  // ৪. অটো-ফলব্যাক ইঞ্জিন (ফাঁকা/কালো স্ক্রিনের ম্যাজিক সমাধান)
+  // প্রথমে মেইন সাইট থেকে ফাইল খোঁজার চেষ্টা করবে
+  let response = await proxyRequest(request, url, MAIN_TARGET, myDomain, true);
+  let status = response.status;
+  let cType = (response.headers.get('content-type') || '').toLowerCase();
   
-  // সার্ভারগুলোকে ধোঁকা দেওয়া
-  proxyRequest.headers.set('Host', targetHost);
-  proxyRequest.headers.set('Origin', `https://${targetHost}`);
-  proxyRequest.headers.set('Referer', `https://${targetHost}/`);
+  // চেক করা হচ্ছে ফাইলটি কোনো ডিজাইন বা স্ক্রিপ্ট ফাইল কিনা
+  let isAsset = request.method === 'GET' && url.pathname.match(/\.(js|css|woff2?|png|jpg|svg|json)$/i);
+  
+  // মেইন সাইটে ফাইলটি না পেলে (404) বা ফাইলটি মিসিং থাকলে
+  let isFailed = status === 404 || status === 403 || (isAsset && cType.includes('text/html'));
 
-  let response = await fetch(proxyRequest);
+  if (isFailed && isAsset) {
+     // নিজে থেকেই LMT (live.ckex.xyz) সার্ভারে ফাইলটি খুঁজবে
+     let fallback1 = await proxyRequest(request, url, LMT_TARGET, myDomain, true);
+     if (fallback1.status === 200) return fallback1;
+     
+     // সেখানেও না পেলে score1.365cric.com সার্ভারে খুঁজবে
+     let fallback2 = await proxyRequest(request, url, SCORE_TARGET, myDomain, true);
+     if (fallback2.status === 200) return fallback2;
+  }
+
+  return response;
+}
+
+// প্রক্সি করার মূল ফাংশন
+async function proxyRequest(originalRequest, targetUrl, targetHost, myDomain, rewriteContent) {
+  let init = {
+      method: originalRequest.method,
+      headers: new Headers(originalRequest.headers),
+      redirect: 'manual'
+  };
+  
+  if (!['GET', 'HEAD'].includes(originalRequest.method)) {
+      init.body = originalRequest.clone().body;
+  }
+
+  // মেইন সার্ভারগুলোকে ধোঁকা দেওয়ার জন্য হেডার পরিবর্তন
+  init.headers.set('Host', targetHost);
+  init.headers.set('Origin', `https://${targetHost}`);
+  init.headers.set('Referer', `https://${targetHost}/`);
+  
+  // WebSockets সাপোর্ট (লাইভ স্কোর আপডেটের জন্য)
+  if (init.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
+     return fetch(targetUrl.toString(), init);
+  }
+
+  let response = await fetch(targetUrl.toString(), init);
   let responseHeaders = new Headers(response.headers);
 
-  // ৩. রিডাইরেক্ট ফিক্স (যাতে এক সার্ভার থেকে অন্য সার্ভারে গেলেও প্রক্সি কাজ করে)
-  const location = responseHeaders.get('Location');
+  // রিডাইরেক্ট লিংক ফিক্স করা
+  let location = responseHeaders.get('Location');
   if (location) {
-    try {
-      const locUrl = new URL(location, `https://${targetHost}`);
-      const newLoc = new URL(`https://${myDomain}${locUrl.pathname}${locUrl.search}`);
-      newLoc.searchParams.set('__proxy_host', locUrl.hostname);
-      newLoc.hash = locUrl.hash;
-      responseHeaders.set('Location', newLoc.toString());
-    } catch(e) {}
+     try {
+        let locUrl = new URL(location, `https://${targetHost}`);
+        let newLoc = new URL(`https://${myDomain}${locUrl.pathname}${locUrl.search}`);
+        newLoc.searchParams.set('__proxy_host', locUrl.hostname);
+        responseHeaders.set('Location', newLoc.toString());
+     } catch(e) {}
   }
 
+  // আইফ্রেম এবং ব্রাউজার সিকিউরিটি বাইপাস
   responseHeaders.delete('Content-Security-Policy');
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
-  const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
+  let cType = (responseHeaders.get('content-type') || '').toLowerCase();
 
-  // ৪. সব লিংকের ডোমেইন নেম পরিবর্তন করা (যাতে কোনো কিছু ব্লক না হয়)
-  if (contentType.includes('text/') || 
-      contentType.includes('application/json') || 
-      contentType.includes('application/javascript')) {
-      
-    let text = await response.text();
-    
-    // মেইন সাইটের নাম রিপ্লেস
-    text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
-    // লাইভ টিভির লিংক রিপ্লেস
-    text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
-    
-    // স্কোরবোর্ডের প্রথম সার্ভার রিপ্লেস
-    text = text.replace(new RegExp(SCORE_TARGET, 'g'), `${myDomain}/?__proxy_host=${SCORE_TARGET}`);
-    // স্কোরবোর্ডের দ্বিতীয় (লুকানো) সার্ভার রিপ্লেস
-    text = text.replace(new RegExp(LMT_TARGET, 'g'), `${myDomain}/?__proxy_host=${LMT_TARGET}`);
+  // ৫. সব সার্ভারের কন্টেন্ট ერთ করে আপনার ডোমেইনে বসানো
+  if (rewriteContent && (cType.includes('text/') || cType.includes('application/json') || cType.includes('application/javascript'))) {
+     let text = await response.text();
+     
+     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
+     text = text.replace(new RegExp(SCORE_TARGET, 'g'), `${myDomain}/?__proxy_host=${SCORE_TARGET}`);
+     text = text.replace(new RegExp(LMT_TARGET, 'g'), `${myDomain}/?__proxy_host=${LMT_TARGET}`);
+     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
 
-    responseHeaders.delete('Content-Length');
-    return new Response(text, { status: response.status, headers: responseHeaders });
+     responseHeaders.delete('Content-Length');
+     return new Response(text, { status: response.status, headers: responseHeaders });
   }
 
   return new Response(response.body, { status: response.status, headers: responseHeaders });
