@@ -12,7 +12,6 @@ async function handleRequest(request) {
   const myDomain = url.hostname;
   const referer = request.headers.get('Referer') || '';
 
-  // ১. ব্রাউজার সিকিউরিটি বাইপাস
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -29,7 +28,6 @@ async function handleRequest(request) {
   let isStream = false;
   let isLmt = false;
 
-  // ২. পাথ রাউটিং (Path Routing)
   if (url.pathname.startsWith('/__score_proxy__')) {
     targetHost = SCORE_TARGET;
     isScore = true;
@@ -43,7 +41,6 @@ async function handleRequest(request) {
     isLmt = true;
     url.pathname = url.pathname.replace('/__lmt_proxy__', '') || '/';
   }
-  // ৩. রেফারার রাউটিং (Iframe এর ভেতরের ফাইলগুলোর জন্য)
   else if (referer) {
     if (referer.includes('/__score_proxy__')) {
       targetHost = SCORE_TARGET;
@@ -89,7 +86,6 @@ async function handleRequest(request) {
   responseHeaders.delete('X-Frame-Options');
   responseHeaders.set('Access-Control-Allow-Origin', '*');
 
-  // রিডাইরেক্ট হ্যান্ডলিং
   if ([301, 302, 303, 307, 308].includes(response.status)) {
     let location = responseHeaders.get('Location');
     if (location) {
@@ -102,7 +98,7 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ৪. HTML ফাইলের জন্য স্পেশাল ফিক্স এবং আপনার ম্যাজিক স্ক্রিপ্ট ইনজেকশন
+  // HTML ফাইলের মডিফিকেশন এবং বক্স ওপেনার স্ক্রিপ্ট ইনজেকশন
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
@@ -124,49 +120,74 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(`//${LMT_TARGET}/?`, 'g'), `//${myDomain}/__lmt_proxy__/`);
 
     // ==========================================
-    // আপনার আইডিয়া: Auto Match ID Finder & Fixer
+    // THE MASTER FIX: Auto Box Opener & Match ID Forcer
     // ==========================================
     const dynamicScoreScript = `
     <script>
       setInterval(() => {
         try {
-          // ১. বর্তমান পেজের লিংক থেকে ম্যাচ আইডি বের করা
-          // উদাহরণ: url যদি /exchange/match/cricket/35422778 হয়, তাহলে 35422778 বের করবে
           const urlParts = window.location.pathname.split('/');
           const matchId = urlParts[urlParts.length - 1]; 
           
-          // চেক করা হচ্ছে এটা আসলেই কোনো নাম্বার (ম্যাচ আইডি) কিনা
           if (matchId && !isNaN(matchId)) {
             const myDomain = window.location.hostname;
-            // আমাদের প্রক্সি করা নতুন নিখুঁত লিংক তৈরি করা
             const correctUrl = 'https://' + myDomain + '/__score_proxy__/#/score1/' + matchId;
             
-            // ২. আইফ্রেম খুঁজে বের করা (id="myIframe" অথবা যেকোনো iframe)
-            const iframes = document.querySelectorAll('iframe');
-            iframes.forEach(iframe => {
-              // আমরা শুধু স্কোরবোর্ডের আইফ্রেমটাকেই টার্গেট করব
-              if (iframe.id === 'myIframe' || iframe.src.includes('score') || iframe.src.includes('__score_proxy__')) {
-                // লিংক যদি আগে থেকেই ঠিক না থাকে, তবেই আপডেট করবে (লুপ ঠেকানোর জন্য)
-                if (iframe.src !== correctUrl) {
-                  iframe.src = correctUrl;
-                  console.log('🔥 Scoreboard ID Matched & Proxied Successfully: ', matchId);
-                }
+            // ১. লুকানো বক্সটাকে (Parent Container) খুঁজে বের করা
+            const scoreArea = document.querySelector('.score_area') || 
+                              document.getElementById('animScore') || 
+                              document.querySelector('.center-m') || 
+                              document.querySelector('.match_odds');
+
+            // ২. বক্সটাকে জোর করে দৃশ্যমান (Visible) করা
+            if (scoreArea) {
+              scoreArea.style.setProperty('display', 'block', 'important');
+              scoreArea.style.setProperty('visibility', 'visible', 'important');
+            }
+
+            // ৩. আইফ্রেম খুঁজে বের করা
+            let iframe = document.getElementById('myIframe');
+            
+            // যদি আইফ্রেম বক্সের ভেতর না থাকে, তবে নতুন করে তৈরি করে বসানো
+            if (!iframe && scoreArea) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'myIframe';
+                iframe.setAttribute('allowfullscreen', 'true');
+                scoreArea.prepend(iframe); // বক্সের একদম উপরে বসিয়ে দেওয়া
+            }
+
+            // ৪. আইফ্রেমের স্টাইল ফিক্স করা এবং লিংক বসানো
+            if (iframe) {
+              iframe.style.setProperty('display', 'block', 'important');
+              iframe.style.setProperty('visibility', 'visible', 'important');
+              iframe.style.setProperty('width', '100%', 'important');
+              iframe.style.setProperty('height', '190px', 'important'); 
+              iframe.style.setProperty('border', 'none', 'important');
+              iframe.style.setProperty('background-color', '#fff', 'important'); // কালো বক্স সাদা করার জন্য
+              
+              // প্যারেন্ট ডিভ হিডেন থাকলে সেটাও আনহাইড করা
+              if (iframe.parentElement) {
+                 iframe.parentElement.style.setProperty('display', 'block', 'important');
               }
-            });
+
+              // লিংক আপডেট করা
+              if (iframe.src !== correctUrl) {
+                iframe.src = correctUrl;
+                console.log('🔥 Forcefully Opened Box & Injected Score for ID:', matchId);
+              }
+            }
           }
         } catch(e) {}
-      }, 1000); // প্রতি ১ সেকেন্ড পর পর চেক করবে
+      }, 500); // প্রতি হাফ সেকেন্ড পর পর চেক করবে যাতে বক্স গায়েব না হতে পারে
     </script>
     `;
 
-    // পেজের একদম শেষে আমাদের স্ক্রিপ্ট বসিয়ে দেওয়া হচ্ছে
     text = text.replace('</body>', dynamicScoreScript + '</body>');
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
   }
 
-  // ৫. JS/JSON ফাইলের লিংক রিপ্লেসমেন্ট
   else if (contentType.includes('application/javascript') || contentType.includes('text/javascript') || contentType.includes('application/json')) {
     let text = await response.text();
 
