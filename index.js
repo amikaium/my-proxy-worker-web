@@ -1,21 +1,30 @@
 const TARGET_HOSTNAME = 'all9x.com';
-const TARGET_URL = `https://${TARGET_HOSTNAME}`;
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
 });
 
 async function handleRequest(request) {
-  const url = new URL(request.url);
-  const myDomain = url.hostname; // আপনার ডাইনামিক ডোমেইন বা প্রিভিউ ডোমেইন
+  // ১. ভিডিও প্লেয়ার (hls.js) এবং React API-এর জন্য CORS Preflight বাইপাস
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Max-Age': '86400',
+      }
+    });
+  }
 
-  // রিকোয়েস্টের URL পরিবর্তন করে মেইন সাইটের দিকে পয়েন্ট করা
+  const url = new URL(request.url);
+  const myDomain = url.hostname; // আপনার ডাইনামিক ডোমেইন
+
+  // রিকোয়েস্টের URL মেইন সাইটে পয়েন্ট করা
   url.hostname = TARGET_HOSTNAME;
 
-  // নতুন রিকোয়েস্ট তৈরি করা
+  // ২. মেইন সার্ভারকে ধোঁকা দেওয়ার জন্য হেডার মডিফাই করা
   const proxyRequest = new Request(url.toString(), request);
-  
-  // Header মডিফাই করা যাতে মেইন সার্ভার বুঝতে না পারে এটি প্রক্সি
   proxyRequest.headers.set('Host', TARGET_HOSTNAME);
   
   if (request.headers.has('Origin')) {
@@ -25,50 +34,62 @@ async function handleRequest(request) {
     proxyRequest.headers.set('Referer', request.headers.get('Referer').replace(myDomain, TARGET_HOSTNAME));
   }
 
-  // মেইন সাইট থেকে রেসপন্স নিয়ে আসা
+  // ৩. মেইন সাইট থেকে ডাটা নিয়ে আসা
   let response = await fetch(proxyRequest);
+  let responseHeaders = new Headers(response.headers);
   
-  // রেসপন্স মডিফাই করার জন্য নতুন রেসপন্স অবজেক্ট তৈরি
-  let modifiedResponse = new Response(response.body, response);
-
-  // CORS পলিসি বাইপাস করা (API ও অন্যান্য ডাটা লোড হওয়ার জন্য)
-  modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-  modifiedResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-
-  // রিডাইরেক্ট (Location header) ফিক্স করা
-  const location = modifiedResponse.headers.get('Location');
+  // ৪. সব ধরনের রেসপন্সে CORS অ্যালাউ করা (লাইভ ভিডিও প্লে হওয়ার জন্য এটা মাস্ট)
+  responseHeaders.set('Access-Control-Allow-Origin', '*');
+  responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  responseHeaders.set('Access-Control-Allow-Headers', '*');
+  
+  // রিডাইরেক্ট ফিক্স
+  const location = responseHeaders.get('Location');
   if (location) {
-    modifiedResponse.headers.set('Location', location.replace(TARGET_HOSTNAME, myDomain));
+    responseHeaders.set('Location', location.replace(TARGET_HOSTNAME, myDomain));
   }
 
-  // HTML কন্টেন্টের ভেতরের হার্ডকোডেড লিংকগুলো কনভার্ট করা
-  const contentType = modifiedResponse.headers.get('Content-Type');
-  if (contentType && contentType.includes('text/html')) {
-    return new HTMLRewriter()
-      .on('a', new AttributeRewriter('href', myDomain))
-      .on('img', new AttributeRewriter('src', myDomain))
-      .on('link', new AttributeRewriter('href', myDomain))
-      .on('script', new AttributeRewriter('src', myDomain))
-      .on('form', new AttributeRewriter('action', myDomain))
-      .on('iframe', new AttributeRewriter('src', myDomain))
-      .transform(modifiedResponse);
-  }
+  // ৫. Content-Type চেক করা (React, API এবং Live TV ফাইলের জন্য)
+  const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
+  const isM3U8Url = url.pathname.endsWith('.m3u8'); // m3u8 ফাইল কিনা চেক
+  
+  // আমরা শুধু টেক্সট বেসড ফাইলগুলোর ভেতরে ঢুকে লিংক বদলাবো
+  const isTextContent = isM3U8Url || 
+                        contentType.includes('text/') || 
+                        contentType.includes('application/json') || 
+                        contentType.includes('application/javascript') || 
+                        contentType.includes('application/x-mpegurl') || 
+                        contentType.includes('application/vnd.apple.mpegurl');
 
-  return modifiedResponse;
-}
-
-// HTML Rewriter ক্লাস - এটি মেইন ডোমেইনের নাম রিপ্লেস করে আপনার ডোমেইন বসিয়ে দেবে
-class AttributeRewriter {
-  constructor(attributeName, proxyDomain) {
-    this.attributeName = attributeName;
-    this.proxyDomain = proxyDomain;
-  }
-  element(element) {
-    const attribute = element.getAttribute(this.attributeName);
-    if (attribute && attribute.includes(TARGET_HOSTNAME)) {
-      // সব জায়গায় all9x.com কে আপনার ডোমেইন দিয়ে রিপ্লেস করবে
-      const newValue = attribute.replace(new RegExp(TARGET_HOSTNAME, 'g'), this.proxyDomain);
-      element.setAttribute(this.attributeName, newValue);
+  if (isTextContent) {
+    // ফাইলটি টেক্সট হিসেবে রিড করা
+    let text = await response.text();
+    
+    // JS, JSON এবং m3u8 এর ভেতরে থাকা মেইন ডোমেইন রিপ্লেস করে আপনার ডোমেইন বসানো
+    const regex = new RegExp(TARGET_HOSTNAME, 'g');
+    text = text.replace(regex, myDomain);
+    
+    // React অ্যাপ অনেক সময় URL Encode করে JSON এ পাঠায়, সেটাও রিপ্লেস করা
+    const encodedTarget = encodeURIComponent(TARGET_HOSTNAME);
+    if (text.includes(encodedTarget)) {
+        const encodedMyDomain = encodeURIComponent(myDomain);
+        text = text.replace(new RegExp(encodedTarget, 'g'), encodedMyDomain);
     }
+
+    // বডি সাইজ চেঞ্জ হওয়ার কারণে Content-Length মুছে দেওয়া
+    responseHeaders.delete('Content-Length');
+
+    return new Response(text, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
   }
+
+  // ৬. ভিডিওর অংশ (.ts ফাইল) বা ইমেজের মতো বাইনারি ডাটা হলে সরাসরি স্ট্রিম করে দেওয়া
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: responseHeaders
+  });
 }
