@@ -1,36 +1,51 @@
 export default {
   async fetch(request, env, ctx) {
-    const TARGET_HOST = "https://vellki247.com";
-
+    const TARGET = "https://vellki247.com";
     const url = new URL(request.url);
 
-    // Build target URL
-    const targetUrl = TARGET_HOST + url.pathname + url.search;
+    const targetUrl = TARGET + url.pathname + url.search;
 
-    // Clone request
+    const newHeaders = new Headers(request.headers);
+    newHeaders.set("origin", TARGET);
+    newHeaders.set("referer", TARGET);
+
     const modifiedRequest = new Request(targetUrl, {
       method: request.method,
-      headers: request.headers,
+      headers: newHeaders,
       body: request.body,
       redirect: "follow"
     });
 
-    // Remove problematic headers
-    modifiedRequest.headers.set("origin", TARGET_HOST);
-    modifiedRequest.headers.set("referer", TARGET_HOST);
+    const response = await fetch(modifiedRequest);
 
-    let response = await fetch(modifiedRequest);
+    const contentType = response.headers.get("content-type") || "";
 
-    let contentType = response.headers.get("content-type") || "";
+    // STREAM / VIDEO / HLS FIX
+    if (
+      contentType.includes("video") ||
+      url.pathname.includes(".m3u8") ||
+      url.pathname.includes(".ts")
+    ) {
+      return new Response(response.body, {
+        headers: response.headers,
+        status: response.status
+      });
+    }
 
-    // Clone response for modification
-    let newResponse = new Response(response.body, response);
+    let newHeadersResp = new Headers(response.headers);
 
-    // Remove security headers that block embedding
-    newResponse.headers.delete("x-frame-options");
-    newResponse.headers.delete("content-security-policy");
+    newHeadersResp.delete("content-security-policy");
+    newHeadersResp.delete("x-frame-options");
 
-    // Rewrite HTML
+    // COOKIE FIX
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) {
+      newHeadersResp.set(
+        "set-cookie",
+        setCookie.replaceAll("vellki247.com", url.hostname)
+      );
+    }
+
     if (contentType.includes("text/html")) {
       let text = await response.text();
 
@@ -39,11 +54,14 @@ export default {
         .replaceAll("http://vellki247.com", url.origin);
 
       return new Response(text, {
-        headers: newResponse.headers,
+        headers: newHeadersResp,
         status: response.status
       });
     }
 
-    return newResponse;
+    return new Response(response.body, {
+      headers: newHeadersResp,
+      status: response.status
+    });
   }
 };
