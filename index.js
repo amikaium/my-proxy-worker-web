@@ -3,6 +3,36 @@ export default {
     const TARGET = "https://vellki247.com";
     const url = new URL(request.url);
 
+    // 🔥 LIVE / VIDEO / GAME ROUTE DETECT
+    if (
+      url.pathname.includes("live") ||
+      url.pathname.includes("tv") ||
+      url.pathname.includes("stream")
+    ) {
+      return new Response(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Live</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { margin:0; padding:0; background:#000; }
+            iframe { width:100%; height:100vh; border:none; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${TARGET + url.pathname + url.search}"
+            allow="autoplay; fullscreen"
+            allowfullscreen>
+          </iframe>
+        </body>
+        </html>
+      `, {
+        headers: { "content-type": "text/html" }
+      });
+    }
+
+    // 🔁 NORMAL PROXY
     const targetUrl = TARGET + url.pathname + url.search;
 
     const newHeaders = new Headers(request.headers);
@@ -20,24 +50,13 @@ export default {
 
     const contentType = response.headers.get("content-type") || "";
 
-    // STREAM / VIDEO / HLS FIX
-    if (
-      contentType.includes("video") ||
-      url.pathname.includes(".m3u8") ||
-      url.pathname.includes(".ts")
-    ) {
-      return new Response(response.body, {
-        headers: response.headers,
-        status: response.status
-      });
-    }
-
     let newHeadersResp = new Headers(response.headers);
 
+    // 🔓 SECURITY HEADER REMOVE
     newHeadersResp.delete("content-security-policy");
     newHeadersResp.delete("x-frame-options");
 
-    // COOKIE FIX
+    // 🍪 COOKIE FIX
     const setCookie = response.headers.get("set-cookie");
     if (setCookie) {
       newHeadersResp.set(
@@ -46,6 +65,7 @@ export default {
       );
     }
 
+    // 🔧 HTML REWRITE
     if (contentType.includes("text/html")) {
       let text = await response.text();
 
