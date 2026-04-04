@@ -64,21 +64,10 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট, গ্যাপ ফিক্স এবং ভিডিও ব্র্যান্ডিং
+    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং গ্যাপ ফিক্স
     // ==========================================
     const customCss = `
     <style>
-      /* 🔴 ম্যাজিক ফিক্স: ডাবল স্কোরবোর্ড (mylframe) চিরতরে হাইড করা হলো */
-      iframe#mylframe, iframe#myIframe {
-          display: none !important;
-          opacity: 0 !important;
-          visibility: hidden !important;
-          width: 0 !important;
-          height: 0 !important;
-          position: absolute !important;
-          z-index: -9999 !important;
-      }
-
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
           max-width: 140px !important; 
@@ -98,29 +87,12 @@ async function handleRequest(request) {
         margin: 0 !important;
         padding: 0 !important;
       }
-
-      /* 🎯 লাইভ টিভি ভিডিও ওয়াটারমার্কের স্টাইল */
-      .skyx-video-watermark {
-          position: absolute !important;
-          top: 10px !important;
-          right: 10px !important;
-          z-index: 2147483647 !important; 
-          pointer-events: none !important; 
-          width: 55px !important;
-      }
-      .skyx-video-watermark img {
-          width: 100% !important;
-          height: auto !important;
-          object-fit: contain !important;
-          opacity: 0.35 !important; 
-          filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.5)) !important; 
-      }
     </style>
     `;
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // JS: সেফ টেক্সট রিপ্লেসমেন্ট এবং লাইভ স্কোর লজিক
+    // JS: সেফ টেক্সট রিপ্লেসমেন্ট এবং লাইভ স্কোর লজিক + ভিডিও ওয়াটারমার্ক
     // ==========================================
     const emptyBoxScript = `
     <script>
@@ -143,14 +115,12 @@ async function handleRequest(request) {
                 }
             }
         } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE' && node.nodeName !== 'IFRAME') {
-            // Script এবং Style ট্যাগ ইগনোর করে ভেতরের টেক্সট খুঁজবে
             for (let i = 0; i < node.childNodes.length; i++) {
                 safeTextReplace(node.childNodes[i]);
             }
         }
       }
 
-      // ওয়েবসাইট লোড হওয়ার সাথে সাথে এবং ডায়নামিক চেঞ্জ হওয়ার সময় রিপ্লেস করবে
       const textObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
@@ -165,25 +135,36 @@ async function handleRequest(request) {
          textObserver.observe(document.body, { childList: true, subtree: true });
       });
 
-      // 🟢 লাইভ স্কোর আইফ্রেম লজিক এবং ভিডিও ব্র্যান্ডিং
+      // 🟢 লাইভ স্কোর আইফ্রেম লজিক এবং ভিডিও ওয়াটারমার্ক
       let currentMatchId = null;
       setInterval(() => {
-        // 🎯 ভিডিও ওয়াটারমার্ক লজিক (নিরাপদভাবে বসানো হয়েছে যাতে অন্য কিছু নষ্ট না হয়)
-        const videoElement = document.querySelector('video');
-        if (videoElement && videoElement.parentNode && !document.getElementById('skyx-watermark')) {
-            const watermarkDiv = document.createElement('div');
-            watermarkDiv.id = 'skyx-watermark';
-            watermarkDiv.className = 'skyx-video-watermark';
-            watermarkDiv.innerHTML = '<img src="${MY_LOGO}">';
-            
-            videoElement.parentNode.insertBefore(watermarkDiv, videoElement.nextSibling);
-            
-            const currentPosition = window.getComputedStyle(videoElement.parentNode).position;
-            if (currentPosition === 'static') {
-                videoElement.parentNode.style.setProperty('position', 'relative', 'important');
+        
+        // --- 1. Video Branding Logic (Top Right) ---
+        const videoElem = document.querySelector('video'); // ভিডিও ট্যাগ খুঁজবে
+        if (videoElem && videoElem.parentElement) {
+            let watermark = document.getElementById('my-video-watermark');
+            if (!watermark) {
+                // ভিডিওর প্যারেন্ট ডিভ কে রিলেটিভ করতে হবে যাতে লোগো ঠিক জায়গায় বসে
+                videoElem.parentElement.style.setProperty('position', 'relative', 'important');
+                
+                watermark = document.createElement('img');
+                watermark.id = 'my-video-watermark';
+                watermark.src = '${MY_LOGO}'; 
+                
+                // ওয়াটারমার্ক এর স্টাইল
+                watermark.style.setProperty('position', 'absolute', 'important');
+                watermark.style.setProperty('top', '10px', 'important');     // উপর থেকে দূরত্ব
+                watermark.style.setProperty('right', '10px', 'important');   // ডান থেকে দূরত্ব
+                watermark.style.setProperty('width', '70px', 'important');   // লোগোর সাইজ (প্রয়োজনে চেঞ্জ করতে পারেন)
+                watermark.style.setProperty('z-index', '9999', 'important'); 
+                watermark.style.setProperty('pointer-events', 'none', 'important'); // ভিডিওর ফুলস্ক্রিন বাটনে যেন ক্লিক লাগে
+                watermark.style.setProperty('opacity', '0.9', 'important'); // হালকা ট্রান্সপারেন্ট
+                
+                videoElem.parentElement.appendChild(watermark);
             }
         }
 
+        // --- 2. Live Score Logic (Original) ---
         const oldIframe = document.getElementById('myIframe');
         if (oldIframe) oldIframe.remove();
 
