@@ -59,15 +59,16 @@ async function handleRequest(request) {
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
+    // শুধুমাত্র প্রক্সি ডোমেইনের জন্য বেসিক রিপ্লেসমেন্ট (ডিজাইন ভাঙবে না)
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS: ডাবল স্কোর ফিক্স, লোগো এবং ওয়াটারমার্ক
+    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট, গ্যাপ ফিক্স এবং ভিডিও ব্র্যান্ডিং
     // ==========================================
     const customCss = `
     <style>
-      /* 🔴 ম্যাজিক ফিক্স: mylframe (L দিয়ে) এবং myIframe দুটোকেই চিরতরে গায়েব করা হলো */
+      /* 🔴 ম্যাজিক ফিক্স: ডাবল স্কোরবোর্ড (mylframe) চিরতরে হাইড করা হলো */
       iframe#mylframe, iframe#myIframe {
           display: none !important;
           opacity: 0 !important;
@@ -78,7 +79,6 @@ async function handleRequest(request) {
           z-index: -9999 !important;
       }
 
-      /* জিরো-ফ্ল্যাশ লোগো */
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
           max-width: 140px !important; 
@@ -86,8 +86,6 @@ async function handleRequest(request) {
           object-fit: contain !important;
           object-position: left center !important;
       }
-      
-      /* স্কোরবোর্ডের গ্যাপ রিমুভ */
       .score_area, #animScore {
         padding: 0 !important;
         margin: 0 !important;
@@ -101,16 +99,17 @@ async function handleRequest(request) {
         padding: 0 !important;
       }
 
-      /* 🎯 ভিডিও ওয়াটারমার্কের সেই 'সুন্দর' স্টাইলটি ফিরিয়ে আনা হলো */
+      /* 🎯 লাইভ টিভি ভিডিও ওয়াটারমার্কের স্টাইল */
       .skyx-video-watermark {
           position: absolute !important;
           top: 10px !important;
           right: 10px !important;
           z-index: 2147483647 !important; 
           pointer-events: none !important; 
+          width: 55px !important;
       }
-      .skyx-watermark-img {
-          max-width: 55px !important; 
+      .skyx-video-watermark img {
+          width: 100% !important;
           height: auto !important;
           object-fit: contain !important;
           opacity: 0.35 !important; 
@@ -121,73 +120,73 @@ async function handleRequest(request) {
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // JS: সেফ টেক্সট, লাইভ স্কোর এবং সেফ ভিডিও লজিক
+    // JS: সেফ টেক্সট রিপ্লেসমেন্ট এবং লাইভ স্কোর লজিক
     // ==========================================
     const emptyBoxScript = `
     <script>
-      // 🟢 ডিজাইনে হাত না দিয়ে টেক্সট পরিবর্তন
+      // 🟢 ডিজাইনে হাত না দিয়ে শুধুমাত্র ওয়েবসাইটের লেখা (Text) পরিবর্তনের লজিক
       function safeTextReplace(node) {
-        if (node.nodeType === 3) { 
+        if (node.nodeType === 3) { // Text Node
             let text = node.nodeValue;
             if (text && text.trim() !== '') {
-                if (/3wickets|all9x|7wickets|7wicket|9xlive|9x live/i.test(text)) {
-                    node.nodeValue = text.replace(/3wickets\\.live/gi, 'skyx.live')
-                                      .replace(/3wickets/gi, 'SkyX')
-                                      .replace(/all9x\\.live/gi, 'skyx.live')
-                                      .replace(/all9x/gi, 'SkyX')
-                                      .replace(/7wickets\\.live/gi, 'skyx.live')
-                                      .replace(/7wickets/gi, 'SkyX')
-                                      .replace(/7wicket/gi, 'SkyX')
-                                      .replace(/9xlive/gi, 'SkyX')
-                                      .replace(/9x live/gi, 'SkyX');
+                let newText = text.replace(/3wickets\\.live/gi, 'skyx.live')
+                                  .replace(/3wickets/gi, 'SkyX')
+                                  .replace(/all9x\\.live/gi, 'skyx.live')
+                                  .replace(/all9x/gi, 'SkyX')
+                                  .replace(/7wickets\\.live/gi, 'skyx.live')
+                                  .replace(/7wickets/gi, 'SkyX')
+                                  .replace(/7wicket/gi, 'SkyX')
+                                  .replace(/9xlive/gi, 'SkyX')
+                                  .replace(/9x live/gi, 'SkyX');
+                if (newText !== text) {
+                    node.nodeValue = newText;
                 }
             }
-        } else if (node.nodeType === 1) {
-            const forbiddenTags = ['SCRIPT', 'STYLE', 'IFRAME', 'VIDEO', 'AUDIO', 'CANVAS', 'SVG'];
-            if (forbiddenTags.includes(node.nodeName)) return;
-            
-            if (node.classList && (node.classList.contains('vjs') || node.classList.contains('video-js') || node.classList.contains('zoomed_mode'))) return;
-
+        } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE' && node.nodeName !== 'IFRAME') {
+            // Script এবং Style ট্যাগ ইগনোর করে ভেতরের টেক্সট খুঁজবে
             for (let i = 0; i < node.childNodes.length; i++) {
                 safeTextReplace(node.childNodes[i]);
             }
         }
       }
 
-      setInterval(() => {
-          safeTextReplace(document.body);
-          document.title = document.title.replace(/3wickets|all9x|7wickets|7wicket|9xlive|9x live/gi, 'SkyX');
-      }, 1500);
+      // ওয়েবসাইট লোড হওয়ার সাথে সাথে এবং ডায়নামিক চেঞ্জ হওয়ার সময় রিপ্লেস করবে
+      const textObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+             safeTextReplace(node);
+          });
+        });
+      });
 
+      document.addEventListener("DOMContentLoaded", () => {
+         safeTextReplace(document.body);
+         document.title = document.title.replace(/3wickets|all9x|7wickets|7wicket|9xlive|9x live/gi, 'SkyX');
+         textObserver.observe(document.body, { childList: true, subtree: true });
+      });
+
+      // 🟢 লাইভ স্কোর আইফ্রেম লজিক এবং ভিডিও ব্র্যান্ডিং
       let currentMatchId = null;
-
       setInterval(() => {
-        // 🎯 ভিডিও ওয়াটারমার্ক লজিক (যে ভার্সনটা সুন্দর ছিল)
+        // 🎯 ভিডিও ওয়াটারমার্ক লজিক (নিরাপদভাবে বসানো হয়েছে যাতে অন্য কিছু নষ্ট না হয়)
         const videoElement = document.querySelector('video');
-        if (videoElement) {
-            const videoParent = videoElement.parentElement;
-            if (videoParent && !document.getElementById('skyx-watermark')) {
-                const watermarkDiv = document.createElement('div');
-                watermarkDiv.id = 'skyx-watermark';
-                watermarkDiv.className = 'skyx-video-watermark';
-
-                const watermarkImg = document.createElement('img');
-                watermarkImg.src = '${MY_LOGO}';
-                watermarkImg.className = 'skyx-watermark-img';
-
-                watermarkDiv.appendChild(watermarkImg);
-                videoParent.appendChild(watermarkDiv); 
-                
-                // 🔴 স্মার্ট ফিক্স: যদি ভিডিওর প্যারেন্ট আগে থেকেই fixed বা absolute না থাকে, তবেই relative করবে। 
-                // এর ফলে স্ক্রল করলে ভিডিও ছোট হয়ে যাওয়ার (PiP) ফাংশনটি আর নষ্ট হবে না।
-                const currentPosition = window.getComputedStyle(videoParent).position;
-                if (currentPosition === 'static') {
-                    videoParent.style.setProperty('position', 'relative', 'important');
-                }
+        if (videoElement && videoElement.parentNode && !document.getElementById('skyx-watermark')) {
+            const watermarkDiv = document.createElement('div');
+            watermarkDiv.id = 'skyx-watermark';
+            watermarkDiv.className = 'skyx-video-watermark';
+            watermarkDiv.innerHTML = '<img src="${MY_LOGO}">';
+            
+            videoElement.parentNode.insertBefore(watermarkDiv, videoElement.nextSibling);
+            
+            const currentPosition = window.getComputedStyle(videoElement.parentNode).position;
+            if (currentPosition === 'static') {
+                videoElement.parentNode.style.setProperty('position', 'relative', 'important');
             }
         }
 
-        // 🎯 লাইভ স্কোর আইফ্রেম লজিক
+        const oldIframe = document.getElementById('myIframe');
+        if (oldIframe) oldIframe.remove();
+
         const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
         const sportId = pathSegments.length > 1 ? pathSegments[pathSegments.length - 2] : null;
@@ -210,9 +209,8 @@ async function handleRequest(request) {
             myIsconBox.style.setProperty('justify-content', 'center', 'important');
             myIsconBox.style.setProperty('align-items', 'center', 'important');
             
-            if (!scoreArea.contains(myIsconBox)) {
-                scoreArea.appendChild(myIsconBox); 
-            }
+            scoreArea.innerHTML = ''; 
+            scoreArea.appendChild(myIsconBox); 
           }
 
           if (newMatchId !== currentMatchId) {
@@ -235,6 +233,13 @@ async function handleRequest(request) {
                 notAvailableText.style.setProperty('font-weight', 'bold', 'important');
                 myIsconBox.appendChild(notAvailableText);
             }
+          }
+
+          if (myIsconBox) {
+            Array.from(myIsconBox.children).forEach(child => {
+              if (sportId === '4' && child.tagName !== 'IFRAME') child.remove();
+              if (sportId !== '4' && child.tagName !== 'DIV') child.remove();
+            });
           }
         }
       }, 300);
