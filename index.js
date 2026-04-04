@@ -63,22 +63,20 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS: লোগো ফ্ল্যাশ বন্ধ করা এবং গ্যাপ ফিক্স
+    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং সাইজ লক
     // ==========================================
     const customCss = `
     <style>
-      /* অরিজিনাল লোগোর লিংক থাকলে সেটাকে অদৃশ্য করে রাখা হবে যাতে ফ্ল্যাশ না করে */
-      img#headLogo[src*="imagedelivery.net"], img.top-logo[src*="imagedelivery.net"] {
-          opacity: 0 !important; 
-      }
-      
-      /* আপনার লোগো আসার পর অরিজিনাল পজিশনে (বাম দিকে) সেট করা */
+      /* ব্রাউজারকে বাধ্য করা হচ্ছে সবসময় আপনার লোগো দেখাতে, কোনো গ্যাপ ছাড়াই */
       img#headLogo, img.top-logo {
+          content: url('${MY_LOGO}') !important;
+          max-width: 140px !important; /* অরিজিনাল সাইজের সাথে ফিট করার জন্য */
+          max-height: 45px !important;
           object-fit: contain !important;
-          object-position: left center !important; 
+          object-position: left center !important;
       }
 
-      /* আইফ্রেমের গ্যাপ রিমুভ (আগের মতোই) */
+      /* আইফ্রেমের গ্যাপ রিমুভ */
       .score_area, #animScore {
         padding: 0 !important;
         margin: 0 !important;
@@ -96,20 +94,14 @@ async function handleRequest(request) {
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // JS: লোগো রিপ্লেস এবং লাইভ স্কোর লজিক
+    // JS: শুধুমাত্র লাইভ স্কোর লজিক (লোগোর কোড বাদ দেওয়া হয়েছে)
     // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
 
       setInterval(() => {
-        // ১. লোগোর লেআউট ঠিক রেখে শুধুমাত্র সোর্স (ছবি) পরিবর্তন করা
-        const logo = document.getElementById('headLogo') || document.querySelector('img.top-logo');
-        if (logo && logo.src !== '${MY_LOGO}') {
-            logo.src = '${MY_LOGO}';
-        }
-
-        // ২. পুরোনো আইফ্রেম রিমুভ
+        // পুরোনো আইফ্রেম রিমুভ
         const oldIframe = document.getElementById('myIframe');
         if (oldIframe) oldIframe.remove();
 
