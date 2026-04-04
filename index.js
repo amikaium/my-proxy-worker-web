@@ -1,6 +1,6 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
-const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; // আপনার দেওয়া লোগো
+const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; // আপনার স্কাই এক্স (SkyX) লোগো
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -59,18 +59,34 @@ async function handleRequest(request) {
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
+    // ==========================================
+    // ১. লিংক এবং ডোমেইন রিপ্লেসমেন্ট
+    // ==========================================
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং সাইজ লক
+    // ২. সব টেক্সট/ব্র্যান্ড নেম পরিবর্তন করে SkyX করা (Case-insensitive)
+    // ==========================================
+    text = text.replace(/3wickets\.live/gi, 'skyx.live');
+    text = text.replace(/3wickets/gi, 'SkyX');
+    text = text.replace(/all9x\.live/gi, 'skyx.live');
+    text = text.replace(/all9x/gi, 'SkyX');
+    text = text.replace(/7wickets\.live/gi, 'skyx.live');
+    text = text.replace(/7wickets/gi, 'SkyX');
+    text = text.replace(/7wicket/gi, 'SkyX');
+    text = text.replace(/9xlive/gi, 'SkyX');
+    text = text.replace(/9x live/gi, 'SkyX');
+    
+    // ==========================================
+    // ৩. CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং সাইজ লক
     // ==========================================
     const customCss = `
     <style>
       /* ব্রাউজারকে বাধ্য করা হচ্ছে সবসময় আপনার লোগো দেখাতে, কোনো গ্যাপ ছাড়াই */
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
-          max-width: 140px !important; /* অরিজিনাল সাইজের সাথে ফিট করার জন্য */
+          max-width: 140px !important; 
           max-height: 45px !important;
           object-fit: contain !important;
           object-position: left center !important;
@@ -94,7 +110,7 @@ async function handleRequest(request) {
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // JS: শুধুমাত্র লাইভ স্কোর লজিক (লোগোর কোড বাদ দেওয়া হয়েছে)
+    // ৪. JS: শুধুমাত্র লাইভ স্কোর লজিক
     // ==========================================
     const emptyBoxScript = `
     <script>
