@@ -63,17 +63,22 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS দিয়ে লোগো রিপ্লেস (Zero Flash) + গ্যাপ ফিক্স
+    // CSS: লোগো ফ্ল্যাশ বন্ধ করা এবং গ্যাপ ফিক্স
     // ==========================================
     const customCss = `
     <style>
-      /* লোগো রিপ্লেসমেন্ট ম্যাজিক */
-      #headLogo, .top-logo {
-        content: url('${MY_LOGO}') !important;
-        object-fit: contain !important;
+      /* অরিজিনাল লোগোর লিংক থাকলে সেটাকে অদৃশ্য করে রাখা হবে যাতে ফ্ল্যাশ না করে */
+      img#headLogo[src*="imagedelivery.net"], img.top-logo[src*="imagedelivery.net"] {
+          opacity: 0 !important; 
       }
       
-      /* আইফ্রেমের গ্যাপ রিমুভ */
+      /* আপনার লোগো আসার পর অরিজিনাল পজিশনে (বাম দিকে) সেট করা */
+      img#headLogo, img.top-logo {
+          object-fit: contain !important;
+          object-position: left center !important; 
+      }
+
+      /* আইফ্রেমের গ্যাপ রিমুভ (আগের মতোই) */
       .score_area, #animScore {
         padding: 0 !important;
         margin: 0 !important;
@@ -91,15 +96,15 @@ async function handleRequest(request) {
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // লাইভ স্কোর এবং JS লোগো ফিক্স লজিক
+    // JS: লোগো রিপ্লেস এবং লাইভ স্কোর লজিক
     // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
 
       setInterval(() => {
-        // ১. জাভাস্ক্রিপ্ট দিয়েও লোগো ফোর্স আপডেট রাখা (ডাবল সেফটি)
-        const logo = document.getElementById('headLogo') || document.querySelector('.top-logo');
+        // ১. লোগোর লেআউট ঠিক রেখে শুধুমাত্র সোর্স (ছবি) পরিবর্তন করা
+        const logo = document.getElementById('headLogo') || document.querySelector('img.top-logo');
         if (logo && logo.src !== '${MY_LOGO}') {
             logo.src = '${MY_LOGO}';
         }
@@ -127,7 +132,6 @@ async function handleRequest(request) {
             myIsconBox.style.setProperty('height', '201.6px', 'important');
             myIsconBox.style.setProperty('background-color', '#172832', 'important');
             
-            // "Not Available" টেক্সট মাঝখানে রাখার জন্য
             myIsconBox.style.setProperty('display', 'flex', 'important');
             myIsconBox.style.setProperty('justify-content', 'center', 'important');
             myIsconBox.style.setProperty('align-items', 'center', 'important');
@@ -141,7 +145,6 @@ async function handleRequest(request) {
             myIsconBox.innerHTML = ''; 
             
             if (sportId === '4') {
-                // ক্রিকেট হলে আইফ্রেম
                 const newIframe = document.createElement('iframe');
                 newIframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
                 newIframe.style.setProperty('width', '100%', 'important');
@@ -150,7 +153,6 @@ async function handleRequest(request) {
                 newIframe.style.setProperty('overflow', 'hidden', 'important');
                 myIsconBox.appendChild(newIframe);
             } else {
-                // অন্য গেম হলে মেসেজ
                 const notAvailableText = document.createElement('div');
                 notAvailableText.innerText = "Live Score Not Available";
                 notAvailableText.style.setProperty('color', '#ffffff', 'important');
