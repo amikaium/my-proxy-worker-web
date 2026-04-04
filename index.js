@@ -67,12 +67,15 @@ async function handleRequest(request) {
     // ==========================================
     const customCss = `
     <style>
-      /* 🔴 ম্যাজিক ফিক্স: মূল ওয়েবসাইটের এরর দেওয়া আইফ্রেম চিরতরে অদৃশ্য করা হলো */
-      iframe#myIframe {
+      /* 🔴 ম্যাজিক ফিক্স: mylframe (L দিয়ে) এবং myIframe দুটোকেই চিরতরে গায়েব করা হলো */
+      iframe#mylframe, iframe#myIframe {
           display: none !important;
           opacity: 0 !important;
+          visibility: hidden !important;
           width: 0 !important;
           height: 0 !important;
+          position: absolute !important;
+          z-index: -9999 !important;
       }
 
       /* জিরো-ফ্ল্যাশ লোগো */
@@ -98,17 +101,16 @@ async function handleRequest(request) {
         padding: 0 !important;
       }
 
-      /* 🎯 ভিডিও ওয়াটারমার্কের প্রফেশনাল স্টাইল */
+      /* 🎯 ভিডিও ওয়াটারমার্কের সেই 'সুন্দর' স্টাইলটি ফিরিয়ে আনা হলো */
       .skyx-video-watermark {
           position: absolute !important;
           top: 10px !important;
           right: 10px !important;
           z-index: 2147483647 !important; 
           pointer-events: none !important; 
-          width: 55px !important;
       }
-      .skyx-video-watermark img {
-          width: 100% !important;
+      .skyx-watermark-img {
+          max-width: 55px !important; 
           height: auto !important;
           object-fit: contain !important;
           opacity: 0.35 !important; 
@@ -160,16 +162,29 @@ async function handleRequest(request) {
       let currentMatchId = null;
 
       setInterval(() => {
-        // 🎯 ভিডিও ওয়াটারমার্ক লজিক (PiP নষ্ট না করে সেফলি বসানো)
+        // 🎯 ভিডিও ওয়াটারমার্ক লজিক (যে ভার্সনটা সুন্দর ছিল)
         const videoElement = document.querySelector('video');
-        if (videoElement && videoElement.parentNode && !document.getElementById('skyx-watermark')) {
-            const watermarkDiv = document.createElement('div');
-            watermarkDiv.id = 'skyx-watermark';
-            watermarkDiv.className = 'skyx-video-watermark';
-            watermarkDiv.innerHTML = '<img src="${MY_LOGO}">';
-            
-            // ভিডিওর প্যারেন্টে স্টাইল পরিবর্তন না করে শুধুমাত্র এলিমেন্টটা ইনজেক্ট করা হচ্ছে
-            videoElement.parentNode.insertBefore(watermarkDiv, videoElement.nextSibling);
+        if (videoElement) {
+            const videoParent = videoElement.parentElement;
+            if (videoParent && !document.getElementById('skyx-watermark')) {
+                const watermarkDiv = document.createElement('div');
+                watermarkDiv.id = 'skyx-watermark';
+                watermarkDiv.className = 'skyx-video-watermark';
+
+                const watermarkImg = document.createElement('img');
+                watermarkImg.src = '${MY_LOGO}';
+                watermarkImg.className = 'skyx-watermark-img';
+
+                watermarkDiv.appendChild(watermarkImg);
+                videoParent.appendChild(watermarkDiv); 
+                
+                // 🔴 স্মার্ট ফিক্স: যদি ভিডিওর প্যারেন্ট আগে থেকেই fixed বা absolute না থাকে, তবেই relative করবে। 
+                // এর ফলে স্ক্রল করলে ভিডিও ছোট হয়ে যাওয়ার (PiP) ফাংশনটি আর নষ্ট হবে না।
+                const currentPosition = window.getComputedStyle(videoParent).position;
+                if (currentPosition === 'static') {
+                    videoParent.style.setProperty('position', 'relative', 'important');
+                }
+            }
         }
 
         // 🎯 লাইভ স্কোর আইফ্রেম লজিক
@@ -195,7 +210,6 @@ async function handleRequest(request) {
             myIsconBox.style.setProperty('justify-content', 'center', 'important');
             myIsconBox.style.setProperty('align-items', 'center', 'important');
             
-            // অরিজিনাল ডাটা ক্লিয়ার না করে শুধু আমাদের বক্স অ্যাড করা হলো
             if (!scoreArea.contains(myIsconBox)) {
                 scoreArea.appendChild(myIsconBox); 
             }
@@ -221,14 +235,6 @@ async function handleRequest(request) {
                 notAvailableText.style.setProperty('font-weight', 'bold', 'important');
                 myIsconBox.appendChild(notAvailableText);
             }
-          }
-
-          // আমরা যেহেতু CSS দিয়ে myIframe হাইড করেছি, তাই জাভাস্ক্রিপ্ট দিয়ে আর ডিলিট করার দরকার নেই
-          if (myIsconBox) {
-            Array.from(myIsconBox.children).forEach(child => {
-              if (sportId === '4' && child.tagName !== 'IFRAME') child.remove();
-              if (sportId !== '4' && child.tagName !== 'DIV') child.remove();
-            });
           }
         }
       }, 300);
