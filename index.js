@@ -1,27 +1,42 @@
-          // ৫. স্পোর্টস আইডি অনুযায়ী সঠিক আইফ্রেম বসানো
-          if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
-            currentMatchId = newMatchId;
-            
-            myIsconBox.innerHTML = ''; 
-            
-            const newIframe = document.createElement('iframe');
-            
-            // 🔴 এখানেই ম্যাজিক! 
-            if (sportId === '4') {
-                // ক্রিকেট হলে আপনার কাস্টম লিংক (ourscore_C)
-                newIframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
-            } else {
-                // সকার/টেনিস হলে অরিজিনাল score1 লিংক
-                newIframe.src = "https://score1.365cric.com/#/score1/" + newMatchId;
-                
-                // 'Not Authorized' বাইপাস করার জন্য Referrer হাইড করা হচ্ছে
-                newIframe.setAttribute('referrerpolicy', 'no-referrer');
-            }
-            
-            newIframe.style.setProperty('width', '100%', 'important');
-            newIframe.style.setProperty('height', '100%', 'important');
-            newIframe.style.setProperty('border', 'none', 'important');
-            newIframe.style.setProperty('overflow', 'hidden', 'important');
-            
-            myIsconBox.appendChild(newIframe);
-          }
+export default {
+  async fetch(request, env, ctx) {
+    // CORS বাইপাস করার জন্য হেডার
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+    };
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    const url = new URL(request.url);
+    const matchId = url.searchParams.get('matchId');
+
+    if (!matchId) {
+      return new Response(JSON.stringify({ error: "Match ID is required" }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+      });
+    }
+
+    // প্রক্সি লিংক তৈরি
+    const proxyUrl = `https://score1.365cric.com/#/score1/${matchId}`;
+
+    try {
+      // লিংকে ভিজিট করে রিডাইরেক্ট ফলো করা
+      const response = await fetch(proxyUrl, { redirect: 'follow' });
+      const finalUrl = response.url; // আসল লিংক এক্সট্র্যাক্ট করা
+
+      return new Response(JSON.stringify({ matchId: matchId, finalUrl: finalUrl }), {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: "Failed to fetch URL" }), { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+      });
+    }
+  }
+};
