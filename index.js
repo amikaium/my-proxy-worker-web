@@ -1,8 +1,11 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
 const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; 
-const TARGET_COLOR = '#D0021B'; // যে কালারটি রিমুভ করতে চান
 const NEW_COLOR = '#56BAD9';    // আপনার কাস্টম কালার
+
+// একাধিক কালার (Hex এবং RGB) টার্গেট করার জন্য Regex
+const TARGET_COLORS_HEX = /#D0021B|#C60000|#DE362D/gi;
+const TARGET_COLORS_RGB = /rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)|rgb\(\s*198\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*222\s*,\s*54\s*,\s*45\s*\)/gi;
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -64,12 +67,11 @@ async function handleRequest(request) {
   if (contentType.includes('text/css') || contentType.includes('application/javascript') || contentType.includes('text/javascript')) {
     let text = await response.text();
     
-    // ডোমেইন রিপ্লেস (সিকিউরিটির জন্য)
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     
-    // Hex এবং RGB ফরম্যাটে থাকা কালার চেঞ্জ
-    text = text.replace(new RegExp(TARGET_COLOR, 'gi'), NEW_COLOR);
-    text = text.replace(/rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)/gi, NEW_COLOR);
+    // Hex এবং RGB ফরম্যাটে থাকা সব টার্গেটেড কালার চেঞ্জ
+    text = text.replace(TARGET_COLORS_HEX, NEW_COLOR);
+    text = text.replace(TARGET_COLORS_RGB, NEW_COLOR);
 
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
@@ -85,8 +87,8 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // HTML এর ভেতরে থাকা ইনলাইন স্টাইলের কালার চেঞ্জ
-    text = text.replace(new RegExp(TARGET_COLOR, 'gi'), NEW_COLOR);
-    text = text.replace(/rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)/gi, NEW_COLOR);
+    text = text.replace(TARGET_COLORS_HEX, NEW_COLOR);
+    text = text.replace(TARGET_COLORS_RGB, NEW_COLOR);
 
     // ==========================================
     // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল CSS Variable কালার চেঞ্জ
