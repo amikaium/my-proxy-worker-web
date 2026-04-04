@@ -1,10 +1,10 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
 const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; 
-const NEW_COLOR = '#56BAD9';             // আপনার কাস্টম কালার (Hex)
-const NEW_COLOR_ENCODED = '%2356BAD9';   // আপনার কাস্টম কালার (URL Encoded for SVGs)
+const MY_FAVICON = 'https://i.postimg.cc/tJXJpqHb/20260404-151145.jpg'; // আপনার নতুন ফেভ আইকন
+const NEW_COLOR = '#56BAD9';             
+const NEW_COLOR_ENCODED = '%2356BAD9';   
 
-// সব ধরনের লাল কালার (Hex, URL Encoded এবং RGB) ধরার জন্য Regex
 const TARGET_COLORS_HEX = /#(D0021B|C60000|DE362D|F10000|C70000|FF0000|E60000)/gi;
 const TARGET_COLORS_ENCODED = /%23(D0021B|C60000|DE362D|F10000|C70000|FF0000|E60000)/gi;
 const TARGET_COLORS_RGB = /rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)|rgb\(\s*198\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*222\s*,\s*54\s*,\s*45\s*\)|rgb\(\s*241\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*199\s*,\s*0\s*,\s*0\s*\)/gi;
@@ -28,7 +28,6 @@ async function handleRequest(request) {
   }
 
   let targetHost = MAIN_TARGET;
-  
   if (url.pathname.startsWith('/__video_proxy__')) {
     targetHost = STREAM_TARGET;
     url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
@@ -63,138 +62,86 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
-  // ==========================================
-  // 🟢 CSS এবং JS ফাইলের ভেতরের গ্লোবাল কালার চেঞ্জ
-  // ==========================================
+  // CSS/JS ফাইল প্রসেসিং
   if (contentType.includes('text/css') || contentType.includes('application/javascript') || contentType.includes('text/javascript')) {
     let text = await response.text();
-    
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
-    
-    // Hex, URL Encoded (SVG) এবং RGB ফরম্যাটে থাকা সব কালার চেঞ্জ
     text = text.replace(TARGET_COLORS_HEX, NEW_COLOR);
     text = text.replace(TARGET_COLORS_ENCODED, NEW_COLOR_ENCODED);
     text = text.replace(TARGET_COLORS_RGB, NEW_COLOR);
-
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
   }
 
-  // ==========================================
-  // 🟢 HTML ফাইলের ভেতরের কাজসমূহ
-  // ==========================================
+  // HTML ফাইল প্রসেসিং
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
-
-    // HTML এর ভেতরে থাকা ইনলাইন স্টাইল ও SVG কালার চেঞ্জ
     text = text.replace(TARGET_COLORS_HEX, NEW_COLOR);
     text = text.replace(TARGET_COLORS_ENCODED, NEW_COLOR_ENCODED);
     text = text.replace(TARGET_COLORS_RGB, NEW_COLOR);
 
-    // ==========================================
-    // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল CSS Variable
-    // ==========================================
-    const customCss = `
+    // পুরনো ফেভ আইকন রিমুভ করার জন্য হেড সেকশন মডিফাই
+    const faviconHead = `
+    <link rel="icon" href="${MY_FAVICON}" type="image/x-icon">
+    <link rel="shortcut icon" href="${MY_FAVICON}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="${MY_FAVICON}">
     <style>
       :root {
           --loginpagebackground: ${NEW_COLOR} !important;
           --theme-red: ${NEW_COLOR} !important;
           --main-color-red: ${NEW_COLOR} !important;
       }
-
-      .login-index, 
-      a.login-index.ui-link, 
-      .btn-red, 
-      .bg-red,
-      #cricketHeading,
-      h3#cricketHeading {
+      .login-index, a.login-index.ui-link, .btn-red, .bg-red, #cricketHeading, h3#cricketHeading {
           background: ${NEW_COLOR} !important;
           background-color: ${NEW_COLOR} !important;
           background-image: none !important; 
           border-color: ${NEW_COLOR} !important;
           color: #ffffff !important;
       }
-
-      /* Play Now / Game Tags Extra Fallback */
-      dd.play-btn, dd.game-btn {
-          background-color: ${NEW_COLOR} !important;
-      }
-
+      dd.play-btn, dd.game-btn { background-color: ${NEW_COLOR} !important; }
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
-          max-width: 140px !important; 
-          max-height: 45px !important;
+          max-width: 140px !important; max-height: 45px !important;
           object-fit: contain !important;
-          object-position: left center !important;
       }
-      
-      .score_area, #animScore {
-        padding: 0 !important;
-        margin: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-      }
-      #myIscon {
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
+      .score_area, #animScore { padding: 0 !important; margin: 0 !important; width: 100% !important; }
     </style>
     `;
-    text = text.replace('</head>', customCss + '</head>');
+    
+    // হেড ট্যাগের শুরুতে ফেভ আইকন বসানো হচ্ছে যাতে এটি প্রায়োরিটি পায়
+    text = text.replace('<head>', '<head>' + faviconHead);
 
-    // ==========================================
-    // JS: সেফ টেক্সট, লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক
-    // ==========================================
+    // JS স্ক্রিপ্ট (Branding & Live Score)
     const emptyBoxScript = `
     <script>
-      // 🟢 টেক্সট রিপ্লেসমেন্ট
       function safeTextReplace(node) {
         if (node.nodeType === 3) {
             let text = node.nodeValue;
             if (text && text.trim() !== '') {
-                let newText = text.replace(/3wickets\\.live/gi, 'skyx.live')
-                                  .replace(/3wickets/gi, 'SkyX')
-                                  .replace(/all9x\\.live/gi, 'skyx.live')
-                                  .replace(/all9x/gi, 'SkyX')
-                                  .replace(/7wickets\\.live/gi, 'skyx.live')
-                                  .replace(/7wickets/gi, 'SkyX')
-                                  .replace(/7wicket/gi, 'SkyX')
-                                  .replace(/9xlive/gi, 'SkyX')
-                                  .replace(/9x live/gi, 'SkyX');
-                if (newText !== text) {
-                    node.nodeValue = newText;
-                }
+                let newText = text.replace(/3wickets\\.live|all9x\\.live|7wickets\\.live/gi, 'skyx.live')
+                                  .replace(/3wickets|all9x|7wickets|7wicket|9xlive/gi, 'SkyX');
+                if (newText !== text) node.nodeValue = newText;
             }
         } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE' && node.nodeName !== 'IFRAME') {
-            for (let i = 0; i < node.childNodes.length; i++) {
-                safeTextReplace(node.childNodes[i]);
-            }
+            for (let i = 0; i < node.childNodes.length; i++) safeTextReplace(node.childNodes[i]);
         }
       }
 
-      const textObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-             safeTextReplace(node);
-          });
-        });
-      });
-
       document.addEventListener("DOMContentLoaded", () => {
          safeTextReplace(document.body);
-         document.title = document.title.replace(/3wickets|all9x|7wickets|7wicket|9xlive|9x live/gi, 'SkyX');
-         textObserver.observe(document.body, { childList: true, subtree: true });
+         document.title = document.title.replace(/3wickets|all9x|7wickets|7wicket|9xlive/gi, 'SkyX');
+         
+         // ডাইনামিক ফেভ আইকন ফিক্স (যদি অন্য কোনো স্ক্রিপ্ট চেঞ্জ করতে চায়)
+         const links = document.querySelectorAll("link[rel*='icon']");
+         links.forEach(link => link.href = '${MY_FAVICON}');
       });
 
-      // 🟢 লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক
       let currentMatchId = null;
       setInterval(() => {
-        
+        // Video Branding
         const videoElem = document.querySelector('video'); 
         if (videoElem && videoElem.parentElement) {
             let watermark = document.getElementById('my-video-watermark');
@@ -202,83 +149,41 @@ async function handleRequest(request) {
                 watermark = document.createElement('img');
                 watermark.id = 'my-video-watermark';
                 watermark.src = '${MY_LOGO}'; 
-                
-                watermark.style.setProperty('position', 'absolute', 'important');
-                watermark.style.setProperty('top', '10px', 'important');     
-                watermark.style.setProperty('right', '10px', 'important');   
-                watermark.style.setProperty('width', '70px', 'important');   
-                watermark.style.setProperty('z-index', '9999', 'important'); 
-                watermark.style.setProperty('pointer-events', 'none', 'important'); 
-                watermark.style.setProperty('opacity', '0.4', 'important'); 
-                
+                watermark.style = "position:absolute;top:10px;right:10px;width:70px;z-index:9999;pointer-events:none;opacity:0.4 !important;";
                 videoElem.parentElement.appendChild(watermark);
             }
         }
-
-        const oldIframe = document.getElementById('myIframe');
-        if (oldIframe) oldIframe.remove();
-
-        const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
+        // Live Score
+        const pathSegments = window.location.pathname.split('/').filter(s => s.length > 0);
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
         const sportId = pathSegments.length > 1 ? pathSegments[pathSegments.length - 2] : null;
-        
         const scoreArea = document.querySelector('.score_area') || document.getElementById('animScore');
-        
         if (scoreArea && newMatchId) {
-          scoreArea.style.setProperty('display', 'block', 'important');
-          scoreArea.style.setProperty('visibility', 'visible', 'important');
-
           let myIsconBox = document.getElementById('myIscon');
-          
           if (!myIsconBox) {
             myIsconBox = document.createElement('div');
             myIsconBox.id = 'myIscon';
-            myIsconBox.style.setProperty('width', '100%', 'important');
-            myIsconBox.style.setProperty('height', '201.6px', 'important');
-            myIsconBox.style.setProperty('background-color', '#172832', 'important');
-            myIsconBox.style.setProperty('display', 'flex', 'important');
-            myIsconBox.style.setProperty('justify-content', 'center', 'important');
-            myIsconBox.style.setProperty('align-items', 'center', 'important');
-            
-            scoreArea.innerHTML = ''; 
-            scoreArea.appendChild(myIsconBox); 
+            myIsconBox.style = "width:100%;height:201.6px;background-color:#172832;display:flex;justify-content:center;align-items:center;";
+            scoreArea.innerHTML = ''; scoreArea.appendChild(myIsconBox); 
           }
-
           if (newMatchId !== currentMatchId) {
             currentMatchId = newMatchId;
             myIsconBox.innerHTML = ''; 
-            
             if (sportId === '4') {
-                const newIframe = document.createElement('iframe');
-                newIframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
-                newIframe.style.setProperty('width', '100%', 'important');
-                newIframe.style.setProperty('height', '100%', 'important');
-                newIframe.style.setProperty('border', 'none', 'important');
-                newIframe.style.setProperty('overflow', 'hidden', 'important');
-                myIsconBox.appendChild(newIframe);
+                const ifrm = document.createElement('iframe');
+                ifrm.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
+                ifrm.style = "width:100%;height:100%;border:none;overflow:hidden;";
+                myIsconBox.appendChild(ifrm);
             } else {
-                const notAvailableText = document.createElement('div');
-                notAvailableText.innerText = "Live Score Not Available";
-                notAvailableText.style.setProperty('color', '#ffffff', 'important');
-                notAvailableText.style.setProperty('font-size', '18px', 'important');
-                notAvailableText.style.setProperty('font-weight', 'bold', 'important');
-                myIsconBox.appendChild(notAvailableText);
+                myIsconBox.innerHTML = '<div style="color:white;font-weight:bold;">Live Score Not Available</div>';
             }
           }
-
-          if (myIsconBox) {
-            Array.from(myIsconBox.children).forEach(child => {
-              if (sportId === '4' && child.tagName !== 'IFRAME') child.remove();
-              if (sportId !== '4' && child.tagName !== 'DIV') child.remove();
-            });
-          }
         }
-      }, 300);
+      }, 500);
     </script>
     `;
 
     text = text.replace('</body>', emptyBoxScript + '</body>');
-
     responseHeaders.delete('Content-Length');
     return new Response(text, { status: response.status, headers: responseHeaders });
   }
