@@ -1,7 +1,11 @@
-// Configuration
+/**
+ * Professional Cloudflare Worker Proxy
+ * Target: tenx365x.live
+ */
+
 const targetHost = 'tenx365x.live';
-const themeColor = '#56BBD9'; // আপনার নতুন কালার
-const oldColorHex = '#14805E';
+const myColor = '#56BBD9';      // আপনার নতুন কালার
+const oldColor = '#14805E';     // অরিজিনাল সবুজ কালার
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -10,7 +14,6 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const actualHost = url.host;
-
   url.hostname = targetHost;
 
   const newHeaders = new Headers(request.headers);
@@ -29,70 +32,78 @@ async function handleRequest(request) {
   if (contentType.includes('text/html') || contentType.includes('text/css') || contentType.includes('application/javascript')) {
     let body = await response.text();
 
-    // ১. গ্লোবাল ডোমেইন রিপ্লেসমেন্ট
+    // ১. ডোমেইন এবং কালার গ্লোবাল রিপ্লেসমেন্ট (নিখুঁতভাবে)
     body = body.replace(new RegExp(targetHost, 'g'), actualHost);
+    body = body.replace(new RegExp(oldColor, 'gi'), myColor);
 
-    // ২. আগের কালার (#14805E) পুরোপুরি মুছে আপনার কালার বসানো
-    body = body.replace(new RegExp(oldColorHex, 'gi'), themeColor);
-
-    // ৩. কাস্টম প্রফেশনাল স্টাইল ইনজেকশন
     if (contentType.includes('text/html')) {
       const customStyles = `
       <style>
-        /* ১. হেডার ডার্ক গ্রেডিয়েন্ট লুক */
+        /* ১. হেডার ডার্ক লিনিয়ার গ্রেডিয়েন্ট */
         header, .header-top, [class*="header"] {
-          background: linear-gradient(180deg, #2c2c2c 0%, #000000 100%) !important;
-          border-bottom: 1px solid ${themeColor}44 !important;
+          background: linear-gradient(180deg, #222222 0%, #000000 100%) !important;
+          border-bottom: 1px solid ${myColor}55 !important;
         }
 
-        /* ২. লগইন বাটন কাস্টমাইজেশন */
-        .login-index.ui-link, button.login, .login-btn {
-          background-color: ${themeColor} !important;
-          color: #ffffff !important;
+        /* ২. সাইন আপ বাটন ভিজিবল করা */
+        #signupButton, .btn-signup {
+          display: inline-flex !important;
+          visibility: visible !important;
+          background-color: transparent !important;
+          border: 1px solid ${myColor} !important;
+          color: white !important;
+          margin-right: 8px;
+        }
+
+        /* ৩. প্রফেশনাল শাইনিং বর্ডার এনিমেশন (লগইন বাটন) */
+        .login-index.ui-link, .login-btn {
           position: relative;
-          overflow: hidden;
-          border: none !important;
-          font-weight: bold;
+          background: ${myColor} !important;
+          color: white !important;
           z-index: 1;
-          display: inline-flex;
+          overflow: hidden;
+          padding: 2px; /* বর্ডারের থিকনেস */
+          border-radius: 5px;
+          border: none !important;
+          display: inline-flex !important;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
         }
 
-        /* ৩. লগইন বাটনের চারদিকে শাইনিং বর্ডার ইফেক্ট */
+        /* চিকন লাইনের শাইনিং ইফেক্ট যা চারদিকে ঘুরবে */
         .login-index.ui-link::before {
           content: '';
           position: absolute;
-          top: -50%;
+          z-index: -2;
           left: -50%;
+          top: -50%;
           width: 200%;
           height: 200%;
-          background: conic-gradient(transparent, transparent, transparent, ${themeColor}, #ffffff, ${themeColor});
-          animation: rotate-border 4s linear infinite;
-          z-index: -1;
+          background-color: transparent;
+          background-image: conic-gradient(transparent, ${myColor}, #ffffff, transparent 30%);
+          animation: rotate-border 3s linear infinite;
         }
 
         .login-index.ui-link::after {
           content: '';
           position: absolute;
-          inset: 2px;
-          background: ${themeColor};
-          border-radius: 3px;
           z-index: -1;
+          left: 1px;
+          top: 1px;
+          width: calc(100% - 2px);
+          height: calc(100% - 2px);
+          background: ${myColor}; /* বাটনের মূল কালার */
+          border-radius: 4px;
         }
 
         @keyframes rotate-border {
-          0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
 
-        /* ৪. অতিরিক্ত সুরক্ষা: পুরনো কালার যেন কোথাও না থাকে */
-        [style*="${oldColorHex}"] {
-          background-color: ${themeColor} !important;
-          border-color: ${themeColor} !important;
-          color: white !important;
-        }
+        /* ৪. সাইটের অন্য সব সবুজ অংশ আপনার কালারে পরিবর্তন */
+        svg path[fill="${oldColor}"], svg [fill="${oldColor}"] { fill: ${myColor} !important; }
+        [style*="background-color: ${oldColor}"] { background-color: ${myColor} !important; }
+        .ui-btn-active { background-color: ${myColor} !important; border-color: ${myColor} !important; }
       </style>
       `;
       body = body.replace('</head>', `${customStyles}</head>`);
@@ -100,8 +111,7 @@ async function handleRequest(request) {
 
     const modifiedResponse = new Response(body, response);
     modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-    // Security Header cleaning to ensure style injection works
-    modifiedResponse.headers.delete('content-security-policy');
+    modifiedResponse.headers.delete('content-security-policy'); // স্টাইল কাজ করার জন্য জরুরি
     
     return modifiedResponse;
   }
