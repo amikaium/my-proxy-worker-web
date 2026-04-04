@@ -1,12 +1,12 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
 const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; 
-const NEW_COLOR = '#56BAD9';    // আপনার কাস্টম কালার
+const NEW_COLOR = '#56BAD9';             // আপনার কাস্টম কালার (Hex)
+const NEW_COLOR_ENCODED = '%2356BAD9';   // আপনার কাস্টম কালার (URL Encoded for SVGs)
 
-// Hex: নতুন কালারগুলোর হেক্স কোডও যুক্ত করা হলো (#F10000 এবং #C70000)
-const TARGET_COLORS_HEX = /#D0021B|#C60000|#DE362D|#F10000|#C70000/gi;
-
-// RGB: স্ক্রিনশটের linear-gradient এর rgb(241, 0, 0) এবং rgb(199, 0, 0) যুক্ত করা হলো
+// সব ধরনের লাল কালার (Hex, URL Encoded এবং RGB) ধরার জন্য Regex
+const TARGET_COLORS_HEX = /#(D0021B|C60000|DE362D|F10000|C70000|FF0000|E60000)/gi;
+const TARGET_COLORS_ENCODED = /%23(D0021B|C60000|DE362D|F10000|C70000|FF0000|E60000)/gi;
 const TARGET_COLORS_RGB = /rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)|rgb\(\s*198\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*222\s*,\s*54\s*,\s*45\s*\)|rgb\(\s*241\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*199\s*,\s*0\s*,\s*0\s*\)/gi;
 
 addEventListener('fetch', event => {
@@ -71,8 +71,9 @@ async function handleRequest(request) {
     
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     
-    // Hex এবং RGB ফরম্যাটে থাকা সব টার্গেটেড কালার চেঞ্জ
+    // Hex, URL Encoded (SVG) এবং RGB ফরম্যাটে থাকা সব কালার চেঞ্জ
     text = text.replace(TARGET_COLORS_HEX, NEW_COLOR);
+    text = text.replace(TARGET_COLORS_ENCODED, NEW_COLOR_ENCODED);
     text = text.replace(TARGET_COLORS_RGB, NEW_COLOR);
 
     responseHeaders.delete('Content-Length');
@@ -88,12 +89,13 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
-    // HTML এর ভেতরে থাকা ইনলাইন স্টাইলের কালার চেঞ্জ
+    // HTML এর ভেতরে থাকা ইনলাইন স্টাইল ও SVG কালার চেঞ্জ
     text = text.replace(TARGET_COLORS_HEX, NEW_COLOR);
+    text = text.replace(TARGET_COLORS_ENCODED, NEW_COLOR_ENCODED);
     text = text.replace(TARGET_COLORS_RGB, NEW_COLOR);
 
     // ==========================================
-    // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল CSS Variable কালার চেঞ্জ
+    // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল CSS Variable
     // ==========================================
     const customCss = `
     <style>
@@ -103,7 +105,6 @@ async function handleRequest(request) {
           --main-color-red: ${NEW_COLOR} !important;
       }
 
-      /* এখানে #cricketHeading ও h3#cricketHeading যোগ করা হয়েছে */
       .login-index, 
       a.login-index.ui-link, 
       .btn-red, 
@@ -112,9 +113,14 @@ async function handleRequest(request) {
       h3#cricketHeading {
           background: ${NEW_COLOR} !important;
           background-color: ${NEW_COLOR} !important;
-          background-image: none !important; /* লাল গ্রেডিয়েন্ট রিমুভ করার জন্য */
+          background-image: none !important; 
           border-color: ${NEW_COLOR} !important;
           color: #ffffff !important;
+      }
+
+      /* Play Now / Game Tags Extra Fallback */
+      dd.play-btn, dd.game-btn {
+          background-color: ${NEW_COLOR} !important;
       }
 
       img#headLogo, img.top-logo {
@@ -189,7 +195,6 @@ async function handleRequest(request) {
       let currentMatchId = null;
       setInterval(() => {
         
-        // --- 1. Video Branding Logic ---
         const videoElem = document.querySelector('video'); 
         if (videoElem && videoElem.parentElement) {
             let watermark = document.getElementById('my-video-watermark');
@@ -210,7 +215,6 @@ async function handleRequest(request) {
             }
         }
 
-        // --- 2. Live Score Logic ---
         const oldIframe = document.getElementById('myIframe');
         if (oldIframe) oldIframe.remove();
 
