@@ -64,7 +64,7 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং গ্যাপ ফিক্স
+    // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল কালার চেঞ্জ
     // ==========================================
     const customCss = `
     <style>
@@ -87,12 +87,36 @@ async function handleRequest(request) {
         margin: 0 !important;
         padding: 0 !important;
       }
+      
+      /* --- Red Color to Target Color (#56BAD9) Replacement --- */
+      
+      /* 1. Targeting specific Login Button from your screenshot */
+      a.login-index.ui-link, 
+      .login-index,
+      .btn-red, 
+      .bg-red, 
+      .theme-red {
+          background-color: #56BAD9 !important;
+          background-image: none !important; /* Removes the red gradient */
+          border-color: #56BAD9 !important;
+          color: #ffffff !important;
+      }
+      
+      /* 2. Global attribute selector for inline styles (Catches other red areas) */
+      [style*="rgb(241, 0, 0)"],
+      [style*="rgb(199, 0, 0)"],
+      [style*="#E50000"],
+      [style*="#e50000"] {
+          background-color: #56BAD9 !important;
+          background-image: none !important;
+          border-color: #56BAD9 !important;
+      }
     </style>
     `;
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // JS: সেফ টেক্সট রিপ্লেসমেন্ট এবং লাইভ স্কোর লজিক + ভিডিও ওয়াটারমার্ক
+    // JS: সেফ টেক্সট রিপ্লেসমেন্ট, লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক
     // ==========================================
     const emptyBoxScript = `
     <script>
@@ -144,19 +168,18 @@ async function handleRequest(request) {
         if (videoElem && videoElem.parentElement) {
             let watermark = document.getElementById('my-video-watermark');
             if (!watermark) {
-                // জোর করে পজিশন চেঞ্জ করা বাদ দেওয়া হয়েছে যাতে অরিজিনাল ওয়েবসাইটের ফ্লোটিং ভিডিও নষ্ট না হয়
                 watermark = document.createElement('img');
                 watermark.id = 'my-video-watermark';
                 watermark.src = '${MY_LOGO}'; 
                 
-                // ওয়াটারমার্ক এর স্টাইল
+                // ওয়াটারমার্ক এর স্টাইল (Opacity 0.4 এবং Position Fix করা হয়েছে)
                 watermark.style.setProperty('position', 'absolute', 'important');
                 watermark.style.setProperty('top', '10px', 'important');     
                 watermark.style.setProperty('right', '10px', 'important');   
                 watermark.style.setProperty('width', '70px', 'important');   
                 watermark.style.setProperty('z-index', '9999', 'important'); 
                 watermark.style.setProperty('pointer-events', 'none', 'important'); 
-                watermark.style.setProperty('opacity', '0.4', 'important'); // অপাসিটি কমানো হয়েছে (হালকা দেখাবে)
+                watermark.style.setProperty('opacity', '0.4', 'important'); 
                 
                 videoElem.parentElement.appendChild(watermark);
             }
