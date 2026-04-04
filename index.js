@@ -59,15 +59,37 @@ async function handleRequest(request) {
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
-    // শুধুমাত্র প্রক্সি ডোমেইনের জন্য বেসিক রিপ্লেসমেন্ট (ডিজাইন ভাঙবে না)
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল কালার চেঞ্জ
+    // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল CSS Variable কালার চেঞ্জ
     // ==========================================
     const customCss = `
     <style>
+      /* --- Global CSS Variable Replacement --- */
+      :root {
+          /* আপনি যে ভ্যারিয়েবলটি দিয়েছেন সেটি গ্লোবালি চেঞ্জ করা হলো */
+          --loginpagebackground: #56BAD9 !important;
+          
+          /* অন্যান্য কমন লাল রঙের ভ্যারিয়েবলগুলোও চেঞ্জ করে দিলাম নিরাপত্তার জন্য */
+          --theme-red: #56BAD9 !important;
+          --main-color-red: #56BAD9 !important;
+      }
+
+      /* যদি কোনো জায়গায় আগের লাল গ্রেডিয়েন্ট জোর করে থাকে, সেটা মুছে আপনার কালার বসানোর জন্য */
+      .login-index, 
+      a.login-index.ui-link, 
+      .btn-red, 
+      .bg-red {
+          background: #56BAD9 !important;
+          background-color: #56BAD9 !important;
+          background-image: none !important; /* আগের লাল গ্রেডিয়েন্ট মুছে ফেলবে */
+          border-color: #56BAD9 !important;
+          color: #ffffff !important;
+      }
+
+      /* হেডারের লোগো */
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
           max-width: 140px !important; 
@@ -75,6 +97,8 @@ async function handleRequest(request) {
           object-fit: contain !important;
           object-position: left center !important;
       }
+      
+      /* লাইভ স্কোরের গ্যাপ ফিক্স */
       .score_area, #animScore {
         padding: 0 !important;
         margin: 0 !important;
@@ -87,42 +111,18 @@ async function handleRequest(request) {
         margin: 0 !important;
         padding: 0 !important;
       }
-      
-      /* --- Red Color to Target Color (#56BAD9) Replacement --- */
-      
-      /* 1. Targeting specific Login Button from your screenshot */
-      a.login-index.ui-link, 
-      .login-index,
-      .btn-red, 
-      .bg-red, 
-      .theme-red {
-          background-color: #56BAD9 !important;
-          background-image: none !important; /* Removes the red gradient */
-          border-color: #56BAD9 !important;
-          color: #ffffff !important;
-      }
-      
-      /* 2. Global attribute selector for inline styles (Catches other red areas) */
-      [style*="rgb(241, 0, 0)"],
-      [style*="rgb(199, 0, 0)"],
-      [style*="#E50000"],
-      [style*="#e50000"] {
-          background-color: #56BAD9 !important;
-          background-image: none !important;
-          border-color: #56BAD9 !important;
-      }
     </style>
     `;
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // JS: সেফ টেক্সট রিপ্লেসমেন্ট, লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক
+    // JS: সেফ টেক্সট, লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক
     // ==========================================
     const emptyBoxScript = `
     <script>
-      // 🟢 ডিজাইনে হাত না দিয়ে শুধুমাত্র ওয়েবসাইটের লেখা (Text) পরিবর্তনের লজিক
+      // 🟢 টেক্সট রিপ্লেসমেন্ট
       function safeTextReplace(node) {
-        if (node.nodeType === 3) { // Text Node
+        if (node.nodeType === 3) {
             let text = node.nodeValue;
             if (text && text.trim() !== '') {
                 let newText = text.replace(/3wickets\\.live/gi, 'skyx.live')
@@ -159,11 +159,11 @@ async function handleRequest(request) {
          textObserver.observe(document.body, { childList: true, subtree: true });
       });
 
-      // 🟢 লাইভ স্কোর আইফ্রেম লজিক এবং ভিডিও ওয়াটারমার্ক
+      // 🟢 লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক
       let currentMatchId = null;
       setInterval(() => {
         
-        // --- 1. Video Branding Logic (Top Right) ---
+        // --- 1. Video Branding Logic ---
         const videoElem = document.querySelector('video'); 
         if (videoElem && videoElem.parentElement) {
             let watermark = document.getElementById('my-video-watermark');
@@ -172,7 +172,7 @@ async function handleRequest(request) {
                 watermark.id = 'my-video-watermark';
                 watermark.src = '${MY_LOGO}'; 
                 
-                // ওয়াটারমার্ক এর স্টাইল (Opacity 0.4 এবং Position Fix করা হয়েছে)
+                // অপাসিটি 0.4 এবং অবস্থান ঠিক রাখা হলো
                 watermark.style.setProperty('position', 'absolute', 'important');
                 watermark.style.setProperty('top', '10px', 'important');     
                 watermark.style.setProperty('right', '10px', 'important');   
@@ -185,7 +185,7 @@ async function handleRequest(request) {
             }
         }
 
-        // --- 2. Live Score Logic (Original) ---
+        // --- 2. Live Score Logic ---
         const oldIframe = document.getElementById('myIframe');
         if (oldIframe) oldIframe.remove();
 
