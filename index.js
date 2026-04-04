@@ -62,68 +62,77 @@ async function handleRequest(request) {
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // FINAL WORKING IFRAME SCRIPT (ourscore_C)
+    // BACK TO ORIGINAL LOGIC (With updated working URL)
     // ==========================================
     const emptyBoxScript = `
     <script>
       let currentMatchId = null;
 
-      // ১. সাইটের অরিজিনাল স্কোরবোর্ড হাইড করা
-      if (!document.getElementById('hide-original-score')) {
-        const style = document.createElement('style');
-        style.id = 'hide-original-score';
-        style.innerHTML = \`
-          .score_area, #animScore, #mobAnimScore { 
-            display: none !important; 
-            height: 0px !important; 
-            overflow: hidden !important; 
-            visibility: hidden !important;
-          }
-        \`;
-        document.head.appendChild(style);
-      }
-
       setInterval(() => {
-        // ২. URL থেকে ডাইনামিক Match ID বের করা
+        // ১. পুরোনো myIframe আইডিটা থাকলে সেটাকে রিমুভ করে দেওয়া
+        const oldIframe = document.getElementById('myIframe');
+        if (oldIframe) {
+          oldIframe.remove();
+        }
+
+        // ২. URL থেকে ডাইনামিক ID বের করা
         const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
 
-        if (!newMatchId) return;
-
-        // ৩. Scoreboard এবং Live TV ট্যাবের এরিয়া খুঁজে বের করা
-        const tabsContainer = document.querySelector('ul.nav-tabs.scrtv') || document.querySelector('#newdivscoretv');
+        // ৩. ওয়েবসাইটের অরিজিনাল score_area খুঁজে বের করা
+        const scoreArea = document.querySelector('.score_area') || document.getElementById('animScore');
         
-        if (tabsContainer && tabsContainer.parentNode) {
-          
-          let myIsconBox = document.getElementById('myIsconMaster');
+        if (scoreArea && newMatchId) {
+          // বক্সটিকে অবশ্যই দৃশ্যমান রাখা
+          scoreArea.style.setProperty('display', 'block', 'important');
+          scoreArea.style.setProperty('visibility', 'visible', 'important');
+
+          // ৪. 'myIscon' আইডি বক্স চেক বা তৈরি করা
+          let myIsconBox = document.getElementById('myIscon');
           
           if (!myIsconBox) {
             myIsconBox = document.createElement('div');
-            myIsconBox.id = 'myIsconMaster';
-            // ব্যাকগ্রাউন্ড কালার ডার্ক রাখা হয়েছে যেন সুন্দরভাবে ব্লেন্ড হয়
-            myIsconBox.style.cssText = 'width: 100% !important; height: 210.6px !important; background-color: #172832 !important; display: block !important; margin-bottom: 5px !important;';
+            myIsconBox.id = 'myIscon';
             
-            // ট্যাবের ঠিক নিচে বসানো হচ্ছে
-            tabsContainer.parentNode.insertBefore(myIsconBox, tabsContainer.nextSibling);
+            // অরিজিনাল স্টাইল সেট করা
+            myIsconBox.style.setProperty('width', '100%', 'important');
+            myIsconBox.style.setProperty('height', '201.6px', 'important');
+            myIsconBox.style.setProperty('background-color', '#172832', 'important');
+            myIsconBox.style.setProperty('display', 'block', 'important');
+            
+            scoreArea.innerHTML = ''; // অরিজিনাল বক্সের ভেতরটা পরিষ্কার করা
+            scoreArea.appendChild(myIsconBox); // ভেতরে আমাদের বক্স বসানো
           }
 
-          // ৪. নতুন ম্যাচ ওপেন হলে আইফ্রেম আপডেট করা
+          // ৫. নতুন কাজ করা লিংকটি দিয়ে আইফ্রেম বসানো বা আপডেট করা
           if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
-              currentMatchId = newMatchId;
-              
-              myIsconBox.innerHTML = ''; // পুরোনোটা ক্লিয়ার
-              
-              const iframe = document.createElement('iframe');
-              
-              // 🔴 আপনার দেওয়া নতুন ওয়ার্কিং লিংক ব্যবহার করা হয়েছে এবং শেষে ডাইনামিক ID বসানো হয়েছে
-              iframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
-              
-              iframe.style.cssText = 'width: 100% !important; height: 100% !important; border: none !important; overflow: hidden !important;';
-              
-              myIsconBox.appendChild(iframe);
+            currentMatchId = newMatchId;
+            
+            myIsconBox.innerHTML = ''; 
+            
+            const newIframe = document.createElement('iframe');
+            
+            // 🔴 আপনার কাজ করা নতুন লিংক (ourscore_C)
+            newIframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
+            
+            newIframe.style.setProperty('width', '100%', 'important');
+            newIframe.style.setProperty('height', '100%', 'important');
+            newIframe.style.setProperty('border', 'none', 'important');
+            newIframe.style.setProperty('overflow', 'hidden', 'important');
+            
+            myIsconBox.appendChild(newIframe);
+          }
+
+          // ৬. আমাদের Iframe ছাড়া অন্য কিছু ওয়েবসাইটে চলে আসলে তা রিমুভ করে দেওয়া
+          if (myIsconBox) {
+            Array.from(myIsconBox.children).forEach(child => {
+              if (child.tagName !== 'IFRAME') {
+                child.remove();
+              }
+            });
           }
         }
-      }, 500); // পেজ চেঞ্জ হওয়ার সাথে সাথে আইডি ধরে আপডেট করবে
+      }, 300);
     </script>
     `;
 
