@@ -1,6 +1,8 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
 const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; 
+const TARGET_COLOR = '#D0021B'; // যে কালারটি রিমুভ করতে চান
+const NEW_COLOR = '#56BAD9';    // আপনার কাস্টম কালার
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -56,40 +58,58 @@ async function handleRequest(request) {
 
   const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
 
+  // ==========================================
+  // 🟢 CSS এবং JS ফাইলের ভেতরের গ্লোবাল কালার চেঞ্জ
+  // ==========================================
+  if (contentType.includes('text/css') || contentType.includes('application/javascript') || contentType.includes('text/javascript')) {
+    let text = await response.text();
+    
+    // ডোমেইন রিপ্লেস (সিকিউরিটির জন্য)
+    text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
+    
+    // Hex এবং RGB ফরম্যাটে থাকা কালার চেঞ্জ
+    text = text.replace(new RegExp(TARGET_COLOR, 'gi'), NEW_COLOR);
+    text = text.replace(/rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)/gi, NEW_COLOR);
+
+    responseHeaders.delete('Content-Length');
+    return new Response(text, { status: response.status, headers: responseHeaders });
+  }
+
+  // ==========================================
+  // 🟢 HTML ফাইলের ভেতরের কাজসমূহ
+  // ==========================================
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
+    // HTML এর ভেতরে থাকা ইনলাইন স্টাইলের কালার চেঞ্জ
+    text = text.replace(new RegExp(TARGET_COLOR, 'gi'), NEW_COLOR);
+    text = text.replace(/rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)/gi, NEW_COLOR);
+
     // ==========================================
     // CSS: লোগো, গ্যাপ ফিক্স এবং গ্লোবাল CSS Variable কালার চেঞ্জ
     // ==========================================
     const customCss = `
     <style>
-      /* --- Global CSS Variable Replacement --- */
       :root {
-          /* আপনি যে ভ্যারিয়েবলটি দিয়েছেন সেটি গ্লোবালি চেঞ্জ করা হলো */
-          --loginpagebackground: #56BAD9 !important;
-          
-          /* অন্যান্য কমন লাল রঙের ভ্যারিয়েবলগুলোও চেঞ্জ করে দিলাম নিরাপত্তার জন্য */
-          --theme-red: #56BAD9 !important;
-          --main-color-red: #56BAD9 !important;
+          --loginpagebackground: ${NEW_COLOR} !important;
+          --theme-red: ${NEW_COLOR} !important;
+          --main-color-red: ${NEW_COLOR} !important;
       }
 
-      /* যদি কোনো জায়গায় আগের লাল গ্রেডিয়েন্ট জোর করে থাকে, সেটা মুছে আপনার কালার বসানোর জন্য */
       .login-index, 
       a.login-index.ui-link, 
       .btn-red, 
       .bg-red {
-          background: #56BAD9 !important;
-          background-color: #56BAD9 !important;
-          background-image: none !important; /* আগের লাল গ্রেডিয়েন্ট মুছে ফেলবে */
-          border-color: #56BAD9 !important;
+          background: ${NEW_COLOR} !important;
+          background-color: ${NEW_COLOR} !important;
+          background-image: none !important; 
+          border-color: ${NEW_COLOR} !important;
           color: #ffffff !important;
       }
 
-      /* হেডারের লোগো */
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
           max-width: 140px !important; 
@@ -98,7 +118,6 @@ async function handleRequest(request) {
           object-position: left center !important;
       }
       
-      /* লাইভ স্কোরের গ্যাপ ফিক্স */
       .score_area, #animScore {
         padding: 0 !important;
         margin: 0 !important;
@@ -172,7 +191,6 @@ async function handleRequest(request) {
                 watermark.id = 'my-video-watermark';
                 watermark.src = '${MY_LOGO}'; 
                 
-                // অপাসিটি 0.4 এবং অবস্থান ঠিক রাখা হলো
                 watermark.style.setProperty('position', 'absolute', 'important');
                 watermark.style.setProperty('top', '10px', 'important');     
                 watermark.style.setProperty('right', '10px', 'important');   
