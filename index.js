@@ -1,6 +1,6 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
-const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; // আপনার স্কাই এক্স (SkyX) লোগো
+const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; 
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -59,31 +59,15 @@ async function handleRequest(request) {
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
-    // ==========================================
-    // ১. লিংক এবং ডোমেইন রিপ্লেসমেন্ট
-    // ==========================================
+    // শুধুমাত্র প্রক্সি ডোমেইনের জন্য বেসিক রিপ্লেসমেন্ট (ডিজাইন ভাঙবে না)
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // ২. সব টেক্সট/ব্র্যান্ড নেম পরিবর্তন করে SkyX করা (Case-insensitive)
-    // ==========================================
-    text = text.replace(/3wickets\.live/gi, 'skyx.live');
-    text = text.replace(/3wickets/gi, 'SkyX');
-    text = text.replace(/all9x\.live/gi, 'skyx.live');
-    text = text.replace(/all9x/gi, 'SkyX');
-    text = text.replace(/7wickets\.live/gi, 'skyx.live');
-    text = text.replace(/7wickets/gi, 'SkyX');
-    text = text.replace(/7wicket/gi, 'SkyX');
-    text = text.replace(/9xlive/gi, 'SkyX');
-    text = text.replace(/9x live/gi, 'SkyX');
-    
-    // ==========================================
-    // ৩. CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং সাইজ লক
+    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং গ্যাপ ফিক্স
     // ==========================================
     const customCss = `
     <style>
-      /* ব্রাউজারকে বাধ্য করা হচ্ছে সবসময় আপনার লোগো দেখাতে, কোনো গ্যাপ ছাড়াই */
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
           max-width: 140px !important; 
@@ -91,8 +75,6 @@ async function handleRequest(request) {
           object-fit: contain !important;
           object-position: left center !important;
       }
-
-      /* আইফ্রেমের গ্যাপ রিমুভ */
       .score_area, #animScore {
         padding: 0 !important;
         margin: 0 !important;
@@ -110,14 +92,54 @@ async function handleRequest(request) {
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // ৪. JS: শুধুমাত্র লাইভ স্কোর লজিক
+    // JS: সেফ টেক্সট রিপ্লেসমেন্ট এবং লাইভ স্কোর লজিক
     // ==========================================
     const emptyBoxScript = `
     <script>
-      let currentMatchId = null;
+      // 🟢 ডিজাইনে হাত না দিয়ে শুধুমাত্র ওয়েবসাইটের লেখা (Text) পরিবর্তনের লজিক
+      function safeTextReplace(node) {
+        if (node.nodeType === 3) { // Text Node
+            let text = node.nodeValue;
+            if (text && text.trim() !== '') {
+                let newText = text.replace(/3wickets\\.live/gi, 'skyx.live')
+                                  .replace(/3wickets/gi, 'SkyX')
+                                  .replace(/all9x\\.live/gi, 'skyx.live')
+                                  .replace(/all9x/gi, 'SkyX')
+                                  .replace(/7wickets\\.live/gi, 'skyx.live')
+                                  .replace(/7wickets/gi, 'SkyX')
+                                  .replace(/7wicket/gi, 'SkyX')
+                                  .replace(/9xlive/gi, 'SkyX')
+                                  .replace(/9x live/gi, 'SkyX');
+                if (newText !== text) {
+                    node.nodeValue = newText;
+                }
+            }
+        } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE' && node.nodeName !== 'IFRAME') {
+            // Script এবং Style ট্যাগ ইগনোর করে ভেতরের টেক্সট খুঁজবে
+            for (let i = 0; i < node.childNodes.length; i++) {
+                safeTextReplace(node.childNodes[i]);
+            }
+        }
+      }
 
+      // ওয়েবসাইট লোড হওয়ার সাথে সাথে এবং ডায়নামিক চেঞ্জ হওয়ার সময় রিপ্লেস করবে
+      const textObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+             safeTextReplace(node);
+          });
+        });
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+         safeTextReplace(document.body);
+         document.title = document.title.replace(/3wickets|all9x|7wickets|7wicket|9xlive|9x live/gi, 'SkyX');
+         textObserver.observe(document.body, { childList: true, subtree: true });
+      });
+
+      // 🟢 লাইভ স্কোর আইফ্রেম লজিক
+      let currentMatchId = null;
       setInterval(() => {
-        // পুরোনো আইফ্রেম রিমুভ
         const oldIframe = document.getElementById('myIframe');
         if (oldIframe) oldIframe.remove();
 
@@ -139,7 +161,6 @@ async function handleRequest(request) {
             myIsconBox.style.setProperty('width', '100%', 'important');
             myIsconBox.style.setProperty('height', '201.6px', 'important');
             myIsconBox.style.setProperty('background-color', '#172832', 'important');
-            
             myIsconBox.style.setProperty('display', 'flex', 'important');
             myIsconBox.style.setProperty('justify-content', 'center', 'important');
             myIsconBox.style.setProperty('align-items', 'center', 'important');
