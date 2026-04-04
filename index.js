@@ -3,9 +3,11 @@ const STREAM_TARGET = 'n11-production.click';
 const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; 
 const NEW_COLOR = '#56BAD9';    // আপনার কাস্টম কালার
 
-// একাধিক কালার (Hex এবং RGB) টার্গেট করার জন্য Regex
-const TARGET_COLORS_HEX = /#D0021B|#C60000|#DE362D/gi;
-const TARGET_COLORS_RGB = /rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)|rgb\(\s*198\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*222\s*,\s*54\s*,\s*45\s*\)/gi;
+// Hex: নতুন কালারগুলোর হেক্স কোডও যুক্ত করা হলো (#F10000 এবং #C70000)
+const TARGET_COLORS_HEX = /#D0021B|#C60000|#DE362D|#F10000|#C70000/gi;
+
+// RGB: স্ক্রিনশটের linear-gradient এর rgb(241, 0, 0) এবং rgb(199, 0, 0) যুক্ত করা হলো
+const TARGET_COLORS_RGB = /rgb\(\s*208\s*,\s*2\s*,\s*27\s*\)|rgb\(\s*198\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*222\s*,\s*54\s*,\s*45\s*\)|rgb\(\s*241\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*199\s*,\s*0\s*,\s*0\s*\)/gi;
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -101,13 +103,16 @@ async function handleRequest(request) {
           --main-color-red: ${NEW_COLOR} !important;
       }
 
+      /* এখানে #cricketHeading ও h3#cricketHeading যোগ করা হয়েছে */
       .login-index, 
       a.login-index.ui-link, 
       .btn-red, 
-      .bg-red {
+      .bg-red,
+      #cricketHeading,
+      h3#cricketHeading {
           background: ${NEW_COLOR} !important;
           background-color: ${NEW_COLOR} !important;
-          background-image: none !important; 
+          background-image: none !important; /* লাল গ্রেডিয়েন্ট রিমুভ করার জন্য */
           border-color: ${NEW_COLOR} !important;
           color: #ffffff !important;
       }
