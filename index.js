@@ -1,66 +1,3 @@
-const MAIN_TARGET = '7wickets.live'; 
-const STREAM_TARGET = 'n11-production.click'; 
-
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
-
-async function handleRequest(request) {
-  const url = new URL(request.url);
-  const myDomain = url.hostname;
-
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': '*',
-      }
-    });
-  }
-
-  let targetHost = MAIN_TARGET;
-  
-  if (url.pathname.startsWith('/__video_proxy__')) {
-    targetHost = STREAM_TARGET;
-    url.pathname = url.pathname.replace('/__video_proxy__', '') || '/';
-  }
-
-  url.hostname = targetHost;
-
-  const proxyReqHeaders = new Headers(request.headers);
-  proxyReqHeaders.set('Host', targetHost);
-  proxyReqHeaders.set('Origin', `https://${MAIN_TARGET}`);
-  proxyReqHeaders.set('Referer', `https://${MAIN_TARGET}/`);
-  proxyReqHeaders.delete('Accept-Encoding');
-
-  const proxyRequest = new Request(url.toString(), {
-    method: request.method,
-    headers: proxyReqHeaders,
-    body: request.body,
-    redirect: 'manual'
-  });
-
-  let response;
-  try {
-    response = await fetch(proxyRequest);
-  } catch (err) {
-    return new Response("Connection Error", { status: 500 });
-  }
-
-  let responseHeaders = new Headers(response.headers);
-  responseHeaders.delete('Content-Security-Policy');
-  responseHeaders.delete('X-Frame-Options');
-  responseHeaders.set('Access-Control-Allow-Origin', '*');
-
-  const contentType = (responseHeaders.get('Content-Type') || '').toLowerCase();
-
-  if (contentType.includes('text/html')) {
-    let text = await response.text();
-
-    text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
-    text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
-
     // ==========================================
     // BACK TO ORIGINAL LOGIC (With updated working URL)
     // ==========================================
@@ -75,9 +12,14 @@ async function handleRequest(request) {
           oldIframe.remove();
         }
 
-        // ২. URL থেকে ডাইনামিক ID বের করা
+        // ২. URL থেকে ডাইনামিক ID এবং Sport ID বের করা
         const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
+        
+        // স্ল্যাশের একেবারে শেষেরটা হলো Match ID
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
+        
+        // Match ID এর ঠিক আগেরটা হলো Sport ID (যেমন: 4=Cricket, 1=Soccer, 2=Tennis)
+        const sportId = pathSegments.length > 1 ? pathSegments[pathSegments.length - 2] : null;
 
         // ৩. ওয়েবসাইটের অরিজিনাল score_area খুঁজে বের করা
         const scoreArea = document.querySelector('.score_area') || document.getElementById('animScore');
@@ -104,7 +46,7 @@ async function handleRequest(request) {
             scoreArea.appendChild(myIsconBox); // ভেতরে আমাদের বক্স বসানো
           }
 
-          // ৫. নতুন কাজ করা লিংকটি দিয়ে আইফ্রেম বসানো বা আপডেট করা
+          // ৫. স্পোর্টস আইডি অনুযায়ী আইফ্রেম বসানো বা আপডেট করা
           if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
             currentMatchId = newMatchId;
             
@@ -112,8 +54,14 @@ async function handleRequest(request) {
             
             const newIframe = document.createElement('iframe');
             
-            // 🔴 আপনার কাজ করা নতুন লিংক (ourscore_C)
-            newIframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
+            // 🔴 Sport ID অনুযায়ী লিংক পরিবর্তন করার লজিক
+            if (sportId === '4') {
+                // স্পোর্টস আইডি 4 হলে ক্রিকেটের লিংক লোড হবে
+                newIframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
+            } else {
+                // স্পোর্টস আইডি 4 ছাড়া অন্য কিছু (যেমন 1 বা 2) হলে সকার/টেনিস এর লিংক লোড হবে
+                newIframe.src = "https://live.ckex.xyz/lmt/preview.html?matchId=" + newMatchId;
+            }
             
             newIframe.style.setProperty('width', '100%', 'important');
             newIframe.style.setProperty('height', '100%', 'important');
@@ -135,12 +83,3 @@ async function handleRequest(request) {
       }, 300);
     </script>
     `;
-
-    text = text.replace('</body>', emptyBoxScript + '</body>');
-
-    responseHeaders.delete('Content-Length');
-    return new Response(text, { status: response.status, headers: responseHeaders });
-  }
-
-  return new Response(response.body, { status: response.status, headers: responseHeaders });
-}
