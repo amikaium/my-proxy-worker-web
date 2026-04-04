@@ -36,19 +36,10 @@ async function handleRequest(request) {
     // ১. গ্লোবাল ডোমেইন এবং হেক্স কালার রিপ্লেসমেন্ট
     body = body.replace(new RegExp(targetHost, 'g'), actualHost);
     body = body.replace(new RegExp(oldColor, 'gi'), myColor);
-    
-    // URL এনকোডেড সবুজ কালার থাকলে সেটাও রিপ্লেস করবে
-    body = body.replace(/%2314805E/gi, '%2356BBD9');
-
-    // ২. সাইন আপ বাটন লিংক পরিবর্তন (রেজিস্ট্রেশনের যেকোনো লিংক আপনার লিংকে যাবে)
-    body = body.replace(/href="[^"]*(?:\/Register|\/SignUp)[^"]*"/gi, `href="${signUpURL}"`);
-    body = body.replace(/id="signupButton"/gi, `id="signupButton" href="${signUpURL}"`);
-
-    // ৩. Background Image (Base64 URL) রিমুভ করে আপনার কালার বসানো (স্ক্রিনশটের সমস্যার সমাধান)
-    // এটি HTML বা CSS যেখানেই Base64 ইমেজ পাক না কেন, সেটা মুছে ব্যাকগ্রাউন্ড কালার দিয়ে দিবে।
-    body = body.replace(/background-image:\s*url\(['"]?data:image\/svg\+xml;base64,[^)]+\)['"]?;?/gi, `background-image: none !important; background-color: ${myColor} !important;`);
+    body = body.replace(/%2314805E/gi, '%2356BBD9'); // URL Encoded কালার রিপ্লেসমেন্ট
 
     if (contentType.includes('text/html')) {
+      // ২. কাস্টম CSS (ডিজাইন এবং Play Now এর হেলানো শেপ ঠিক করার জন্য)
       const customStyles = `
       <style>
         /* হেডার প্রিমিয়াম ডার্ক লিনিয়ার গ্রেডিয়েন্ট */
@@ -57,7 +48,7 @@ async function handleRequest(request) {
           border-bottom: 0.5px solid ${myColor}44 !important;
         }
 
-        /* লগইন বাটন - সলিড ডিজাইন উইথ প্রিমিয়াম আইকন (কোনো এনিমেশন ছাড়া) */
+        /* লগইন বাটন - সলিড ডিজাইন উইথ প্রিমিয়াম আইকন */
         .login-index.ui-link, .login-btn {
           background: ${myColor} !important;
           color: #ffffff !important;
@@ -83,7 +74,7 @@ async function handleRequest(request) {
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") no-repeat center;
         }
 
-        /* সাইন আপ বাটন - সলিড ক্লিন ডিজাইন উইথ বর্ডার */
+        /* সাইন আপ বাটন - সলিড ক্লিন ডিজাইন */
         #signupButton, .btn-signup {
           display: inline-flex !important;
           visibility: visible !important;
@@ -99,13 +90,12 @@ async function handleRequest(request) {
           margin-right: 8px;
         }
 
-        /* স্পেসিফিক ফিক্স: Play Now এর বামের সবুজ ইমেজ ফোর্স রিমুভ করা */
+        /* Play Now এর বাম দিকের হেলানো (Slanted) ডিজাইন তৈরি */
         dd {
-          background-image: none !important;
-        }
-        
-        dd[style*="background"], dl dd {
-          background-color: ${myColor} !important;
+          background-image: none !important; /* পুরনো ইমেজ মুছে দেওয়া হলো */
+          background-color: ${myColor} !important; /* আপনার কালার দেওয়া হলো */
+          clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%) !important; /* CSS দিয়ে হেলানো শেপ তৈরি */
+          padding-left: 10px !important;
         }
 
         /* অন্যান্য যেকোনো সবুজের অবশিষ্টাংশ রিমুভ */
@@ -122,6 +112,29 @@ async function handleRequest(request) {
       </style>
       `;
       body = body.replace('</head>', `${customStyles}</head>`);
+
+      // ৩. সাইন আপ বাটন ফোর্স রিডাইরেক্ট (জাভাস্ক্রিপ্ট ইনজেকশন)
+      // সাইট নিজস্ব ইভেন্ট দিয়ে লিংক ব্লক করে দেয়, তাই এটা দিয়ে ফোর্স রিডাইরেক্ট করা হলো
+      const forceRedirectScript = `
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          const signupButtons = document.querySelectorAll('#signupButton, .btn-signup, a[href*="Register"], a[href*="SignUp"]');
+          
+          signupButtons.forEach(button => {
+            button.href = "${signUpURL}"; // লিংক চেঞ্জ
+            button.target = "_self";
+            
+            // ক্লিক করলে যেন অন্য কোনো ইভেন্ট কাজ না করে সরাসরি আপনার লিংকে যায়
+            button.addEventListener("click", function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              window.location.href = "${signUpURL}";
+            }, true);
+          });
+        });
+      </script>
+      `;
+      body = body.replace('</body>', `${forceRedirectScript}</body>`);
     }
 
     const modifiedResponse = new Response(body, response);
