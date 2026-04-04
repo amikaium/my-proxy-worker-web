@@ -140,25 +140,23 @@ async function handleRequest(request) {
       setInterval(() => {
         
         // --- 1. Video Branding Logic (Top Right) ---
-        const videoElem = document.querySelector('video'); // ভিডিও ট্যাগ খুঁজবে
+        const videoElem = document.querySelector('video'); 
         if (videoElem && videoElem.parentElement) {
             let watermark = document.getElementById('my-video-watermark');
             if (!watermark) {
-                // ভিডিওর প্যারেন্ট ডিভ কে রিলেটিভ করতে হবে যাতে লোগো ঠিক জায়গায় বসে
-                videoElem.parentElement.style.setProperty('position', 'relative', 'important');
-                
+                // জোর করে পজিশন চেঞ্জ করা বাদ দেওয়া হয়েছে যাতে অরিজিনাল ওয়েবসাইটের ফ্লোটিং ভিডিও নষ্ট না হয়
                 watermark = document.createElement('img');
                 watermark.id = 'my-video-watermark';
                 watermark.src = '${MY_LOGO}'; 
                 
                 // ওয়াটারমার্ক এর স্টাইল
                 watermark.style.setProperty('position', 'absolute', 'important');
-                watermark.style.setProperty('top', '10px', 'important');     // উপর থেকে দূরত্ব
-                watermark.style.setProperty('right', '10px', 'important');   // ডান থেকে দূরত্ব
-                watermark.style.setProperty('width', '70px', 'important');   // লোগোর সাইজ (প্রয়োজনে চেঞ্জ করতে পারেন)
+                watermark.style.setProperty('top', '10px', 'important');     
+                watermark.style.setProperty('right', '10px', 'important');   
+                watermark.style.setProperty('width', '70px', 'important');   
                 watermark.style.setProperty('z-index', '9999', 'important'); 
-                watermark.style.setProperty('pointer-events', 'none', 'important'); // ভিডিওর ফুলস্ক্রিন বাটনে যেন ক্লিক লাগে
-                watermark.style.setProperty('opacity', '0.9', 'important'); // হালকা ট্রান্সপারেন্ট
+                watermark.style.setProperty('pointer-events', 'none', 'important'); 
+                watermark.style.setProperty('opacity', '0.4', 'important'); // অপাসিটি কমানো হয়েছে (হালকা দেখাবে)
                 
                 videoElem.parentElement.appendChild(watermark);
             }
