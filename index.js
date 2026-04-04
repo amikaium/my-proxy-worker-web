@@ -1,6 +1,6 @@
 const MAIN_TARGET = '7wickets.live'; 
 const STREAM_TARGET = 'n11-production.click'; 
-const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; 
+const MY_LOGO = 'https://i.postimg.cc/Hk8xp7X7/Photo-Room-20260404-125618.png'; // SkyX ব্র্যান্ডিং লোগো
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
@@ -59,15 +59,15 @@ async function handleRequest(request) {
   if (contentType.includes('text/html')) {
     let text = await response.text();
 
-    // শুধুমাত্র প্রক্সি ডোমেইনের জন্য বেসিক রিপ্লেসমেন্ট (ডিজাইন ভাঙবে না)
     text = text.replace(new RegExp(MAIN_TARGET, 'g'), myDomain);
     text = text.replace(new RegExp(STREAM_TARGET, 'g'), `${myDomain}/__video_proxy__`);
 
     // ==========================================
-    // CSS: জিরো-ফ্ল্যাশ লোগো রিপ্লেসমেন্ট এবং গ্যাপ ফিক্স
+    // CSS: জিরো-ফ্ল্যাশ লোগো, গ্যাপ ফিক্স এবং ভিডিও ওয়াটারমার্ক স্টাইল
     // ==========================================
     const customCss = `
     <style>
+      /* ব্রাউজারকে বাধ্য করা হচ্ছে সবসময় আপনার লোগো দেখাতে, কোনো গ্যাপ ছাড়াই */
       img#headLogo, img.top-logo {
           content: url('${MY_LOGO}') !important;
           max-width: 140px !important; 
@@ -75,6 +75,8 @@ async function handleRequest(request) {
           object-fit: contain !important;
           object-position: left center !important;
       }
+
+      /* আইফ্রেমের গ্যাপ রিমুভ (full width score iframe) */
       .score_area, #animScore {
         padding: 0 !important;
         margin: 0 !important;
@@ -87,12 +89,28 @@ async function handleRequest(request) {
         margin: 0 !important;
         padding: 0 !important;
       }
+
+      /* 🎯 ভিডিও ওয়াটারমার্কের প্রফেশনাল স্টাইল */
+      .skyx-video-watermark {
+          position: absolute !important;
+          top: 10px !important;
+          right: 10px !important;
+          z-index: 2147483647 !important; /* সবকিছুর ওপরে রাখার জন্য সর্বোচ্চ z-index */
+          pointer-events: none !important; /* ওয়াটারমার্কে যাতে ক্লিক না পড়ে */
+      }
+      .skyx-watermark-img {
+          max-width: 55px !important; /* ওয়াটারমার্কের সাইজ */
+          height: auto !important;
+          object-fit: contain !important;
+          opacity: 0.35 !important; /* ভিজিবিলিটি কমিয়ে ব্র্যান্ডিং করা হয়েছে */
+          filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.5)) !important; /* কালো শ্যাডো, যাতে সাদা ও কালো—দুই ব্যাকগ্রাউন্ডেই দেখা যায় */
+      }
     </style>
     `;
     text = text.replace('</head>', customCss + '</head>');
 
     // ==========================================
-    // JS: সেফ টেক্সট রিপ্লেসমেন্ট এবং লাইভ স্কোর লজিক
+    // JS: সেফ টেক্সট রিপ্লেসমেন্ট, লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক লজিক
     // ==========================================
     const emptyBoxScript = `
     <script>
@@ -122,7 +140,6 @@ async function handleRequest(request) {
         }
       }
 
-      // ওয়েবসাইট লোড হওয়ার সাথে সাথে এবং ডায়নামিক চেঞ্জ হওয়ার সময় রিপ্লেস করবে
       const textObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
@@ -137,9 +154,39 @@ async function handleRequest(request) {
          textObserver.observe(document.body, { childList: true, subtree: true });
       });
 
-      // 🟢 লাইভ স্কোর আইফ্রেম লজিক
       let currentMatchId = null;
+
+      // 🎯 লাইভ স্কোর এবং ভিডিও ওয়াটারমার্ক ডায়নামিক চেকের জন্য প্রধান লুপ
       setInterval(() => {
+        // --- ভিডিও ওয়াটারমার্ক লজিক ---
+        // 🎯 ইন্সপেক্টর থেকে পাওয়া #video আইডি খুঁজা হচ্ছে
+        const videoElement = document.getElementById('video');
+        
+        // যদি ভিডিও প্লেয়ার থাকে এবং আমাদের ওয়াটারমার্ক আইডি না থাকে, তবে এড করবে
+        if (videoElement && !document.getElementById('skyx-watermark')) {
+            const videoParent = videoElement.parentElement; // ভিডিওর Container
+            if (videoParent) {
+                // ভিডিওর Container কে position: relative করা, যাতে ওয়াটারমার্ক ভিডিওর ভেতরে পজিশন নিতে পারে
+                videoParent.style.setProperty('position', 'relative', 'important');
+
+                // ওয়াটারমার্কের জন্য div তৈরি করা
+                const watermarkDiv = document.createElement('div');
+                watermarkDiv.id = 'skyx-watermark';
+                watermarkDiv.className = 'skyx-video-watermark';
+
+                // লোগোর জন্য img তৈরি করা
+                const watermarkImg = document.createElement('img');
+                watermarkImg.src = '${MY_LOGO}';
+                watermarkImg.className = 'skyx-watermark-img';
+
+                watermarkDiv.appendChild(watermarkImg);
+                
+                // ভিডিওর একদম ওপরে ওয়াটারমার্ক বসিয়ে দেওয়া
+                videoParent.prepend(watermarkDiv); 
+            }
+        }
+
+        // --- লাইভ স্কোর আইফ্রেম লজিক (আগের মতোই) ---
         const oldIframe = document.getElementById('myIframe');
         if (oldIframe) oldIframe.remove();
 
@@ -161,6 +208,7 @@ async function handleRequest(request) {
             myIsconBox.style.setProperty('width', '100%', 'important');
             myIsconBox.style.setProperty('height', '201.6px', 'important');
             myIsconBox.style.setProperty('background-color', '#172832', 'important');
+            
             myIsconBox.style.setProperty('display', 'flex', 'important');
             myIsconBox.style.setProperty('justify-content', 'center', 'important');
             myIsconBox.style.setProperty('align-items', 'center', 'important');
