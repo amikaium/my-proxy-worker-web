@@ -14,11 +14,7 @@
 
         // ২. URL থেকে ডাইনামিক ID এবং Sport ID বের করা
         const pathSegments = window.location.pathname.split('/').filter(segment => segment.length > 0);
-        
-        // স্ল্যাশের একেবারে শেষেরটা হলো Match ID
         const newMatchId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
-        
-        // Match ID এর ঠিক আগেরটা হলো Sport ID (যেমন: 4=Cricket, 1=Soccer, 2=Tennis)
         const sportId = pathSegments.length > 1 ? pathSegments[pathSegments.length - 2] : null;
 
         // ৩. ওয়েবসাইটের অরিজিনাল score_area খুঁজে বের করা
@@ -46,7 +42,7 @@
             scoreArea.appendChild(myIsconBox); // ভেতরে আমাদের বক্স বসানো
           }
 
-          // ৫. স্পোর্টস আইডি অনুযায়ী আইফ্রেম বসানো বা আপডেট করা
+          // ৫. স্পোর্টস আইডি অনুযায়ী সঠিক আইফ্রেম বসানো
           if (newMatchId !== currentMatchId || !myIsconBox.querySelector('iframe')) {
             currentMatchId = newMatchId;
             
@@ -54,13 +50,13 @@
             
             const newIframe = document.createElement('iframe');
             
-            // 🔴 Sport ID অনুযায়ী লিংক পরিবর্তন করার লজিক
+            // 🔴 এখানেই ম্যাজিক! 
             if (sportId === '4') {
-                // স্পোর্টস আইডি 4 হলে ক্রিকেটের লিংক লোড হবে
+                // ক্রিকেট হলে আপনার কাস্টম লিংক (ourscore_C)
                 newIframe.src = "https://score1.365cric.com/#/ourscore_C/" + newMatchId;
             } else {
-                // স্পোর্টস আইডি 4 ছাড়া অন্য কিছু (যেমন 1 বা 2) হলে সকার/টেনিস এর লিংক লোড হবে
-                newIframe.src = "https://live.ckex.xyz/lmt/preview.html?matchId=" + newMatchId;
+                // সকার/টেনিস হলে অরিজিনাল score1 লিংক। এই লিংকটাই নিজে থেকে ckex-এ রিডাইরেক্ট করে নেবে।
+                newIframe.src = "https://score1.365cric.com/#/score1/" + newMatchId;
             }
             
             newIframe.style.setProperty('width', '100%', 'important');
