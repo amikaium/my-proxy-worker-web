@@ -1,5 +1,12 @@
 export default {
   async fetch(request, env, ctx) {
+    
+    // ==========================================
+    // ★ আপনার গ্লোবাল থিম কালার (এখানে চেঞ্জ করলে সব জায়গায় চেঞ্জ হবে)
+    // ==========================================
+    const THEME_COLOR = "#56BAD8"; 
+    // ==========================================
+
     const url = new URL(request.url);
 
     // ==========================================
@@ -8,7 +15,7 @@ export default {
     if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
       const customSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <polygon points="15,0 100,0 100,100 0,100" fill="#56BAD9" />
+          <polygon points="15,0 100,0 100,100 0,100" fill="${THEME_COLOR}" />
         </svg>
       `;
       return new Response(customSvg, {
@@ -156,17 +163,22 @@ export default {
         </script>
       `;
 
-      // ★ নতুন আপডেট: নির্দিষ্ট ক্লাসের জন্য Custom CSS Injection
+      // ★ কাস্টম CSS (নির্দিষ্ট ক্লাসগুলোর জন্য)
       const customCssOverrides = `
         <style>
-          /* স্ক্রিনশটে দেখানো dl.entrance-title এর বর্ডার কালার পরিবর্তন */
+          /* বর্ডার কালার পরিবর্তন */
           dl.entrance-title {
-            border-bottom-color: #56BAD8 !important;
+            border-bottom-color: ${THEME_COLOR} !important;
+          }
+          /* লগইন পেজের ব্যাকগ্রাউন্ড কালার পরিবর্তন */
+          div.login_main {
+            background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important;
+            background-color: ${THEME_COLOR} !important;
           }
         </style>
       `;
 
-      // HTML এর <head> এ স্ক্রিপ্ট এবং কাস্টম স্টাইল একসাথে ইনজেক্ট করা হচ্ছে
+      // HTML এর <head> এ স্ক্রিপ্ট এবং কাস্টম স্টাইল ইনজেক্ট
       text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
       
       // ডোমেইন রিপ্লেস
@@ -174,10 +186,10 @@ export default {
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
       // গ্লোবাল কালার রিপ্লেসমেন্ট (অন্যান্য জায়গার জন্য)
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); 
-      text = text.replace(/#14805e/gi, '#56BAD8'); 
-      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, '#56BAD8'); 
-      text = text.replace(/#009999/gi, '#56BAD8'); 
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, THEME_COLOR); 
+      text = text.replace(/#14805e/gi, THEME_COLOR); 
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, THEME_COLOR); 
+      text = text.replace(/#009999/gi, THEME_COLOR); 
 
       return new Response(text, { status: response.status, headers: resHeaders });
     } 
@@ -191,10 +203,10 @@ export default {
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
       // গ্লোবাল কালার রিপ্লেসমেন্ট
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); 
-      text = text.replace(/#14805e/gi, '#56BAD8'); 
-      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, '#56BAD8'); 
-      text = text.replace(/#009999/gi, '#56BAD8'); 
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, THEME_COLOR); 
+      text = text.replace(/#14805e/gi, THEME_COLOR); 
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, THEME_COLOR); 
+      text = text.replace(/#009999/gi, THEME_COLOR); 
 
       return new Response(text, { status: response.status, headers: resHeaders });
     }
