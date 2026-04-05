@@ -1,140 +1,77 @@
-/**
- * Professional Reverse Proxy Worker - Final & Crash-Proof Version
- * Target: tenx365x.live
- */
+const TARGET_DOMAIN = 'www.baji11.live';
+const TARGET_URL = `https://${TARGET_DOMAIN}`;
 
-const targetHost = 'tenx365x.live';
-const myColor = '#56BBD9';      // আপনার আকাশী কালার
-const oldColor = '#14805E';     // অরিজিনাল সবুজ কালার
-const signUpURL = 'https://arfankhan.vip'; // সাইন আপ লিংক
-
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
-
-async function handleRequest(request) {
-  try {
+export default {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    const actualHost = url.host;
-    url.hostname = targetHost;
+    const clientDomain = url.hostname;
 
-    const newHeaders = new Headers(request.headers);
-    newHeaders.set('Host', targetHost);
-    newHeaders.set('Referer', `https://${targetHost}/`);
-    newHeaders.set('User-Agent', request.headers.get('User-Agent'));
+    // ১. অরিজিনাল সার্ভারের জন্য URL পরিবর্তন
+    url.hostname = TARGET_DOMAIN;
 
-    const response = await fetch(url.toString(), {
+    // ২. রিকোয়েস্ট হেডারগুলো মডিফাই করা (যাতে অরিজিনাল সার্ভার বুঝতে না পারে ট্রাফিক কোথা থেকে আসছে)
+    const modifiedRequestHeaders = new Headers(request.headers);
+    modifiedRequestHeaders.set('Host', TARGET_DOMAIN);
+    modifiedRequestHeaders.set('Referer', TARGET_URL + url.pathname);
+    modifiedRequestHeaders.set('Origin', TARGET_URL);
+
+    const modifiedRequest = new Request(url.toString(), {
       method: request.method,
-      headers: newHeaders,
+      headers: modifiedRequestHeaders,
       body: request.body,
-      redirect: 'follow'
+      redirect: 'manual' // রিডাইরেক্ট নিজে হ্যান্ডেল করার জন্য
     });
 
-    const contentType = response.headers.get('content-type') || '';
+    // ৩. অরিজিনাল সার্ভার থেকে ডেটা ফেচ করা
+    let response = await fetch(modifiedRequest);
+    const responseHeaders = new Headers(response.headers);
 
-    if (
-      contentType.includes('text/html') ||
-      contentType.includes('text/css') ||
-      contentType.includes('application/javascript')
-    ) {
-      let body = await response.text();
+    // ৪. সিকিউরিটি এবং ফ্রেম ব্লকিং বাইপাস করার জন্য কিছু হেডার রিমুভ করা
+    responseHeaders.delete('Content-Security-Policy');
+    responseHeaders.delete('Content-Security-Policy-Report-Only');
+    responseHeaders.delete('Clear-Site-Data');
+    responseHeaders.delete('X-Frame-Options');
 
-      // ১. গ্লোবাল ডোমেইন এবং কালার রিপ্লেসমেন্ট
-      body = body.replace(new RegExp(targetHost, 'g'), actualHost);
-      body = body.replace(new RegExp(oldColor, 'gi'), myColor);
-      body = body.replace(/%2314805E/gi, '%2356BBD9');
-
-      if (contentType.includes('text/html')) {
-        const customStyles = `
-        <style>
-          /* হেডার প্রিমিয়াম ডার্ক গ্রেডিয়েন্ট */
-          header, .header-top {
-            background: linear-gradient(180deg, #252525 0%, #000000 100%) !important;
-            border-bottom: 0.5px solid ${myColor}44 !important;
-          }
-
-          /* লগইন বাটন - সলিড ডিজাইন উইথ আইকন */
-          .login-index.ui-link {
-            background: ${myColor} !important;
-            color: #ffffff !important;
-            border-radius: 4px !important;
-            padding: 6px 14px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            font-weight: bold !important;
-          }
-          .login-index.ui-link::before {
-            content: ''; display: inline-block; width: 15px; height: 15px;
-            margin-right: 6px; background-color: white;
-            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") no-repeat center;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") no-repeat center;
-          }
-
-          /* সাইন আপ বাটন - সলিড ক্লিন ডিজাইন */
-          #signupButton, .btn-signup {
-            display: inline-flex !important; visibility: visible !important;
-            background-color: transparent !important; color: white !important;
-            border: 1.5px solid ${myColor} !important; border-radius: 4px !important;
-            padding: 5px 14px !important; font-weight: bold !important; margin-right: 8px;
-          }
-
-          /* শুধুমাত্র হোমপেজের "Play Now" এর জন্য হেলানো ডিজাইন */
-          .marketbox dd, .game-list dd {
-            background-image: none !important;
-            background-color: ${myColor} !important;
-            clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%) !important;
-            padding-left: 10px !important;
-          }
-
-          /* ভেতরের পেইজে স্কোরবোর্ডের রঙ পরিবর্তন */
-          .odds-box, .back-cell, [class*="back-"] {
-            background-color: ${myColor} !important;
-          }
-          .odds-box span, .odds-box .odds, .back-cell span {
-            color: #000 !important;
-          }
-
-          /* ইন-প্লে লিস্টের ভাঙা ডিজাইন ঠিক করা */
-          .match-info, .ui-block-a, .ui-block-b, .match-row {
-              background: transparent !important;
-          }
-          .ui-btn-active, .active {
-              background: ${myColor} !important;
-          }
-        </style>
-        `;
-        body = body.replace('</head>', `${customStyles}</head>`);
-
-        const forceRedirectScript = `
-        <script>
-          document.addEventListener('click', function(e) {
-            let target = e.target;
-            while (target && target.tagName !== 'A') {
-              target = target.parentElement;
-            }
-            if (target && (target.id === 'signupButton' || target.classList.contains('btn-signup'))) {
-              e.preventDefault();
-              e.stopPropagation();
-              window.location.href = '${signUpURL}';
-            }
-          }, true);
-        </script>
-        `;
-        body = body.replace('</body>', `${forceRedirectScript}</body>`);
-      }
-
-      const modifiedResponse = new Response(body, response);
-      modifiedResponse.headers.delete('content-security-policy');
-      return modifiedResponse;
+    // যদি অরিজিনাল সার্ভার কোনো রিডাইরেক্ট (Location) পাঠায়, তবে সেটা আপনার ডোমেইনে কনভার্ট করা
+    if (responseHeaders.has('Location')) {
+      let location = responseHeaders.get('Location');
+      location = location.replace(new RegExp(`https?://${TARGET_DOMAIN}`, 'g'), `https://${clientDomain}`);
+      responseHeaders.set('Location', location);
     }
 
-    return response;
+    let modifiedResponse = new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
 
-  } catch (e) {
-    // যদি কোনো কারণে কোড ক্র্যাশ করে, তবে এই সেফটি কোডটি অরিজিনাল সাইটটি দেখিয়ে দেবে
-    // এর ফলে 1101 Error আর আসবে না।
-    console.error(`Worker exception: ${e.message}`, e.stack);
-    return fetch(request);
+    // ৫. HTML Rewriter দিয়ে পেজের ভেতরের (href, src, action) লিংকগুলো পরিবর্তন করা
+    const contentType = responseHeaders.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      return new HTMLRewriter()
+        .on('*', new AttributeRewriter(TARGET_DOMAIN, clientDomain))
+        .transform(modifiedResponse);
+    }
+
+    return modifiedResponse;
+  }
+};
+
+// HTML-এর ভেতরের অ্যাট্রিবিউট ডাইনামিকভাবে রিপ্লেস করার জন্য হেল্পার ক্লাস
+class AttributeRewriter {
+  constructor(targetDomain, clientDomain) {
+    this.targetDomain = targetDomain;
+    this.clientDomain = clientDomain;
+  }
+  element(element) {
+    const attributesToRewrite = ['href', 'src', 'action'];
+    for (const attr of attributesToRewrite) {
+      const value = element.getAttribute(attr);
+      if (value) {
+        // অরিজিনাল ডোমেইন খুঁজে পেলে তা আপনার ডাইনামিক ডোমেইন দিয়ে রিপ্লেস করবে
+        const newValue = value.replace(new RegExp(`https?://${this.targetDomain}`, 'g'), `https://${this.clientDomain}`);
+        element.setAttribute(attr, newValue);
+      }
+    }
   }
 }
