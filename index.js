@@ -162,10 +162,15 @@ export default {
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
       // ====================================================
-      // ★ নতুন আপডেট: গ্লোবাল কালার রিপ্লেসমেন্ট (HTML এর ভেতর)
+      // ★ গ্লোবাল কালার রিপ্লেসমেন্ট (HTML এর ভেতর)
       // ====================================================
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); // RGB ভার্সন রিপ্লেস
-      text = text.replace(/#14805e/gi, '#56BAD8'); // Hex ভার্সন রিপ্লেস
+      // আগের হেডারের কালার
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); 
+      text = text.replace(/#14805e/gi, '#56BAD8'); 
+      
+      // নতুন বর্ডার বটম কালার
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, '#56BAD8'); 
+      text = text.replace(/#009999/gi, '#56BAD8'); 
 
       return new Response(text, { status: response.status, headers: resHeaders });
     } 
@@ -179,10 +184,15 @@ export default {
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
       // ====================================================
-      // ★ নতুন আপডেট: গ্লোবাল কালার রিপ্লেসমেন্ট (CSS/JS এর ভেতর)
+      // ★ গ্লোবাল কালার রিপ্লেসমেন্ট (CSS/JS এর ভেতর)
       // ====================================================
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); // RGB ভার্সন রিপ্লেস
-      text = text.replace(/#14805e/gi, '#56BAD8'); // Hex ভার্সন রিপ্লেস
+      // আগের হেডারের কালার
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); 
+      text = text.replace(/#14805e/gi, '#56BAD8'); 
+      
+      // নতুন বর্ডার বটম কালার
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, '#56BAD8'); 
+      text = text.replace(/#009999/gi, '#56BAD8'); 
 
       return new Response(text, { status: response.status, headers: resHeaders });
     }
