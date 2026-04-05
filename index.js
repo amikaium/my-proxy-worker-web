@@ -6,69 +6,106 @@ export default {
     const url = new URL(request.url);
     const clientDomain = url.hostname;
 
-    // ১. অরিজিনাল সার্ভারের জন্য URL পরিবর্তন
+    // ১. CORS Preflight (OPTIONS) হ্যান্ডেল করা - React API-এর জন্য জরুরি
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization",
+        }
+      });
+    }
+
     url.hostname = TARGET_DOMAIN;
 
-    // ২. রিকোয়েস্ট হেডারগুলো মডিফাই করা (যাতে অরিজিনাল সার্ভার বুঝতে না পারে ট্রাফিক কোথা থেকে আসছে)
     const modifiedRequestHeaders = new Headers(request.headers);
     modifiedRequestHeaders.set('Host', TARGET_DOMAIN);
-    modifiedRequestHeaders.set('Referer', TARGET_URL + url.pathname);
     modifiedRequestHeaders.set('Origin', TARGET_URL);
+    modifiedRequestHeaders.set('Referer', TARGET_URL + url.pathname);
 
     const modifiedRequest = new Request(url.toString(), {
       method: request.method,
       headers: modifiedRequestHeaders,
       body: request.body,
-      redirect: 'manual' // রিডাইরেক্ট নিজে হ্যান্ডেল করার জন্য
+      redirect: 'manual'
     });
 
-    // ৩. অরিজিনাল সার্ভার থেকে ডেটা ফেচ করা
     let response = await fetch(modifiedRequest);
     const responseHeaders = new Headers(response.headers);
 
-    // ৪. সিকিউরিটি এবং ফ্রেম ব্লকিং বাইপাস করার জন্য কিছু হেডার রিমুভ করা
     responseHeaders.delete('Content-Security-Policy');
     responseHeaders.delete('Content-Security-Policy-Report-Only');
     responseHeaders.delete('Clear-Site-Data');
     responseHeaders.delete('X-Frame-Options');
 
-    // যদি অরিজিনাল সার্ভার কোনো রিডাইরেক্ট (Location) পাঠায়, তবে সেটা আপনার ডোমেইনে কনভার্ট করা
+    // ২. কুকি রিরাইট (লগইন সেশন ধরে রাখার জন্য সবচেয়ে গুরুত্বপূর্ণ)
+    if (responseHeaders.has('Set-Cookie')) {
+       let cookies = responseHeaders.get('Set-Cookie');
+       // অরিজিনাল ডোমেইনকে ক্লায়েন্ট ডোমেইন দিয়ে রিপ্লেস করা
+       cookies = cookies.replace(new RegExp(TARGET_DOMAIN, 'gi'), clientDomain);
+       // সাবডোমেইন কুকি ফরম্যাট ফিক্স করা
+       cookies = cookies.replace(/domain=\.[^;]+/gi, `domain=.${clientDomain}`);
+       responseHeaders.set('Set-Cookie', cookies);
+    }
+
     if (responseHeaders.has('Location')) {
       let location = responseHeaders.get('Location');
       location = location.replace(new RegExp(`https?://${TARGET_DOMAIN}`, 'g'), `https://${clientDomain}`);
       responseHeaders.set('Location', location);
     }
 
-    let modifiedResponse = new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders
-    });
-
-    // ৫. HTML Rewriter দিয়ে পেজের ভেতরের (href, src, action) লিংকগুলো পরিবর্তন করা
     const contentType = responseHeaders.get('content-type') || '';
+
+    // ৩. HTML হলে HTMLRewriter ব্যবহার করবে
     if (contentType.includes('text/html')) {
+      let modifiedResponse = new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders
+      });
+
       return new HTMLRewriter()
         .on('*', new AttributeRewriter(TARGET_DOMAIN, clientDomain))
         .transform(modifiedResponse);
     }
 
-    return modifiedResponse;
+    // ৪. JS বা JSON হলে ফাইলের ভেতরের টেক্সট/লিংক রিরাইট করবে (API কল ঠিক করার জন্য)
+    if (contentType.includes('application/javascript') || 
+        contentType.includes('text/javascript') || 
+        contentType.includes('application/json')) {
+        
+        let bodyText = await response.text();
+        // JS বা JSON এর ভেতরের অরিজিনাল ডোমেইন খুঁজে আপনার ডোমেইন বসিয়ে দেবে
+        bodyText = bodyText.replace(new RegExp(TARGET_DOMAIN, 'g'), clientDomain);
+
+        return new Response(bodyText, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders
+        });
+    }
+
+    // ইমেজ বা অন্য ফাইলের জন্য সরাসরি রেসপন্স
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
   }
 };
 
-// HTML-এর ভেতরের অ্যাট্রিবিউট ডাইনামিকভাবে রিপ্লেস করার জন্য হেল্পার ক্লাস
 class AttributeRewriter {
   constructor(targetDomain, clientDomain) {
     this.targetDomain = targetDomain;
     this.clientDomain = clientDomain;
   }
   element(element) {
-    const attributesToRewrite = ['href', 'src', 'action'];
+    // data-url বা অন্য কাস্টম অ্যাট্রিবিউটও যুক্ত করা হলো
+    const attributesToRewrite = ['href', 'src', 'action', 'data-url'];
     for (const attr of attributesToRewrite) {
       const value = element.getAttribute(attr);
       if (value) {
-        // অরিজিনাল ডোমেইন খুঁজে পেলে তা আপনার ডাইনামিক ডোমেইন দিয়ে রিপ্লেস করবে
         const newValue = value.replace(new RegExp(`https?://${this.targetDomain}`, 'g'), `https://${this.clientDomain}`);
         element.setAttribute(attr, newValue);
       }
