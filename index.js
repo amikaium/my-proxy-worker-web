@@ -11,6 +11,18 @@ export default {
     // ==========================================
 
     const url = new URL(request.url);
+    const targetDomain = env.TARGET || "pori365.live";
+    const proxyDomain = url.hostname;
+
+    // ==========================================
+    // ০. ডাইরেক্ট লোগো রিকোয়েস্ট ব্লক এবং রিডাইরেক্ট (১০০% গ্যারান্টি)
+    // ব্রাউজার আগের লোগো রিকোয়েস্ট করলেই আপনার লোগো চলে আসবে
+    // ==========================================
+    if (url.pathname.includes('/static/media/logo') || url.pathname.includes('logo.')) {
+      if (url.pathname.endsWith('.png') || url.pathname.endsWith('.svg') || url.pathname.endsWith('.webp')) {
+        return Response.redirect(CUSTOM_LOGO_URL, 302);
+      }
+    }
 
     // ==========================================
     // ১. কাস্টম SVG ইন্টারসেপ্ট
@@ -25,9 +37,6 @@ export default {
         }
       });
     }
-
-    const targetDomain = env.TARGET || "pori365.live";
-    const proxyDomain = url.hostname;
 
     // ==========================================
     // ২. API ও Live TV ইন্টারসেপ্টর রুট
@@ -74,11 +83,9 @@ export default {
         apiResHeaders.set("Set-Cookie", updatedCookie);
       }
 
-      // ★ LIVE TV M3U8 FIX: লাইভ টিভির ফাইলের ভেতরের ডিরেক্ট লিংকগুলো প্রক্সি করা হচ্ছে
       const apiContentType = apiResHeaders.get("Content-Type") || "";
       if (apiContentType.includes("mpegurl") || targetApiUrlStr.includes('.m3u8')) {
         let m3u8Text = await apiRes.text();
-        // M3U8 এর ভেতরের https:// লিংকগুলোকে প্রক্সির আন্ডারে আনা
         m3u8Text = m3u8Text.replace(/(https?:\/\/[^\s"'<>]+)/g, `https://${proxyDomain}/_api_proxy/$1`);
         return new Response(m3u8Text, {
           status: apiRes.status,
@@ -118,7 +125,6 @@ export default {
     resHeaders.delete("content-security-policy");
     resHeaders.delete("x-frame-options");
 
-    // রিডাইরেক্ট ফিক্স
     if (resHeaders.has("Location")) {
       let location = resHeaders.get("Location");
       let newLocation = location.replace(new RegExp(`https?://${targetDomain}`, 'gi'), `https://${proxyDomain}`);
@@ -128,113 +134,89 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML এবং CSS মডিফিকেশন (কালার, লোগো ও লাইভ টিভি ফিক্স)
+    // ৪. HTML এবং JS মডিফিকেশন (সোর্স কোড থেকে আগের লোগো গায়েব করা)
     // ==========================================
-    if (contentType.includes("text/html")) {
+    if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/css")) {
       let text = await response.text();
 
-      // স্ক্রিপ্ট ইন্টারসেপ্টর (লগইন + লাইভ টিভি)
-      const interceptorScript = `
-      <script>
-        (function() {
-          const proxyDom = "${proxyDomain}";
-          const targetDom = "${targetDomain}";
+      // ★ সোর্স কোড থেকে অরিজিনাল লোগোর লিংকগুলো সরাসরি আপনার লোগো দিয়ে রিপ্লেস করা হচ্ছে 
+      // এর ফলে ব্রাউজার আগের লোগোটার অস্তিত্বই খুঁজে পাবে না!
+      text = text.replace(/\/m\/static\/media\/logo[^"'\s\)\\]+/gi, CUSTOM_LOGO_URL);
+      text = text.replace(/https?:\/\/[^\/]+\/m\/static\/media\/logo[^"'\s\)\\]+/gi, CUSTOM_LOGO_URL);
 
-          // ★ LIVE TV FIX: এই ফাংশনটি trueexch এর পাশাপাশি লাইভ টিভির ডোমেইনকেও প্রক্সি করবে
-          const needsProxy = function(url) {
-            if (typeof url !== 'string') return false;
-            return url.includes('trueexch.com') || url.includes('aax-eu1314.com') || url.includes('.m3u8') || url.includes('.ts');
-          };
-
-          const origFetch = window.fetch;
-          window.fetch = async function() {
-            let args = Array.prototype.slice.call(arguments);
-            
-            if (typeof args[0] === 'string' && needsProxy(args[0])) {
-              if (!args[0].includes('/_api_proxy/')) {
-                 args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
+      if (contentType.includes("text/html")) {
+        // স্ক্রিপ্ট ইন্টারসেপ্টর
+        const interceptorScript = `
+        <script>
+          (function() {
+            const proxyDom = "${proxyDomain}";
+            const targetDom = "${targetDomain}";
+            const needsProxy = function(url) {
+              if (typeof url !== 'string') return false;
+              return url.includes('trueexch.com') || url.includes('aax-eu1314.com') || url.includes('.m3u8') || url.includes('.ts');
+            };
+            const origFetch = window.fetch;
+            window.fetch = async function() {
+              let args = Array.prototype.slice.call(arguments);
+              if (typeof args[0] === 'string' && needsProxy(args[0])) {
+                if (!args[0].includes('/_api_proxy/')) {
+                   args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
+                }
+              } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
+                if (!args[0].url.includes('/_api_proxy/')) {
+                   args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
+                }
               }
-            } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
-              if (!args[0].url.includes('/_api_proxy/')) {
-                 args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
+              if (args[1] && args[1].body && typeof args[1].body === 'string') {
+                args[1].body = args[1].body.split(proxyDom).join(targetDom);
               }
-            }
+              return origFetch.apply(this, args);
+            };
+            const origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+              if (typeof url === 'string' && needsProxy(url)) {
+                 if (!url.includes('/_api_proxy/')) {
+                     url = 'https://' + proxyDom + '/_api_proxy/' + url;
+                 }
+              }
+              this._url = url;
+              return origOpen.apply(this, arguments);
+            };
+            const origSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function(body) {
+              if (body && typeof body === 'string') {
+                body = body.split(proxyDom).join(targetDom);
+              }
+              return origSend.call(this, body);
+            };
+          })();
+        </script>
+        `;
 
-            if (args[1] && args[1].body && typeof args[1].body === 'string') {
-              args[1].body = args[1].body.split(proxyDom).join(targetDom);
-            }
-            return origFetch.apply(this, args);
-          };
+        // ★ কাস্টম CSS (লোগোর জন্য এক্সট্রা প্রটেকশন)
+        const customCssOverrides = `
+        <style> 
+          dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
+          div.login_main { 
+            background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
+            background-color: ${THEME_COLOR} !important; 
+          } 
+          /* ডাবল প্রটেকশন: যেন কোনোভাবেই অন্য লোগো না আসে */
+          h1.top-logo, .top-logo {
+            background-image: url('${CUSTOM_LOGO_URL}') !important;
+            background-size: contain !important;
+            background-position: left center !important;
+            background-repeat: no-repeat !important;
+            background-color: transparent !important;
+          }
+        </style>`;
 
-          const origOpen = XMLHttpRequest.prototype.open;
-          XMLHttpRequest.prototype.open = function(method, url) {
-            if (typeof url === 'string' && needsProxy(url)) {
-               if (!url.includes('/_api_proxy/')) {
-                   url = 'https://' + proxyDom + '/_api_proxy/' + url;
-               }
-            }
-            this._url = url;
-            return origOpen.apply(this, arguments);
-          };
+        text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
+      }
 
-          const origSend = XMLHttpRequest.prototype.send;
-          XMLHttpRequest.prototype.send = function(body) {
-            if (body && typeof body === 'string') {
-              body = body.split(proxyDom).join(targetDom);
-            }
-            return origSend.call(this, body);
-          };
-        })();
-      </script>
-      `;
-
-      // ★ কাস্টম CSS (লোগো পরিবর্তন সহ)
-      const customCssOverrides = `
-      <style> 
-        /* বর্ডার কালার পরিবর্তন */ 
-        dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
-        
-        /* লগইন পেজের ব্যাকগ্রাউন্ড কালার পরিবর্তন */ 
-        div.login_main { 
-          background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
-          background-color: ${THEME_COLOR} !important; 
-        } 
-        
-        /* ★ টপ লোগো পরিবর্তন (কোনো ফ্ল্যাশ ছাড়াই পারমানেন্ট চেঞ্জ) */
-        h1.top-logo, .top-logo {
-          background-image: url('${CUSTOM_LOGO_URL}') !important;
-          background-size: contain !important;
-          background-position: left center !important;
-          background-repeat: no-repeat !important;
-          background-color: transparent !important;
-        }
-      </style>`;
-
-      // HTML এর <head> এ স্ক্রিপ্ট এবং কাস্টম স্টাইল ইনজেক্ট
-      text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
-
-      // ডোমেইন রিপ্লেস
+      // ডোমেইন ও কালার রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
-
-      // গ্লোবাল কালার রিপ্লেসমেন্ট
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, THEME_COLOR);
-      text = text.replace(/#14805e/gi, THEME_COLOR);
-      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, THEME_COLOR);
-      text = text.replace(/#009999/gi, THEME_COLOR);
-
-      return new Response(text, { status: response.status, headers: resHeaders });
-    }
-
-    // JS বা CSS ফাইলের জন্য
-    if (contentType.includes("application/javascript") || contentType.includes("text/css")) {
-      let text = await response.text();
-
-      // ডোমেইন রিপ্লেস
-      text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
-      text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
-
-      // গ্লোবাল কালার রিপ্লেসমেন্ট
       text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, THEME_COLOR);
       text = text.replace(/#14805e/gi, THEME_COLOR);
       text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, THEME_COLOR);
