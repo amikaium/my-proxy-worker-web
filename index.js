@@ -2,9 +2,12 @@ export default {
   async fetch(request, env, ctx) {
 
     // ==========================================
-    // ★ আপনার গ্লোবাল থিম কালার
+    // ★ আপনার গ্লোবাল থিম কালার ও কাস্টম লোগো
     // ==========================================
     const THEME_COLOR = "#000000";
+    
+    // নিচে আপনার লোগোর ডাইরেক্ট লিংক (URL) বসিয়ে দিন:
+    const CUSTOM_LOGO_URL = "https://আপনার-লোগোর-লিংক-এখানে-দিন.png"; 
     // ==========================================
 
     const url = new URL(request.url);
@@ -125,7 +128,7 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML এবং CSS মডিফিকেশন (কালার ও লাইভ টিভি ফিক্স)
+    // ৪. HTML এবং CSS মডিফিকেশন (কালার, লোগো ও লাইভ টিভি ফিক্স)
     // ==========================================
     if (contentType.includes("text/html")) {
       let text = await response.text();
@@ -185,8 +188,27 @@ export default {
       </script>
       `;
 
-      // ★ কাস্টম CSS 
-      const customCssOverrides = `<style> /* বর্ডার কালার পরিবর্তন */ dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } /* লগইন পেজের ব্যাকগ্রাউন্ড কালার পরিবর্তন */ div.login_main { background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; background-color: ${THEME_COLOR} !important; } </style>`;
+      // ★ কাস্টম CSS (লোগো পরিবর্তন সহ)
+      const customCssOverrides = `
+      <style> 
+        /* বর্ডার কালার পরিবর্তন */ 
+        dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
+        
+        /* লগইন পেজের ব্যাকগ্রাউন্ড কালার পরিবর্তন */ 
+        div.login_main { 
+          background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
+          background-color: ${THEME_COLOR} !important; 
+        } 
+        
+        /* ★ টপ লোগো পরিবর্তন (কোনো ফ্ল্যাশ ছাড়াই পারমানেন্ট চেঞ্জ) */
+        h1.top-logo, .top-logo {
+          background-image: url('${CUSTOM_LOGO_URL}') !important;
+          background-size: contain !important;
+          background-position: left center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+        }
+      </style>`;
 
       // HTML এর <head> এ স্ক্রিপ্ট এবং কাস্টম স্টাইল ইনজেক্ট
       text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
