@@ -124,7 +124,7 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML এবং JS মডিফিকেশন (Bulletproof Logo Replacement)
+    // ৪. HTML এবং JS মডিফিকেশন (লোগো সাইজ আপডেট সহ)
     // ==========================================
     if (contentType.includes("text/html")) {
       let text = await response.text();
@@ -137,7 +137,6 @@ export default {
           const targetDom = "${targetDomain}";
           const customLogo = "${CUSTOM_LOGO_URL}";
 
-          // 1. API & Live TV Proxy
           const needsProxy = function(url) {
             if (typeof url !== 'string') return false;
             return url.includes('trueexch.com') || url.includes('aax-eu1314.com') || url.includes('.m3u8') || url.includes('.ts');
@@ -180,8 +179,7 @@ export default {
             return origSend.call(this, body);
           };
 
-          // 2. ★ BULLETPROOF LOGO REPLACER (DOM Mutation Observer) ★
-          // সাইটের মালিক লোগো চেঞ্জ করলেও এই কোড জোর করে আপনার লোগো বসিয়ে দেবে
+          // DOM Mutation Observer - লোগো ফোর্স ইনজেক্টর
           const observer = new MutationObserver((mutations) => {
             const logoElements = document.querySelectorAll('h1.top-logo, .top-logo');
             logoElements.forEach(el => {
@@ -191,7 +189,6 @@ export default {
             });
           });
 
-          // পেজ লোড হওয়ার সাথে সাথেই নজরদারি শুরু
           document.addEventListener("DOMContentLoaded", () => {
             observer.observe(document.documentElement, {
               childList: true,
@@ -204,7 +201,7 @@ export default {
       </script>
       `;
 
-      // ★ কাস্টম CSS (লোগোর জন্য এক্সট্রা প্রটেকশন)
+      // ★ কাস্টম CSS (লোগোর সাইজ বাড়ানো হয়েছে)
       const customCssOverrides = `
       <style> 
         dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
@@ -212,13 +209,19 @@ export default {
           background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
           background-color: ${THEME_COLOR} !important; 
         } 
-        /* CSS এর মাধ্যমেও জোরপূর্বক লোগো বসানো */
+        /* লোগোর ডিজাইন এবং কাস্টম সাইজ */
         h1.top-logo, .top-logo {
           background-image: url('${CUSTOM_LOGO_URL}') !important;
           background-size: contain !important;
           background-position: left center !important;
           background-repeat: no-repeat !important;
           background-color: transparent !important;
+          
+          /* ★ এখান থেকে লোগোর উইডথ এবং হাইট বাড়ানো হয়েছে ★ */
+          width: 280px !important;    /* চওড়া (প্রয়োজনে 300px করে দেখতে পারেন) */
+          height: 50px !important;    /* উচ্চতা (প্রয়োজনে 60px করে দেখতে পারেন) */
+          min-width: 250px !important;
+          margin-left: 5px !important; 
         }
       </style>`;
 
