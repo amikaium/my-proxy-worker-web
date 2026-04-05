@@ -7,7 +7,7 @@ export default {
     const THEME_COLOR = "#000000";
     
     // আপনার নতুন লোগো লিংক
-    const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775419855534-c0e8997f-10c5-452a-92fd-c65ab453a430.webp"; 
+    const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775420282487-652be097-3047-46d3-b4bc-b96484bafb3d.webp"; 
     // ==========================================
 
     const url = new URL(request.url);
