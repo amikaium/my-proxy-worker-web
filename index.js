@@ -115,6 +115,7 @@ export default {
     if (contentType.includes("text/html")) {
       let text = await response.text();
 
+      // স্ক্রিপ্ট ইন্টারসেপ্টর (লগইনের জন্য)
       const interceptorScript = `
         <script>
           (function() {
@@ -155,20 +156,26 @@ export default {
         </script>
       `;
 
-      text = text.replace('<head>', '<head>' + interceptorScript);
+      // ★ নতুন আপডেট: নির্দিষ্ট ক্লাসের জন্য Custom CSS Injection
+      const customCssOverrides = `
+        <style>
+          /* স্ক্রিনশটে দেখানো dl.entrance-title এর বর্ডার কালার পরিবর্তন */
+          dl.entrance-title {
+            border-bottom-color: #56BAD8 !important;
+          }
+        </style>
+      `;
+
+      // HTML এর <head> এ স্ক্রিপ্ট এবং কাস্টম স্টাইল একসাথে ইনজেক্ট করা হচ্ছে
+      text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
       
       // ডোমেইন রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
-      // ====================================================
-      // ★ গ্লোবাল কালার রিপ্লেসমেন্ট (HTML এর ভেতর)
-      // ====================================================
-      // আগের হেডারের কালার
+      // গ্লোবাল কালার রিপ্লেসমেন্ট (অন্যান্য জায়গার জন্য)
       text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); 
       text = text.replace(/#14805e/gi, '#56BAD8'); 
-      
-      // নতুন বর্ডার বটম কালার
       text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, '#56BAD8'); 
       text = text.replace(/#009999/gi, '#56BAD8'); 
 
@@ -183,14 +190,9 @@ export default {
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
-      // ====================================================
-      // ★ গ্লোবাল কালার রিপ্লেসমেন্ট (CSS/JS এর ভেতর)
-      // ====================================================
-      // আগের হেডারের কালার
+      // গ্লোবাল কালার রিপ্লেসমেন্ট
       text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); 
       text = text.replace(/#14805e/gi, '#56BAD8'); 
-      
-      // নতুন বর্ডার বটম কালার
       text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, '#56BAD8'); 
       text = text.replace(/#009999/gi, '#56BAD8'); 
 
