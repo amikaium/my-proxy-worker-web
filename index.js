@@ -4,10 +4,10 @@ export default {
     // ==========================================
     // ★ আপনার গ্লোবাল থিম কালার ও কাস্টম লোগো
     // ==========================================
-    const THEME_COLOR = "#000000";
+    const THEME_COLOR = "#FCAF04";
     
     // আপনার নতুন লোগো লিংক
-    const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775419855534-c0e8997f-10c5-452a-92fd-c65ab453a430.webp"; 
+    const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775421100175-4839c224-d781-4752-be19-a6b02ccc51a0.webp"; 
     // ==========================================
 
     const url = new URL(request.url);
