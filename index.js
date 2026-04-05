@@ -92,7 +92,7 @@ export default {
       method: request.method,
       headers: reqHeaders,
       body: request.body,
-      redirect: 'manual' // অটো রিডাইরেক্ট বন্ধ করা হয়েছে
+      redirect: 'manual' 
     });
 
     let resHeaders = new Headers(response.headers);
@@ -100,7 +100,7 @@ export default {
     resHeaders.delete("content-security-policy");
     resHeaders.delete("x-frame-options");
 
-    // **[রিডাইরেক্ট ফিক্স] সার্ভার রিডাইরেক্ট করলে তাকে আমাদের ডোমেইনে ঘুরিয়ে দেওয়া**
+    // রিডাইরেক্ট ফিক্স
     if (resHeaders.has("Location")) {
       let location = resHeaders.get("Location");
       let newLocation = location.replace(new RegExp(`https?://${targetDomain}`, 'gi'), `https://${proxyDomain}`);
@@ -110,36 +110,31 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML এর ভেতর জাদুকরী স্ক্রিপ্ট ইনজেকশন
+    // ৪. HTML এবং CSS মডিফিকেশন (কালার পরিবর্তন সহ)
     // ==========================================
     if (contentType.includes("text/html")) {
       let text = await response.text();
 
-      // স্ক্রিপ্টের ভেতর JS রিডাইরেক্ট প্রোটেকশন যুক্ত করা হয়েছে
       const interceptorScript = `
         <script>
           (function() {
             const proxyDom = "${proxyDomain}";
             const targetDom = "${targetDomain}";
             
-            // Override Fetch API (লগইনের জন্য)
             const origFetch = window.fetch;
             window.fetch = async function() {
               let args = Array.prototype.slice.call(arguments);
-              
               if (typeof args[0] === 'string' && args[0].includes('trueexch.com')) {
                 args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
               } else if (args[0] instanceof Request && args[0].url.includes('trueexch.com')) {
                 args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
               }
-              
               if (args[1] && args[1].body && typeof args[1].body === 'string') {
                 args[1].body = args[1].body.split(proxyDom).join(targetDom);
               }
               return origFetch.apply(this, args);
             };
 
-            // Override XMLHttpRequest (XHR) (লগইনের জন্য)
             const origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
               if (typeof url === 'string' && url.includes('trueexch.com')) {
@@ -162,9 +157,15 @@ export default {
 
       text = text.replace('<head>', '<head>' + interceptorScript);
       
-      // বডির সব জায়গায় ডোমেইন রিপ্লেস
+      // ডোমেইন রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
+
+      // ====================================================
+      // ★ নতুন আপডেট: গ্লোবাল কালার রিপ্লেসমেন্ট (HTML এর ভেতর)
+      // ====================================================
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); // RGB ভার্সন রিপ্লেস
+      text = text.replace(/#14805e/gi, '#56BAD8'); // Hex ভার্সন রিপ্লেস
 
       return new Response(text, { status: response.status, headers: resHeaders });
     } 
@@ -172,8 +173,17 @@ export default {
     // JS বা CSS ফাইলের জন্য
     if (contentType.includes("application/javascript") || contentType.includes("text/css")) {
       let text = await response.text();
+      
+      // ডোমেইন রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
+
+      // ====================================================
+      // ★ নতুন আপডেট: গ্লোবাল কালার রিপ্লেসমেন্ট (CSS/JS এর ভেতর)
+      // ====================================================
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, '#56BAD8'); // RGB ভার্সন রিপ্লেস
+      text = text.replace(/#14805e/gi, '#56BAD8'); // Hex ভার্সন রিপ্লেস
+
       return new Response(text, { status: response.status, headers: resHeaders });
     }
 
