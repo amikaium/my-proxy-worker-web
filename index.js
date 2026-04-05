@@ -7,12 +7,12 @@ export default {
     // ==========================================
     if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
       
-      // পরিমাপ পরিবর্তন করা হয়েছে: points="2,0 100,0 100,100 0,100"
-      // এখন এটি বাম দিকে আরও বেশি বিস্তৃত এবং বড়, 
-      // কিন্তু ডান দিক দিয়ে কোনো ফাঁকা তৈরি করবে না।
+      // পয়েন্ট আপডেট করা হয়েছে: points="30,0 100,0 100,100 0,100"
+      // এখন বাম দিকটা একদম পারফেক্টলি ত্রিভুজের মতো হেলে থাকবে 
+      // এবং ডান দিকটা পুরোপুরি কভার করা থাকবে।
       const customSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <polygon points="2,0 100,0 100,100 0,100" fill="#56BAD9" />
+          <polygon points="30,0 100,0 100,100 0,100" fill="#56BAD9" />
         </svg>
       `;
       
@@ -39,7 +39,7 @@ export default {
     targetUrl.hostname = targetDomain;
     targetUrl.protocol = 'https:';
 
-    // রিকোয়েস্ট হেডার মডিফাই করা (অরিজিনাল সাইটকে ধোঁকা দেওয়ার জন্য)
+    // রিকোয়েস্ট হেডার মডিফাই করা
     const newRequestHeaders = new Headers(request.headers);
     newRequestHeaders.set("Host", targetDomain);
     newRequestHeaders.set("Referer", `https://${targetDomain}/`);
