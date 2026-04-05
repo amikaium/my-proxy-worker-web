@@ -6,23 +6,13 @@ export default {
     // ==========================================
     const THEME_COLOR = "#000000";
     
-    // নিচে আপনার লোগোর ডাইরেক্ট লিংক (URL) বসিয়ে দিন:
-    const CUSTOM_LOGO_URL = "https://আপনার-লোগোর-লিংক-এখানে-দিন.png"; 
+    // আপনার নতুন লোগো লিংক
+    const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775419855534-c0e8997f-10c5-452a-92fd-c65ab453a430.webp"; 
     // ==========================================
 
     const url = new URL(request.url);
     const targetDomain = env.TARGET || "pori365.live";
     const proxyDomain = url.hostname;
-
-    // ==========================================
-    // ০. ডাইরেক্ট লোগো রিকোয়েস্ট ব্লক এবং রিডাইরেক্ট (১০০% গ্যারান্টি)
-    // ব্রাউজার আগের লোগো রিকোয়েস্ট করলেই আপনার লোগো চলে আসবে
-    // ==========================================
-    if (url.pathname.includes('/static/media/logo') || url.pathname.includes('logo.')) {
-      if (url.pathname.endsWith('.png') || url.pathname.endsWith('.svg') || url.pathname.endsWith('.webp')) {
-        return Response.redirect(CUSTOM_LOGO_URL, 302);
-      }
-    }
 
     // ==========================================
     // ১. কাস্টম SVG ইন্টারসেপ্ট
@@ -134,86 +124,119 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML এবং JS মডিফিকেশন (সোর্স কোড থেকে আগের লোগো গায়েব করা)
+    // ৪. HTML এবং JS মডিফিকেশন (Bulletproof Logo Replacement)
     // ==========================================
-    if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/css")) {
+    if (contentType.includes("text/html")) {
       let text = await response.text();
 
-      // ★ সোর্স কোড থেকে অরিজিনাল লোগোর লিংকগুলো সরাসরি আপনার লোগো দিয়ে রিপ্লেস করা হচ্ছে 
-      // এর ফলে ব্রাউজার আগের লোগোটার অস্তিত্বই খুঁজে পাবে না!
-      text = text.replace(/\/m\/static\/media\/logo[^"'\s\)\\]+/gi, CUSTOM_LOGO_URL);
-      text = text.replace(/https?:\/\/[^\/]+\/m\/static\/media\/logo[^"'\s\)\\]+/gi, CUSTOM_LOGO_URL);
+      // ★ বুলেটপ্রুফ স্ক্রিপ্ট (API + লাইভ টিভি ফিক্স এবং ফোর্স লোগো ইনজেক্টর)
+      const interceptorScript = `
+      <script>
+        (function() {
+          const proxyDom = "${proxyDomain}";
+          const targetDom = "${targetDomain}";
+          const customLogo = "${CUSTOM_LOGO_URL}";
 
-      if (contentType.includes("text/html")) {
-        // স্ক্রিপ্ট ইন্টারসেপ্টর
-        const interceptorScript = `
-        <script>
-          (function() {
-            const proxyDom = "${proxyDomain}";
-            const targetDom = "${targetDomain}";
-            const needsProxy = function(url) {
-              if (typeof url !== 'string') return false;
-              return url.includes('trueexch.com') || url.includes('aax-eu1314.com') || url.includes('.m3u8') || url.includes('.ts');
-            };
-            const origFetch = window.fetch;
-            window.fetch = async function() {
-              let args = Array.prototype.slice.call(arguments);
-              if (typeof args[0] === 'string' && needsProxy(args[0])) {
-                if (!args[0].includes('/_api_proxy/')) {
-                   args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
-                }
-              } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
-                if (!args[0].url.includes('/_api_proxy/')) {
-                   args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
-                }
-              }
-              if (args[1] && args[1].body && typeof args[1].body === 'string') {
-                args[1].body = args[1].body.split(proxyDom).join(targetDom);
-              }
-              return origFetch.apply(this, args);
-            };
-            const origOpen = XMLHttpRequest.prototype.open;
-            XMLHttpRequest.prototype.open = function(method, url) {
-              if (typeof url === 'string' && needsProxy(url)) {
-                 if (!url.includes('/_api_proxy/')) {
-                     url = 'https://' + proxyDom + '/_api_proxy/' + url;
-                 }
-              }
-              this._url = url;
-              return origOpen.apply(this, arguments);
-            };
-            const origSend = XMLHttpRequest.prototype.send;
-            XMLHttpRequest.prototype.send = function(body) {
-              if (body && typeof body === 'string') {
-                body = body.split(proxyDom).join(targetDom);
-              }
-              return origSend.call(this, body);
-            };
-          })();
-        </script>
-        `;
+          // 1. API & Live TV Proxy
+          const needsProxy = function(url) {
+            if (typeof url !== 'string') return false;
+            return url.includes('trueexch.com') || url.includes('aax-eu1314.com') || url.includes('.m3u8') || url.includes('.ts');
+          };
 
-        // ★ কাস্টম CSS (লোগোর জন্য এক্সট্রা প্রটেকশন)
-        const customCssOverrides = `
-        <style> 
-          dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
-          div.login_main { 
-            background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
-            background-color: ${THEME_COLOR} !important; 
-          } 
-          /* ডাবল প্রটেকশন: যেন কোনোভাবেই অন্য লোগো না আসে */
-          h1.top-logo, .top-logo {
-            background-image: url('${CUSTOM_LOGO_URL}') !important;
-            background-size: contain !important;
-            background-position: left center !important;
-            background-repeat: no-repeat !important;
-            background-color: transparent !important;
-          }
-        </style>`;
+          const origFetch = window.fetch;
+          window.fetch = async function() {
+            let args = Array.prototype.slice.call(arguments);
+            if (typeof args[0] === 'string' && needsProxy(args[0])) {
+              if (!args[0].includes('/_api_proxy/')) {
+                 args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
+              }
+            } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
+              if (!args[0].url.includes('/_api_proxy/')) {
+                 args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
+              }
+            }
+            if (args[1] && args[1].body && typeof args[1].body === 'string') {
+              args[1].body = args[1].body.split(proxyDom).join(targetDom);
+            }
+            return origFetch.apply(this, args);
+          };
 
-        text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
-      }
+          const origOpen = XMLHttpRequest.prototype.open;
+          XMLHttpRequest.prototype.open = function(method, url) {
+            if (typeof url === 'string' && needsProxy(url)) {
+               if (!url.includes('/_api_proxy/')) {
+                   url = 'https://' + proxyDom + '/_api_proxy/' + url;
+               }
+            }
+            this._url = url;
+            return origOpen.apply(this, arguments);
+          };
 
+          const origSend = XMLHttpRequest.prototype.send;
+          XMLHttpRequest.prototype.send = function(body) {
+            if (body && typeof body === 'string') {
+              body = body.split(proxyDom).join(targetDom);
+            }
+            return origSend.call(this, body);
+          };
+
+          // 2. ★ BULLETPROOF LOGO REPLACER (DOM Mutation Observer) ★
+          // সাইটের মালিক লোগো চেঞ্জ করলেও এই কোড জোর করে আপনার লোগো বসিয়ে দেবে
+          const observer = new MutationObserver((mutations) => {
+            const logoElements = document.querySelectorAll('h1.top-logo, .top-logo');
+            logoElements.forEach(el => {
+              if (el.style.backgroundImage !== 'url("' + customLogo + '")') {
+                el.style.setProperty('background-image', 'url("' + customLogo + '")', 'important');
+              }
+            });
+          });
+
+          // পেজ লোড হওয়ার সাথে সাথেই নজরদারি শুরু
+          document.addEventListener("DOMContentLoaded", () => {
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+              attributes: true,
+              attributeFilter: ['style', 'class']
+            });
+          });
+        })();
+      </script>
+      `;
+
+      // ★ কাস্টম CSS (লোগোর জন্য এক্সট্রা প্রটেকশন)
+      const customCssOverrides = `
+      <style> 
+        dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
+        div.login_main { 
+          background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
+          background-color: ${THEME_COLOR} !important; 
+        } 
+        /* CSS এর মাধ্যমেও জোরপূর্বক লোগো বসানো */
+        h1.top-logo, .top-logo {
+          background-image: url('${CUSTOM_LOGO_URL}') !important;
+          background-size: contain !important;
+          background-position: left center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+        }
+      </style>`;
+
+      text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
+
+      // ডোমেইন ও কালার রিপ্লেস
+      text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
+      text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, THEME_COLOR);
+      text = text.replace(/#14805e/gi, THEME_COLOR);
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, THEME_COLOR);
+      text = text.replace(/#009999/gi, THEME_COLOR);
+
+      return new Response(text, { status: response.status, headers: resHeaders });
+    }
+
+    if (contentType.includes("application/javascript") || contentType.includes("text/css")) {
+      let text = await response.text();
       // ডোমেইন ও কালার রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
