@@ -7,12 +7,11 @@ export default {
     // ==========================================
     if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
       
-      // পয়েন্ট আপডেট করা হয়েছে: points="30,0 100,0 100,100 0,100"
-      // এখন বাম দিকটা একদম পারফেক্টলি ত্রিভুজের মতো হেলে থাকবে 
-      // এবং ডান দিকটা পুরোপুরি কভার করা থাকবে।
+      // পয়েন্ট আপডেট করা হয়েছে: points="15,0 100,0 100,100 0,100"
+      // এটি শেপটিকে আরও চওড়া করে বাম দিকে নিয়ে আসবে এবং ডান দিক ভরাট রাখবে।
       const customSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <polygon points="30,0 100,0 100,100 0,100" fill="#56BAD9" />
+          <polygon points="15,0 100,0 100,100 0,100" fill="#56BAD9" />
         </svg>
       `;
       
@@ -30,7 +29,6 @@ export default {
     // ==========================================
     
     // আপনার টার্গেট ডোমেইনটি Environment Variable (TARGET) থেকে নেওয়া হবে।
-    // ড্যাশবোর্ড থেকে TARGET সেট না করলে এটি ডিফল্টভাবে pori365.live ব্যবহার করবে।
     const targetDomain = env.TARGET || "pori365.live";
     const proxyDomain = url.hostname;
 
