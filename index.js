@@ -1,137 +1,77 @@
-const TARGET_DOMAIN = 'www.baji11.live';
-const TARGET_URL = `https://${TARGET_DOMAIN}`;
-
+// এই কোডটি পুরোপুরি ডাইনামিক। ডোমেইন সেট করার নিয়ম নিচে দেওয়া হলো।
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const clientDomain = url.hostname;
-
-    // ১. WebSocket (WSS) হ্যান্ডেল করা - বেটিং সাইটের জন্য খুবই জরুরি
-    const upgradeHeader = request.headers.get('Upgrade');
-    if (upgradeHeader && upgradeHeader.toLowerCase() === 'websocket') {
-      url.hostname = TARGET_DOMAIN;
-      const wsRequest = new Request(url.toString(), {
-        headers: request.headers,
-        method: request.method,
-      });
-      return fetch(wsRequest);
-    }
-
-    // ২. CORS Preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "*",
-          "Access-Control-Allow-Credentials": "true"
-        }
-      });
-    }
-
-    url.hostname = TARGET_DOMAIN;
-
-    const modifiedRequestHeaders = new Headers(request.headers);
-    modifiedRequestHeaders.set('Host', TARGET_DOMAIN);
-    modifiedRequestHeaders.set('Origin', TARGET_URL);
-    modifiedRequestHeaders.set('Referer', TARGET_URL + url.pathname);
+    // ১. আপনার টার্গেট ডোমেইনটি Environment Variable (TARGET) থেকে নেওয়া হবে।
+    // ড্যাশবোর্ড থেকে TARGET সেট না করলে এটি ডিফল্টভাবে pori365.live ব্যবহার করবে।
+    const targetDomain = env.TARGET || "pori365.live";
     
-    // কিছু বাড়তি সিকিউরিটি হেডার মুছে ফেলা যা প্রক্সিকে ব্লক করতে পারে
-    modifiedRequestHeaders.delete('CF-Connecting-IP');
-    modifiedRequestHeaders.delete('X-Forwarded-For');
+    const url = new URL(request.url);
+    const proxyDomain = url.hostname; // আপনার প্রক্সি ডোমেইনটি অটো ডিটেক্ট করবে
 
-    const modifiedRequest = new Request(url.toString(), {
+    // টার্গেট ইউআরএল তৈরি
+    const targetUrl = new URL(request.url);
+    targetUrl.hostname = targetDomain;
+    targetUrl.protocol = 'https:';
+
+    // রিকোয়েস্ট হেডার মডিফাই করা (অরিজিনাল সাইটকে ধোঁকা দেওয়ার জন্য)
+    const newRequestHeaders = new Headers(request.headers);
+    newRequestHeaders.set("Host", targetDomain);
+    newRequestHeaders.set("Referer", `https://${targetDomain}/`);
+    newRequestHeaders.set("Origin", `https://${targetDomain}`);
+    
+    // রিয়েল আইপি সংক্রান্ত কিছু হেডার রিমুভ করা
+    newRequestHeaders.delete("cf-connecting-ip");
+    newRequestHeaders.delete("x-real-ip");
+
+    // মূল সার্ভার থেকে ডেটা ফেচ করা
+    let response = await fetch(targetUrl.toString(), {
       method: request.method,
-      headers: modifiedRequestHeaders,
+      headers: newRequestHeaders,
       body: request.body,
-      redirect: 'manual'
+      redirect: "manual",
     });
 
-    let response = await fetch(modifiedRequest);
-    const responseHeaders = new Headers(response.headers);
+    // রেসপন্স হেডার কপি এবং মডিফাই
+    let newResponseHeaders = new Headers(response.headers);
+    newResponseHeaders.set("Access-Control-Allow-Origin", "*");
+    newResponseHeaders.delete("content-security-policy");
+    newResponseHeaders.delete("x-frame-options");
 
-    responseHeaders.delete('Content-Security-Policy');
-    responseHeaders.delete('Content-Security-Policy-Report-Only');
-    responseHeaders.delete('Clear-Site-Data');
-    responseHeaders.delete('X-Frame-Options');
-    responseHeaders.delete('Strict-Transport-Security'); // HSTS ব্লক এড়াতে
-
-    // ৩. কুকি পলিসি শিথিল করা
-    if (responseHeaders.has('Set-Cookie')) {
-       const cookies = responseHeaders.get('Set-Cookie');
-       const updatedCookies = cookies.split(', ').map(cookie => {
-           let c = cookie.replace(new RegExp(TARGET_DOMAIN, 'gi'), clientDomain);
-           c = c.replace(/domain=\.[^;]+/gi, `domain=.${clientDomain}`);
-           // SameSite পলিসিকে None করে দেওয়া যাতে থার্ড-পার্টি কন্টেক্সটেও কাজ করে
-           c = c.replace(/SameSite=(Lax|Strict)/gi, 'SameSite=None');
-           if (!c.includes('Secure')) {
-               c += '; Secure'; // SameSite=None এর সাথে Secure থাকা বাধ্যতামূলক
-           }
-           return c;
-       }).join(', ');
-       
-       responseHeaders.set('Set-Cookie', updatedCookies);
+    // রিডাইরেক্ট (301/302) হ্যান্ডেল করা
+    if (newResponseHeaders.has("Location")) {
+      let location = newResponseHeaders.get("Location");
+      newResponseHeaders.set("Location", location.replace(new RegExp(targetDomain, 'g'), proxyDomain));
     }
 
-    if (responseHeaders.has('Location')) {
-      let location = responseHeaders.get('Location');
-      location = location.replace(new RegExp(`https?://${TARGET_DOMAIN}`, 'g'), `https://${clientDomain}`);
-      responseHeaders.set('Location', location);
+    // কুকিজ ডোমেইন পরিবর্তন করা (লগইন ঠিক রাখার জন্য)
+    const setCookie = newResponseHeaders.get("Set-Cookie");
+    if (setCookie) {
+      newResponseHeaders.set("Set-Cookie", setCookie.replace(new RegExp(targetDomain, 'g'), proxyDomain));
     }
 
-    const contentType = responseHeaders.get('content-type') || '';
+    const contentType = newResponseHeaders.get("Content-Type") || "";
 
-    // ৪. HTML Rewriter
-    if (contentType.includes('text/html')) {
-      let modifiedResponse = new Response(response.body, {
+    // যদি রেসপন্সটি HTML, JS বা CSS হয়, তবে তার ভেতরকার সব লিংক রিপ্লেস করা
+    if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/css")) {
+      let text = await response.text();
+      
+      // মূল সাইটের ডোমেইন যেখানে যেখানে আছে, সব আপনার প্রক্সি ডোমেইন দিয়ে বদলে যাবে
+      const dynamicRegex = new RegExp(targetDomain, 'g');
+      text = text.replace(dynamicRegex, proxyDomain);
+      
+      // কিছু হার্ডকোড করা প্রোটোকল ফিক্স
+      text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
+
+      return new Response(text, {
         status: response.status,
-        statusText: response.statusText,
-        headers: responseHeaders
+        headers: newResponseHeaders
       });
-
-      return new HTMLRewriter()
-        .on('*', new AttributeRewriter(TARGET_DOMAIN, clientDomain))
-        .transform(modifiedResponse);
     }
 
-    // ৫. JS/JSON Rewrite
-    if (contentType.includes('application/javascript') || 
-        contentType.includes('text/javascript') || 
-        contentType.includes('application/json')) {
-        
-        let bodyText = await response.text();
-        // ডোমেইন রিপ্লেস করার পাশাপাশি এস্কেপড ডোমেইনও (যেমন www\.baji11\.live) রিপ্লেস করা
-        bodyText = bodyText.replace(new RegExp(TARGET_DOMAIN, 'g'), clientDomain);
-        bodyText = bodyText.replace(new RegExp('www\\\\.baji11\\\\.live', 'g'), clientDomain); 
-
-        return new Response(bodyText, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: responseHeaders
-        });
-    }
-
+    // ইমেজ বা অন্যান্য ফাইলের জন্য সরাসরি রেসপন্স পাঠানো
     return new Response(response.body, {
       status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders
+      headers: newResponseHeaders
     });
   }
 };
-
-class AttributeRewriter {
-  constructor(targetDomain, clientDomain) {
-    this.targetDomain = targetDomain;
-    this.clientDomain = clientDomain;
-  }
-  element(element) {
-    const attributesToRewrite = ['href', 'src', 'action', 'data-url', 'data-src', 'content'];
-    for (const attr of attributesToRewrite) {
-      const value = element.getAttribute(attr);
-      if (value) {
-        const newValue = value.replace(new RegExp(`https?://${this.targetDomain}`, 'g'), `https://${this.clientDomain}`);
-        element.setAttribute(attr, newValue);
-      }
-    }
-  }
-}
