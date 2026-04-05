@@ -4,10 +4,10 @@ export default {
     // ==========================================
     // ★ আপনার গ্লোবাল থিম কালার ও কাস্টম লোগো
     // ==========================================
-    const THEME_COLOR = "#FCAF04";
+    const THEME_COLOR = "#000000";
     
     // আপনার নতুন লোগো লিংক
-    const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775420606026-f524613b-d9e3-41bf-8d75-d05da439ed78.webp"; 
+    const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775419855534-c0e8997f-10c5-452a-92fd-c65ab453a430.webp"; 
     // ==========================================
 
     const url = new URL(request.url);
@@ -124,108 +124,132 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML এবং JS মডিফিকেশন (লোগো সাইজ আপডেট সহ)
+    // ৪. HTML এবং JS মডিফিকেশন (ALL LOGO REPLACEMENT)
     // ==========================================
-    if (contentType.includes("text/html")) {
+    if (contentType.includes("text/html") || contentType.includes("application/javascript")) {
       let text = await response.text();
 
-      // ★ বুলেটপ্রুফ স্ক্রিপ্ট (API + লাইভ টিভি ফিক্স এবং ফোর্স লোগো ইনজেক্টর)
-      const interceptorScript = `
-      <script>
-        (function() {
-          const proxyDom = "${proxyDomain}";
-          const targetDom = "${targetDomain}";
-          const customLogo = "${CUSTOM_LOGO_URL}";
+      // ★ সোর্স কোড থেকে ইমেজের লিংক সরাসরি গায়েব করা (ডাবল প্রটেকশন)
+      text = text.replace(/\/static\/media\/logo[^"'\s\)\\]+/gi, CUSTOM_LOGO_URL);
 
-          const needsProxy = function(url) {
-            if (typeof url !== 'string') return false;
-            return url.includes('trueexch.com') || url.includes('aax-eu1314.com') || url.includes('.m3u8') || url.includes('.ts');
-          };
+      if (contentType.includes("text/html")) {
+        // ★ বুলেটপ্রুফ স্ক্রিপ্ট (API + লাইভ টিভি ফিক্স এবং ফোর্স লোগো ইনজেক্টর)
+        const interceptorScript = `
+        <script>
+          (function() {
+            const proxyDom = "${proxyDomain}";
+            const targetDom = "${targetDomain}";
+            const customLogo = "${CUSTOM_LOGO_URL}";
 
-          const origFetch = window.fetch;
-          window.fetch = async function() {
-            let args = Array.prototype.slice.call(arguments);
-            if (typeof args[0] === 'string' && needsProxy(args[0])) {
-              if (!args[0].includes('/_api_proxy/')) {
-                 args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
+            const needsProxy = function(url) {
+              if (typeof url !== 'string') return false;
+              return url.includes('trueexch.com') || url.includes('aax-eu1314.com') || url.includes('.m3u8') || url.includes('.ts');
+            };
+
+            const origFetch = window.fetch;
+            window.fetch = async function() {
+              let args = Array.prototype.slice.call(arguments);
+              if (typeof args[0] === 'string' && needsProxy(args[0])) {
+                if (!args[0].includes('/_api_proxy/')) {
+                   args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
+                }
+              } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
+                if (!args[0].url.includes('/_api_proxy/')) {
+                   args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
+                }
               }
-            } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
-              if (!args[0].url.includes('/_api_proxy/')) {
-                 args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
+              if (args[1] && args[1].body && typeof args[1].body === 'string') {
+                args[1].body = args[1].body.split(proxyDom).join(targetDom);
               }
-            }
-            if (args[1] && args[1].body && typeof args[1].body === 'string') {
-              args[1].body = args[1].body.split(proxyDom).join(targetDom);
-            }
-            return origFetch.apply(this, args);
-          };
+              return origFetch.apply(this, args);
+            };
 
-          const origOpen = XMLHttpRequest.prototype.open;
-          XMLHttpRequest.prototype.open = function(method, url) {
-            if (typeof url === 'string' && needsProxy(url)) {
-               if (!url.includes('/_api_proxy/')) {
-                   url = 'https://' + proxyDom + '/_api_proxy/' + url;
-               }
-            }
-            this._url = url;
-            return origOpen.apply(this, arguments);
-          };
-
-          const origSend = XMLHttpRequest.prototype.send;
-          XMLHttpRequest.prototype.send = function(body) {
-            if (body && typeof body === 'string') {
-              body = body.split(proxyDom).join(targetDom);
-            }
-            return origSend.call(this, body);
-          };
-
-          // DOM Mutation Observer - লোগো ফোর্স ইনজেক্টর
-          const observer = new MutationObserver((mutations) => {
-            const logoElements = document.querySelectorAll('h1.top-logo, .top-logo');
-            logoElements.forEach(el => {
-              if (el.style.backgroundImage !== 'url("' + customLogo + '")') {
-                el.style.setProperty('background-image', 'url("' + customLogo + '")', 'important');
+            const origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+              if (typeof url === 'string' && needsProxy(url)) {
+                 if (!url.includes('/_api_proxy/')) {
+                     url = 'https://' + proxyDom + '/_api_proxy/' + url;
+                 }
               }
+              this._url = url;
+              return origOpen.apply(this, arguments);
+            };
+
+            const origSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function(body) {
+              if (body && typeof body === 'string') {
+                body = body.split(proxyDom).join(targetDom);
+              }
+              return origSend.call(this, body);
+            };
+
+            // ★ DOM Mutation Observer - সব ধরণের লোগো ফোর্স ইনজেক্টর ★
+            const observer = new MutationObserver((mutations) => {
+              // ১. ব্যাকগ্রাউন্ড ইমেজের জন্য
+              const bgLogos = document.querySelectorAll('h1.top-logo, .top-logo');
+              bgLogos.forEach(el => {
+                if (el.style.backgroundImage !== 'url("' + customLogo + '")') {
+                  el.style.setProperty('background-image', 'url("' + customLogo + '")', 'important');
+                }
+              });
+
+              // ২. <img> ট্যাগের জন্য (আপনার স্ক্রিনশটের পেজের জন্য)
+              const imgLogos = document.querySelectorAll('.home_logo img, img[src*="logo"]');
+              imgLogos.forEach(img => {
+                if (img.src && !img.src.includes(customLogo)) {
+                  if(img.closest('.home_logo') || img.src.includes('/static/media/logo')) {
+                    img.src = customLogo;
+                  }
+                }
+              });
             });
-          });
 
-          document.addEventListener("DOMContentLoaded", () => {
-            observer.observe(document.documentElement, {
-              childList: true,
-              subtree: true,
-              attributes: true,
-              attributeFilter: ['style', 'class']
+            document.addEventListener("DOMContentLoaded", () => {
+              observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class', 'src']
+              });
             });
-          });
-        })();
-      </script>
-      `;
+          })();
+        </script>
+        `;
 
-      // ★ কাস্টম CSS (লোগোর সাইজ বাড়ানো হয়েছে)
-      const customCssOverrides = `
-      <style> 
-        dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
-        div.login_main { 
-          background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
-          background-color: ${THEME_COLOR} !important; 
-        } 
-        /* লোগোর ডিজাইন এবং কাস্টম সাইজ */
-        h1.top-logo, .top-logo {
-          background-image: url('${CUSTOM_LOGO_URL}') !important;
-          background-size: contain !important;
-          background-position: left center !important;
-          background-repeat: no-repeat !important;
-          background-color: transparent !important;
-          
-          /* ★ এখান থেকে লোগোর উইডথ এবং হাইট বাড়ানো হয়েছে ★ */
-          width: 280px !important;    /* চওড়া (প্রয়োজনে 300px করে দেখতে পারেন) */
-          height: 50px !important;    /* উচ্চতা (প্রয়োজনে 60px করে দেখতে পারেন) */
-          min-width: 250px !important;
-          margin-left: 5px !important; 
-        }
-      </style>`;
+        // ★ কাস্টম CSS (লোগোর সাইজ এবং ইমেজের জন্য)
+        const customCssOverrides = `
+        <style> 
+          dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
+          div.login_main { 
+            background-image: linear-gradient(235deg, ${THEME_COLOR} 21%, ${THEME_COLOR}) !important; 
+            background-color: ${THEME_COLOR} !important; 
+          } 
 
-      text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
+          /* ১. মোবাইল/লগইন পেজের ব্যাকগ্রাউন্ড লোগো */
+          h1.top-logo, .top-logo {
+            background-image: url('${CUSTOM_LOGO_URL}') !important;
+            background-size: contain !important;
+            background-position: left center !important;
+            background-repeat: no-repeat !important;
+            background-color: transparent !important;
+            width: 280px !important;    
+            height: 50px !important;    
+            min-width: 250px !important;
+            margin-left: 5px !important; 
+          }
+
+          /* ২. ★ ডেস্কটপ/অন্য পেজের সরাসরি <img> ট্যাগ লোগো ★ */
+          .home_logo img,
+          img[src*="/static/media/logo"] {
+            content: url('${CUSTOM_LOGO_URL}') !important;
+            max-width: 260px !important;  /* সাইজ কন্ট্রোল করার জন্য */
+            height: auto !important;
+            object-fit: contain !important;
+          }
+        </style>`;
+
+        text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
+      }
 
       // ডোমেইন ও কালার রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
@@ -238,7 +262,7 @@ export default {
       return new Response(text, { status: response.status, headers: resHeaders });
     }
 
-    if (contentType.includes("application/javascript") || contentType.includes("text/css")) {
+    if (contentType.includes("text/css")) {
       let text = await response.text();
       // ডোমেইন ও কালার রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
