@@ -1,11 +1,11 @@
 let cachedConfig = null;
 let lastCacheTime = 0;
 
-const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="100%" height="100%">
-  <rect width="800" height="400" fill="#2a2a2a"/>
-  <rect width="780" height="380" x="10" y="10" fill="none" stroke="#444" stroke-width="4" stroke-dasharray="10,10"/>
-  <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#666">NO IMAGE</text>
-  <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#555">Upload from Control Panel</text>
+// ★ গ্যাপ ছাড়া ফুল উইথ NO IMAGE প্লেসহোল্ডার
+const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" preserveAspectRatio="none" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#2a2a2a"/>
+  <rect width="100%" height="100%" fill="none" stroke="#444" stroke-width="8" stroke-dasharray="15,15"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#666">NO IMAGE</text>
 </svg>`;
 
 async function getDynamicConfig() {
@@ -134,7 +134,7 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML/CSS মডিফিকেশন (DEEP COLOR REPLACEMENT)
+    // ৪. HTML/CSS মডিফিকেশন (YOUR OLD COLOR LOGIC ADDED)
     // ==========================================
     if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/css")) {
       let text = await response.text();
@@ -145,33 +145,22 @@ export default {
           text = text.replace(/(?<![\/\.a-zA-Z-])pori(?![a-zA-Z-])/gi, autoBrandName.split(' ')[0]);
       }
 
-      // -----------------------------------------------------
-      // ★ DEEP HEX REPLACEMENT (Fixes Play Now without breaking Sports)
-      // -----------------------------------------------------
-      const themeHex = config.themeColor;
-      const themeHexEncoded = encodeURIComponent(themeHex); // e.g. %23FCAF04 (Used in inline SVGs inside CSS)
+      // ★ YOUR EXACT OLD COLOR REPLACEMENT LOGIC ★
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
+      text = text.replace(/#14805e/gi, config.themeColor);
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, config.themeColor);
+      text = text.replace(/#009999/gi, config.themeColor);
       
-      // Standard hex replace
-      text = text.replace(/#009999/gi, themeHex);
-      text = text.replace(/#14805e/gi, themeHex);
-      text = text.replace(/#00cccc/gi, themeHex);
-      text = text.replace(/#0bcfa1/gi, themeHex);
-      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, themeHex);
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, themeHex);
-      
-      // Encoded hex replace (THIS FIXES THE SLANTED SVG BUTTON!)
+      // (Added Encoded hex replace just in case the site uses them in inline SVGs)
+      const themeHexEncoded = encodeURIComponent(config.themeColor);
       text = text.replace(/%23009999/gi, themeHexEncoded);
       text = text.replace(/%2314805e/gi, themeHexEncoded);
-      text = text.replace(/%2300cccc/gi, themeHexEncoded);
-      text = text.replace(/%230bcfa1/gi, themeHexEncoded);
-      // -----------------------------------------------------
 
       if (config.logo && !contentType.includes("text/css")) {
           text = text.replace(/\/static\/media\/logo[^"'\s\)\\]+/gi, config.logo);
       }
 
       if (contentType.includes("text/html")) {
-        
         if(config.favicon) {
            text = text.replace(/<link rel="icon"[^>]+>/gi, '');
            text = text.replace(/<link rel="shortcut icon"[^>]+>/gi, '');
@@ -211,13 +200,8 @@ export default {
 
         const customCssOverrides = `
         <style> 
-          :root { --theme-color: ${config.themeColor}; }
-          
-          /* Safe Theme Colors */
-          dl.entrance-title { border-bottom-color: var(--theme-color) !important; } 
-          div.login_main { background-image: linear-gradient(235deg, var(--theme-color) 21%, var(--theme-color)) !important; background-color: var(--theme-color) !important; } 
-          .bg-theme { background-color: var(--theme-color) !important; }
-          .text-theme { color: var(--theme-color) !important; }
+          dl.entrance-title { border-bottom-color: ${config.themeColor} !important; } 
+          div.login_main { background-image: linear-gradient(235deg, ${config.themeColor} 21%, ${config.themeColor}) !important; background-color: ${config.themeColor} !important; } 
 
           ${config.logo ? `
           h1.top-logo, .top-logo { background-image: url('${config.logo}') !important; background-size: contain !important; background-position: left center !important; background-repeat: no-repeat !important; background-color: transparent !important; width: 280px !important; height: 50px !important; min-width: 250px !important; margin-left: 5px !important; }
