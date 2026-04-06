@@ -20,8 +20,8 @@ async function getDynamicConfig() {
       const fields = json.fields || {};
       
       let dbBanners = fields.banners?.arrayValue?.values?.map(v => v.stringValue) || [];
-      let finalBanners = new Array(10).fill(""); 
-      for(let i=0; i<10; i++) {
+      let finalBanners = new Array(12).fill(""); // ১২টি স্লট
+      for(let i=0; i<12; i++) {
           finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : ""; 
       }
 
@@ -38,7 +38,7 @@ async function getDynamicConfig() {
     }
   } catch (err) {}
   
-  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: new Array(10).fill("") };
+  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: new Array(12).fill("") };
 }
 
 export default {
@@ -51,14 +51,15 @@ export default {
     let autoBrandName = proxyDomain.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
     // ==========================================
-    // ১. গেম ব্যানার ஸ்பুফার + NO IMAGE প্লেসহোল্ডার
+    // ১. গেম ব্যানার ஸ்பুফার (লুপ ডিলিট করা হয়েছে)
     // ==========================================
     if (url.pathname.includes('/assets/New/MainImage')) {
       let bannerIndex = 0;
       const match = url.pathname.match(/MainImage(?:\s*%20|\s)*\(?(\d+)\)?/i);
       if (match && match[1]) { bannerIndex = parseInt(match[1]); }
       
-      let customImageUrl = config.banners[bannerIndex % 10];
+      // লুপ (% 10) সরিয়ে ফেলা হয়েছে। এখন এক্সাক্ট স্লট চেক করবে।
+      let customImageUrl = config.banners[bannerIndex];
       
       if (!customImageUrl || customImageUrl === "") {
          return new Response(NO_IMAGE_SVG, { headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' } });
@@ -80,7 +81,17 @@ export default {
     }
 
     // ==========================================
-    // ২. API ইন্টারসেপ্টর
+    // ২. ★ Play Now (গেম এক্স) SVG ইন্টারসেপ্টর (আপনার দেওয়া কোড) ★
+    // ==========================================
+    if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
+      const customSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"> <polygon points="15,0 100,0 100,100 0,100" fill="${config.themeColor}" /> </svg>`;
+      return new Response(customSvg, {
+        headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Access-Control-Allow-Origin": "*", "Cache-Control": "max-age=86400" }
+      });
+    }
+
+    // ==========================================
+    // ৩. API ইন্টারসেপ্টর
     // ==========================================
     if (url.pathname.startsWith('/_api_proxy/')) {
       const targetApiUrlStr = request.url.replace(new RegExp(`^https?://${proxyDomain}/_api_proxy/`), '');
@@ -107,7 +118,7 @@ export default {
     }
 
     // ==========================================
-    // ৩. রিভার্স প্রক্সি রিকোয়েস্ট
+    // ৪. রিভার্স প্রক্সি রিকোয়েস্ট
     // ==========================================
     const targetUrl = new URL(request.url);
     targetUrl.hostname = targetDomain;
@@ -134,7 +145,7 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML/CSS মডিফিকেশন (YOUR OLD COLOR LOGIC ADDED)
+    // ৫. HTML/CSS মডিফিকেশন (YOUR OLD EXACT COLOR REPLACEMENTS)
     // ==========================================
     if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/css")) {
       let text = await response.text();
@@ -145,16 +156,11 @@ export default {
           text = text.replace(/(?<![\/\.a-zA-Z-])pori(?![a-zA-Z-])/gi, autoBrandName.split(' ')[0]);
       }
 
-      // ★ YOUR EXACT OLD COLOR REPLACEMENT LOGIC ★
+      // ★ আপনার আগের কোডের হুবহু কালার রিপ্লেসমেন্ট ★
       text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
       text = text.replace(/#14805e/gi, config.themeColor);
       text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, config.themeColor);
       text = text.replace(/#009999/gi, config.themeColor);
-      
-      // (Added Encoded hex replace just in case the site uses them in inline SVGs)
-      const themeHexEncoded = encodeURIComponent(config.themeColor);
-      text = text.replace(/%23009999/gi, themeHexEncoded);
-      text = text.replace(/%2314805e/gi, themeHexEncoded);
 
       if (config.logo && !contentType.includes("text/css")) {
           text = text.replace(/\/static\/media\/logo[^"'\s\)\\]+/gi, config.logo);
