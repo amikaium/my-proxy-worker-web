@@ -1,11 +1,11 @@
 let cachedConfig = null;
 let lastCacheTime = 0;
 
-// ★ গ্যাপ ছাড়া ফুল উইথ NO IMAGE প্লেসহোল্ডার
-const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" preserveAspectRatio="none" width="100%" height="100%">
-  <rect width="100%" height="100%" fill="#2a2a2a"/>
-  <rect width="100%" height="100%" fill="none" stroke="#444" stroke-width="8" stroke-dasharray="15,15"/>
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#666">NO IMAGE</text>
+// ★ গ্যাপ ছাড়া ১০০% ফুল-উইথ NO IMAGE প্লেসহোল্ডার
+const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%">
+  <rect width="100" height="100" fill="#2a2a2a"/>
+  <rect width="96" height="96" x="2" y="2" fill="none" stroke="#444" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="50" y="50" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#666">NO IMAGE</text>
 </svg>`;
 
 async function getDynamicConfig() {
@@ -20,7 +20,7 @@ async function getDynamicConfig() {
       const fields = json.fields || {};
       
       let dbBanners = fields.banners?.arrayValue?.values?.map(v => v.stringValue) || [];
-      let finalBanners = new Array(12).fill(""); // ১২টি স্লট
+      let finalBanners = new Array(12).fill(""); 
       for(let i=0; i<12; i++) {
           finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : ""; 
       }
@@ -51,14 +51,27 @@ export default {
     let autoBrandName = proxyDomain.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
     // ==========================================
-    // ১. গেম ব্যানার ஸ்பুফার (লুপ ডিলিট করা হয়েছে)
+    // ১. কাস্টম SVG ইন্টারসেপ্ট (Play Now Color) ★
+    // ==========================================
+    if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
+      const customSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"> <polygon points="15,0 100,0 100,100 0,100" fill="${config.themeColor}" /> </svg>`;
+      return new Response(customSvg, {
+        headers: {
+          "Content-Type": "image/svg+xml; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "max-age=86400"
+        }
+      });
+    }
+
+    // ==========================================
+    // ২. গেম ব্যানার ஸ்பুফার (MainImage)
     // ==========================================
     if (url.pathname.includes('/assets/New/MainImage')) {
       let bannerIndex = 0;
       const match = url.pathname.match(/MainImage(?:\s*%20|\s)*\(?(\d+)\)?/i);
       if (match && match[1]) { bannerIndex = parseInt(match[1]); }
       
-      // লুপ (% 10) সরিয়ে ফেলা হয়েছে। এখন এক্সাক্ট স্লট চেক করবে।
       let customImageUrl = config.banners[bannerIndex];
       
       if (!customImageUrl || customImageUrl === "") {
@@ -81,39 +94,51 @@ export default {
     }
 
     // ==========================================
-    // ২. ★ Play Now (গেম এক্স) SVG ইন্টারসেপ্টর (আপনার দেওয়া কোড) ★
-    // ==========================================
-    if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
-      const customSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"> <polygon points="15,0 100,0 100,100 0,100" fill="${config.themeColor}" /> </svg>`;
-      return new Response(customSvg, {
-        headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Access-Control-Allow-Origin": "*", "Cache-Control": "max-age=86400" }
-      });
-    }
-
-    // ==========================================
-    // ৩. API ইন্টারসেপ্টর
+    // ৩. API ও Live TV ইন্টারসেপ্টর (★ Login Bypass Fixed ★)
     // ==========================================
     if (url.pathname.startsWith('/_api_proxy/')) {
       const targetApiUrlStr = request.url.replace(new RegExp(`^https?://${proxyDomain}/_api_proxy/`), '');
-      if (request.method === "OPTIONS") return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*" } });
+
+      if (request.method === "OPTIONS") {
+        return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Max-Age": "86400" } });
+      }
 
       const apiReqHeaders = new Headers(request.headers);
       apiReqHeaders.delete('Host');
       apiReqHeaders.set('Origin', `https://${targetDomain}`);
       apiReqHeaders.set('Referer', `https://${targetDomain}/`);
 
-      let apiRes = await fetch(targetApiUrlStr, { method: request.method, headers: apiReqHeaders, body: request.body, redirect: 'manual' });
+      // ★ লগইন কাজ করার আসল জায়গা (Request Body Modify) ★
+      let reqBody = request.body;
+      if (["POST", "PUT", "PATCH"].includes(request.method)) {
+        let textBody = await request.text();
+        textBody = textBody.replace(new RegExp(proxyDomain, 'g'), targetDomain);
+        reqBody = textBody;
+      }
+
+      let apiRes = await fetch(targetApiUrlStr, {
+        method: request.method,
+        headers: apiReqHeaders,
+        body: reqBody,
+        redirect: 'manual'
+      });
+
       let apiResHeaders = new Headers(apiRes.headers);
       apiResHeaders.set("Access-Control-Allow-Origin", "*");
+
       const setCookie = apiResHeaders.get("Set-Cookie");
-      if (setCookie) apiResHeaders.set("Set-Cookie", setCookie.replace(/domain=[^;]+/gi, `domain=${proxyDomain}`));
+      if (setCookie) {
+        let updatedCookie = setCookie.replace(/domain=[^;]+/gi, `domain=${proxyDomain}`);
+        apiResHeaders.set("Set-Cookie", updatedCookie);
+      }
 
       const apiContentType = apiResHeaders.get("Content-Type") || "";
       if (apiContentType.includes("mpegurl") || targetApiUrlStr.includes('.m3u8')) {
         let m3u8Text = await apiRes.text();
         m3u8Text = m3u8Text.replace(/(https?:\/\/[^\s"'<>]+)/g, `https://${proxyDomain}/_api_proxy/$1`);
         return new Response(m3u8Text, { status: apiRes.status, headers: apiResHeaders });
-      } 
+      }
+
       return new Response(apiRes.body, { status: apiRes.status, headers: apiResHeaders });
     }
 
@@ -145,18 +170,17 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৫. HTML/CSS মডিফিকেশন (YOUR OLD EXACT COLOR REPLACEMENTS)
+    // ৫. HTML/CSS মডিফিকেশন (YOUR EXACT REPLACEMENTS)
     // ==========================================
     if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/css")) {
       let text = await response.text();
 
-      // Brand name change
       if(!contentType.includes("text/css")) {
           text = text.replace(/(?<![\/\.a-zA-Z-])pori365(?![a-zA-Z-])/gi, autoBrandName);
           text = text.replace(/(?<![\/\.a-zA-Z-])pori(?![a-zA-Z-])/gi, autoBrandName.split(' ')[0]);
       }
 
-      // ★ আপনার আগের কোডের হুবহু কালার রিপ্লেসমেন্ট ★
+      // ★ আপনার আগের কোডের হুবহু কালার রিপ্লেসমেন্ট লজিক ★
       text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
       text = text.replace(/#14805e/gi, config.themeColor);
       text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, config.themeColor);
@@ -167,12 +191,14 @@ export default {
       }
 
       if (contentType.includes("text/html")) {
+        
         if(config.favicon) {
            text = text.replace(/<link rel="icon"[^>]+>/gi, '');
            text = text.replace(/<link rel="shortcut icon"[^>]+>/gi, '');
            text = text.replace('<head>', `<head>\n<link rel="icon" type="image/x-icon" href="${config.favicon}">\n<link rel="shortcut icon" href="${config.favicon}">`);
         }
 
+        // ★ Login Bypass Script Logic Added Back ★
         const interceptorScript = `
         <script>
           (function() {
@@ -187,8 +213,31 @@ export default {
             const origFetch = window.fetch;
             window.fetch = async function() {
               let args = Array.prototype.slice.call(arguments);
-              if (typeof args[0] === 'string' && needsProxy(args[0]) && !args[0].includes('/_api_proxy/')) { args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0]; }
+              if (typeof args[0] === 'string' && needsProxy(args[0])) {
+                if (!args[0].includes('/_api_proxy/')) { args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0]; }
+              } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
+                if (!args[0].url.includes('/_api_proxy/')) { args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]); }
+              }
+              // Request Body replace (For Login)
+              if (args[1] && args[1].body && typeof args[1].body === 'string') {
+                args[1].body = args[1].body.split(proxyDom).join(targetDom);
+              }
               return origFetch.apply(this, args);
+            };
+
+            const origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+              if (typeof url === 'string' && needsProxy(url)) {
+                 if (!url.includes('/_api_proxy/')) { url = 'https://' + proxyDom + '/_api_proxy/' + url; }
+              }
+              this._url = url;
+              return origOpen.apply(this, arguments);
+            };
+
+            const origSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function(body) {
+              if (body && typeof body === 'string') { body = body.split(proxyDom).join(targetDom); }
+              return origSend.call(this, body);
             };
 
             const observer = new MutationObserver((mutations) => {
@@ -217,6 +266,14 @@ export default {
           ${config.loginBg ? `
           header.login-head, .login-head, .login-bg { background-image: url('${config.loginBg}') !important; background-size: cover !important; background-position: center !important; }
           ` : ''}
+
+          /* ★ ফুল উইথ NO IMAGE ফিক্স */
+          img[src*="/assets/New/MainImage"] { 
+             width: 100% !important; 
+             height: 100% !important; 
+             object-fit: fill !important; 
+             display: block !important; 
+          }
         </style>`;
 
         text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
