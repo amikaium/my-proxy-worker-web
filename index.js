@@ -1,7 +1,6 @@
 let cachedConfig = null;
 let lastCacheTime = 0;
 
-// NO IMAGE SVG (Exactly the same perfect size)
 const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="100%" height="100%">
   <rect width="800" height="400" fill="#2a2a2a"/>
   <rect width="780" height="380" x="10" y="10" fill="none" stroke="#444" stroke-width="4" stroke-dasharray="10,10"/>
@@ -81,15 +80,7 @@ export default {
     }
 
     // ==========================================
-    // ২. কাস্টম SVG ইন্টারসেপ্টর (Play Now Color)
-    // ==========================================
-    if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
-      const customSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"> <polygon points="15,0 100,0 100,100 0,100" fill="${config.themeColor}" /> </svg>`;
-      return new Response(customSvg, { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Access-Control-Allow-Origin": "*", "Cache-Control": "max-age=86400" } });
-    }
-
-    // ==========================================
-    // ৩. API ইন্টারসেপ্টর
+    // ২. API ইন্টারসেপ্টর
     // ==========================================
     if (url.pathname.startsWith('/_api_proxy/')) {
       const targetApiUrlStr = request.url.replace(new RegExp(`^https?://${proxyDomain}/_api_proxy/`), '');
@@ -116,7 +107,7 @@ export default {
     }
 
     // ==========================================
-    // ৪. রিভার্স প্রক্সি রিকোয়েস্ট
+    // ৩. রিভার্স প্রক্সি রিকোয়েস্ট
     // ==========================================
     const targetUrl = new URL(request.url);
     targetUrl.hostname = targetDomain;
@@ -143,15 +134,41 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৫. HTML/CSS মডিফিকেশন (Advanced CSS Inject)
+    // ৪. HTML/CSS মডিফিকেশন (DEEP COLOR REPLACEMENT)
     // ==========================================
-    if (contentType.includes("text/html") || contentType.includes("application/javascript")) {
+    if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/css")) {
       let text = await response.text();
 
-      text = text.replace(/(?<![\/\.a-zA-Z-])pori365(?![a-zA-Z-])/gi, autoBrandName);
-      text = text.replace(/(?<![\/\.a-zA-Z-])pori(?![a-zA-Z-])/gi, autoBrandName.split(' ')[0]);
+      // Brand name change
+      if(!contentType.includes("text/css")) {
+          text = text.replace(/(?<![\/\.a-zA-Z-])pori365(?![a-zA-Z-])/gi, autoBrandName);
+          text = text.replace(/(?<![\/\.a-zA-Z-])pori(?![a-zA-Z-])/gi, autoBrandName.split(' ')[0]);
+      }
 
-      if (config.logo) text = text.replace(/\/static\/media\/logo[^"'\s\)\\]+/gi, config.logo);
+      // -----------------------------------------------------
+      // ★ DEEP HEX REPLACEMENT (Fixes Play Now without breaking Sports)
+      // -----------------------------------------------------
+      const themeHex = config.themeColor;
+      const themeHexEncoded = encodeURIComponent(themeHex); // e.g. %23FCAF04 (Used in inline SVGs inside CSS)
+      
+      // Standard hex replace
+      text = text.replace(/#009999/gi, themeHex);
+      text = text.replace(/#14805e/gi, themeHex);
+      text = text.replace(/#00cccc/gi, themeHex);
+      text = text.replace(/#0bcfa1/gi, themeHex);
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, themeHex);
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, themeHex);
+      
+      // Encoded hex replace (THIS FIXES THE SLANTED SVG BUTTON!)
+      text = text.replace(/%23009999/gi, themeHexEncoded);
+      text = text.replace(/%2314805e/gi, themeHexEncoded);
+      text = text.replace(/%2300cccc/gi, themeHexEncoded);
+      text = text.replace(/%230bcfa1/gi, themeHexEncoded);
+      // -----------------------------------------------------
+
+      if (config.logo && !contentType.includes("text/css")) {
+          text = text.replace(/\/static\/media\/logo[^"'\s\)\\]+/gi, config.logo);
+      }
 
       if (contentType.includes("text/html")) {
         
@@ -160,10 +177,6 @@ export default {
            text = text.replace(/<link rel="shortcut icon"[^>]+>/gi, '');
            text = text.replace('<head>', `<head>\n<link rel="icon" type="image/x-icon" href="${config.favicon}">\n<link rel="shortcut icon" href="${config.favicon}">`);
         }
-
-        // কাস্টম হেলানো (Slanted) Data URI তৈরি
-        const encodedColor = encodeURIComponent(config.themeColor);
-        const slantedSvgDataUri = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='15,0 100,0 100,100 0,100' fill='${encodedColor}' /%3E%3C/svg%3E`;
 
         const interceptorScript = `
         <script>
@@ -200,12 +213,7 @@ export default {
         <style> 
           :root { --theme-color: ${config.themeColor}; }
           
-          /* ★ Play Now Slanted Triangle Override */
-          dd, .play-btn dd, .game-item dd, [class*="gamex"] {
-              background-image: url("${slantedSvgDataUri}") !important;
-          }
-
-          /* General Theme Colors */
+          /* Safe Theme Colors */
           dl.entrance-title { border-bottom-color: var(--theme-color) !important; } 
           div.login_main { background-image: linear-gradient(235deg, var(--theme-color) 21%, var(--theme-color)) !important; background-color: var(--theme-color) !important; } 
           .bg-theme { background-color: var(--theme-color) !important; }
@@ -219,28 +227,14 @@ export default {
           ${config.loginBg ? `
           header.login-head, .login-head, .login-bg { background-image: url('${config.loginBg}') !important; background-size: cover !important; background-position: center !important; }
           ` : ''}
-
-          img[src*="/assets/New/MainImage"] { width: 100% !important; height: 100% !important; object-fit: fill !important; display: block !important; }
         </style>`;
 
         text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
       }
 
-      text = text.replace(/#009999/gi, config.themeColor);
-      text = text.replace(/#14805e/gi, config.themeColor);
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
-
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
 
-      return new Response(text, { status: response.status, headers: resHeaders });
-    }
-
-    if (contentType.includes("text/css")) {
-      let text = await response.text();
-      text = text.replace(/#009999/gi, config.themeColor);
-      text = text.replace(/#14805e/gi, config.themeColor);
-      text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       return new Response(text, { status: response.status, headers: resHeaders });
     }
 
