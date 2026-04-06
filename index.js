@@ -1,6 +1,21 @@
 let cachedConfig = null;
 let lastCacheTime = 0;
 
+// আপনার দেওয়া ১১টি ডিফল্ট ব্যানার (যদি এডমিন প্যানেল ফাঁকা থাকে তবে এগুলো শো করবে)
+const DEFAULT_BANNERS = [
+  "https://i.postimg.cc/prhbQxqv/20260406-144304.jpg",
+  "https://i.postimg.cc/MHCkd4F9/20260406-144338.jpg",
+  "https://i.postimg.cc/4yDCBMSw/20260406-144450.jpg",
+  "https://i.postimg.cc/D09VBDMB/20260406-144633.jpg",
+  "https://i.postimg.cc/VvxyDTVj/20260406-144658.jpg",
+  "https://i.postimg.cc/66gNW25k/20260406-144724.jpg",
+  "https://i.postimg.cc/2jMfkbSb/20260406-144748.jpg",
+  "https://i.postimg.cc/bYWjyDwt/20260406-144806.jpg",
+  "https://i.postimg.cc/Y2ZwrGCL/20260406-144824.jpg",
+  "https://i.postimg.cc/kMzdJ6gK/20260406-144858.jpg",
+  "https://i.postimg.cc/CL8pzhRd/20260406-144936.jpg"
+];
+
 async function getDynamicConfig() {
   const now = Date.now();
   if (cachedConfig && (now - lastCacheTime < 60000)) return cachedConfig;
@@ -12,11 +27,11 @@ async function getDynamicConfig() {
       const json = await res.json();
       const fields = json.fields || {};
       
-      let thumbs = {};
-      if(fields.thumbnails?.mapValue?.fields) {
-         for(let key in fields.thumbnails.mapValue.fields) {
-             thumbs[key] = fields.thumbnails.mapValue.fields[key].stringValue;
-         }
+      let dbBanners = fields.banners?.arrayValue?.values?.map(v => v.stringValue) || [];
+      // যদি এডমিন প্যানেলের স্লট ফাঁকা থাকে, তাহলে ডিফল্ট ইমেজ বসিয়ে দিবে
+      let finalBanners = [];
+      for(let i=0; i<11; i++) {
+          finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : DEFAULT_BANNERS[i];
       }
 
       cachedConfig = {
@@ -25,15 +40,14 @@ async function getDynamicConfig() {
         favicon: fields.favicon?.stringValue || "",
         logo: fields.logo?.stringValue || "",
         loginBg: fields.loginBg?.stringValue || "",
-        banners: fields.banners?.arrayValue?.values?.map(v => v.stringValue) || [],
-        thumbnails: thumbs
+        banners: finalBanners
       };
       lastCacheTime = now;
       return cachedConfig;
     }
   } catch (err) {}
   
-  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: [], thumbnails: {} };
+  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: DEFAULT_BANNERS };
 }
 
 export default {
@@ -43,19 +57,19 @@ export default {
     const targetDomain = config.targetDomain;
     const proxyDomain = url.hostname;
 
-    // অটো ব্র্যান্ড নেম জেনারেটর (proxy domain থেকে)
-    // Example: proxy is "velkix-bot.workers.dev" -> Brand Name is "Velkix Bot"
-    let autoBrandName = proxyDomain.split('.')[0].replace(/-/g, ' ');
-    autoBrandName = autoBrandName.replace(/\b\w/g, l => l.toUpperCase());
+    // অটো ব্র্যান্ড নেম জেনারেটর (Proxy URL থেকে)
+    let autoBrandName = proxyDomain.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
     // ==========================================
-    // ১. ব্যানার স্পুফার
+    // ১. গেম ব্যানার / স্লাইডার স্পুফার (MainImage Network Intercept)
     // ==========================================
-    if (url.pathname.includes('/assets/New/MainImage') && config.banners.length > 0) {
+    if (url.pathname.includes('/assets/New/MainImage')) {
       let bannerIndex = 0;
-      const match = url.pathname.match(/MainImage(?:%20|\s)*\(?(\d+)\)?/i);
+      // MainImage.webp -> 0, MainImage (1).webp -> 1, MainImage (2).webp -> 2 ইত্যাদি বের করা
+      const match = url.pathname.match(/MainImage(?:\s*%20|\s)*\(?(\d+)\)?/i);
       if (match && match[1]) { bannerIndex = parseInt(match[1]); }
-      let customImageUrl = config.banners[bannerIndex % config.banners.length];
+      
+      let customImageUrl = config.banners[bannerIndex % 11];
       
       if (customImageUrl.startsWith('data:image')) {
           const base64Data = customImageUrl.split(',')[1];
@@ -64,6 +78,13 @@ export default {
           for (let i = 0; i < binaryStr.length; i++) { bytes[i] = binaryStr.charCodeAt(i); }
           return new Response(bytes.buffer, { headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*' } });
       }
+
+      // যদি URL হয়
+      const imgResponse = await fetch(customImageUrl);
+      let newHeaders = new Headers(imgResponse.headers);
+      newHeaders.set('Cache-Control', 'public, max-age=86400');
+      newHeaders.set('Access-Control-Allow-Origin', '*');
+      return new Response(imgResponse.body, { status: 200, headers: newHeaders });
     }
 
     // ==========================================
@@ -146,7 +167,6 @@ export default {
           (function() {
             const proxyDom = "${proxyDomain}"; const targetDom = "${targetDomain}";
             const customLogo = "${config.logo}";
-            const thumbData = ${JSON.stringify(config.thumbnails)};
 
             const needsProxy = function(url) {
               if (typeof url !== 'string') return false;
@@ -161,29 +181,12 @@ export default {
             };
 
             const observer = new MutationObserver((mutations) => {
-              // Logo Replacements
               if(customLogo) {
                   const bgLogos = document.querySelectorAll('h1.top-logo, .top-logo');
                   bgLogos.forEach(el => { if (el.style.backgroundImage !== 'url("' + customLogo + '")') el.style.setProperty('background-image', 'url("' + customLogo + '")', 'important'); });
                   const imgLogos = document.querySelectorAll('.home_logo img, img[src*="logo"]');
                   imgLogos.forEach(img => { if (img.src && !img.src.includes(customLogo) && (img.closest('.home_logo') || img.src.includes('/static/media/logo'))) img.src = customLogo; });
               }
-
-              // Dynamic Game Thumbnails Replacement
-              Object.keys(thumbData).forEach(key => {
-                  if(!thumbData[key]) return;
-                  // Search for text matching the key (e.g. 'sports', 'jili') inside game cards
-                  const cards = document.querySelectorAll('.game-item, .item-wrap, .list-item'); 
-                  cards.forEach(card => {
-                      if(card.innerText.toLowerCase().replace(/\\s+/g, '').includes(key)) {
-                          const img = card.querySelector('img');
-                          if(img && !img.src.includes(thumbData[key])) {
-                              img.src = thumbData[key];
-                              img.style.objectFit = 'cover';
-                          }
-                      }
-                  });
-              });
             });
 
             document.addEventListener("DOMContentLoaded", () => { observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'src'] }); });
@@ -212,7 +215,13 @@ export default {
           }
           ` : ''}
 
-          .van-swipe-item img, .swiper-slide img, .carousel-item img { width: 100% !important; height: 100% !important; object-fit: fill !important; display: block !important; }
+          /* ব্যানার গ্যাপ ফিক্সার */
+          img[src*="/assets/New/MainImage"] { 
+             width: 100% !important; 
+             height: 100% !important; 
+             object-fit: fill !important; 
+             display: block !important; 
+          }
         </style>`;
 
         text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
