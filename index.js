@@ -5,8 +5,6 @@ export default {
     // ★ আপনার গ্লোবাল থিম কালার ও কাস্টম লোগো
     // ==========================================
     const THEME_COLOR = "#FCAF04";
-    
-    // আপনার নতুন লোগো লিংক
     const CUSTOM_LOGO_URL = "https://image2url.com/r2/default/images/1775421100175-4839c224-d781-4752-be19-a6b02ccc51a0.webp"; 
     
     // ==========================================
@@ -25,15 +23,12 @@ export default {
       "https://i.postimg.cc/kMzdJ6gK/20260406-144858.jpg",
       "https://i.postimg.cc/CL8pzhRd/20260406-144936.jpg"
     ];
-    // ==========================================
 
     const url = new URL(request.url);
     const targetDomain = env.TARGET || "pori365.live";
     const proxyDomain = url.hostname;
 
-    // ==========================================
     // ১. কাস্টম SVG ইন্টারসেপ্ট
-    // ==========================================
     if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
       const customSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"> <polygon points="15,0 100,0 100,100 0,100" fill="${THEME_COLOR}" /> </svg>`;
       return new Response(customSvg, {
@@ -45,9 +40,7 @@ export default {
       });
     }
 
-    // ==========================================
-    // ২. API ও Live TV ইন্টারসেপ্টর রুট (ব্যানার ফিক্স সহ)
-    // ==========================================
+    // ২. API ও Live TV ইন্টারসেপ্টর
     if (url.pathname.startsWith('/_api_proxy/')) {
       const targetApiUrlStr = request.url.replace(new RegExp(`^https?://${proxyDomain}/_api_proxy/`), '');
 
@@ -95,39 +88,27 @@ export default {
       if (apiContentType.includes("mpegurl") || targetApiUrlStr.includes('.m3u8')) {
         let m3u8Text = await apiRes.text();
         m3u8Text = m3u8Text.replace(/(https?:\/\/[^\s"'<>]+)/g, `https://${proxyDomain}/_api_proxy/$1`);
-        return new Response(m3u8Text, {
-          status: apiRes.status,
-          headers: apiResHeaders
-        });
+        return new Response(m3u8Text, { status: apiRes.status, headers: apiResHeaders });
       } 
-      // ★ API এর JSON রেসপন্স থেকে ডাইরেক্ট ব্যানার রিপ্লেস (যাতে ফ্রন্টএন্ডে যাওয়ার আগেই চেঞ্জ হয়ে যায়)
+      // ★ শুধুমাত্র MainImage স্লাইডার ব্যানার রিপ্লেস করবে, গেম থাম্বনেইল নয়
       else if (apiContentType.includes("application/json") || apiContentType.includes("text/plain")) {
         let jsonText = await apiRes.text();
         let apiBannerIdx = 0;
         
-        // /assets/New/ ফোল্ডারের যেকোনো ইমেজকে আমাদের ব্যানার দিয়ে রিপ্লেস করবে
-        jsonText = jsonText.replace(/(?:https?:\/\/[^\/]+)?\/m\/\/assets\/New\/[^"'\s\\]+\.(?:webp|jpg|jpeg|png|gif)/gi, (match) => {
+        jsonText = jsonText.replace(/(?:https?:\/\/[^\/]+)?\/m\/\/assets\/New\/MainImage(?:[^"'\s\\]*)?\.(?:webp|jpg|jpeg|png|gif)/gi, (match) => {
             let rep = CUSTOM_BANNERS[apiBannerIdx % CUSTOM_BANNERS.length];
             apiBannerIdx++;
             return rep;
         });
         
         jsonText = jsonText.replace(new RegExp(targetDomain, 'g'), proxyDomain);
-        return new Response(jsonText, {
-            status: apiRes.status,
-            headers: apiResHeaders
-        });
+        return new Response(jsonText, { status: apiRes.status, headers: apiResHeaders });
       }
 
-      return new Response(apiRes.body, {
-        status: apiRes.status,
-        headers: apiResHeaders
-      });
+      return new Response(apiRes.body, { status: apiRes.status, headers: apiResHeaders });
     }
 
-    // ==========================================
     // ৩. মূল ওয়েবসাইটের রিভার্স প্রক্সি
-    // ==========================================
     const targetUrl = new URL(request.url);
     targetUrl.hostname = targetDomain;
     targetUrl.protocol = 'https:';
@@ -159,26 +140,22 @@ export default {
 
     const contentType = resHeaders.get("Content-Type") || "";
 
-    // ==========================================
-    // ৪. HTML এবং JS মডিফিকেশন (ব্যানার + লোগো)
-    // ==========================================
+    // ৪. HTML এবং JS মডিফিকেশন
     if (contentType.includes("text/html") || contentType.includes("application/javascript")) {
       let text = await response.text();
 
-      // ★ লোগো ডাবল প্রটেকশন
+      // লোগো প্রটেকশন
       text = text.replace(/\/static\/media\/logo[^"'\s\)\\]+/gi, CUSTOM_LOGO_URL);
 
-      // ★ ব্যানার সোর্স কোড রিপ্লেসমেন্ট (১ মিলি সেকেন্ড ফ্ল্যাশ অফ করার মূল চাবিকাঠি)
-      // মেইন ওয়েবসাইটের HTML/JS ফাইলের ভেতরে থাকা ব্যানার লিংকগুলো মুছে আপনার লিংক বসিয়ে দিবে
+      // ★ HTML সোর্স থেকে শুধুমাত্র MainImage রিপ্লেস করবে
       let htmlBannerIdx = 0;
-      text = text.replace(/(?:https?:\/\/[^\/]+)?\/m\/\/assets\/New\/[^"'\s\\]+\.(?:webp|jpg|jpeg|png|gif)/gi, (match) => {
+      text = text.replace(/(?:https?:\/\/[^\/]+)?\/m\/\/assets\/New\/MainImage(?:[^"'\s\\]*)?\.(?:webp|jpg|jpeg|png|gif)/gi, (match) => {
           let customBanner = CUSTOM_BANNERS[htmlBannerIdx % CUSTOM_BANNERS.length];
           htmlBannerIdx++;
           return customBanner;
       });
 
       if (contentType.includes("text/html")) {
-        // ★ বুলেটপ্রুফ স্ক্রিপ্ট (ফোর্স লোগো এবং ব্যানার ইনজেক্টর)
         const interceptorScript = `
         <script>
           (function() {
@@ -196,13 +173,9 @@ export default {
             window.fetch = async function() {
               let args = Array.prototype.slice.call(arguments);
               if (typeof args[0] === 'string' && needsProxy(args[0])) {
-                if (!args[0].includes('/_api_proxy/')) {
-                   args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0];
-                }
+                if (!args[0].includes('/_api_proxy/')) { args[0] = 'https://' + proxyDom + '/_api_proxy/' + args[0]; }
               } else if (args[0] instanceof Request && needsProxy(args[0].url)) {
-                if (!args[0].url.includes('/_api_proxy/')) {
-                   args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]);
-                }
+                if (!args[0].url.includes('/_api_proxy/')) { args[0] = new Request('https://' + proxyDom + '/_api_proxy/' + args[0].url, args[0]); }
               }
               if (args[1] && args[1].body && typeof args[1].body === 'string') {
                 args[1].body = args[1].body.split(proxyDom).join(targetDom);
@@ -213,9 +186,7 @@ export default {
             const origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
               if (typeof url === 'string' && needsProxy(url)) {
-                 if (!url.includes('/_api_proxy/')) {
-                     url = 'https://' + proxyDom + '/_api_proxy/' + url;
-                 }
+                 if (!url.includes('/_api_proxy/')) { url = 'https://' + proxyDom + '/_api_proxy/' + url; }
               }
               this._url = url;
               return origOpen.apply(this, arguments);
@@ -223,33 +194,14 @@ export default {
 
             const origSend = XMLHttpRequest.prototype.send;
             XMLHttpRequest.prototype.send = function(body) {
-              if (body && typeof body === 'string') {
-                body = body.split(proxyDom).join(targetDom);
-              }
+              if (body && typeof body === 'string') { body = body.split(proxyDom).join(targetDom); }
               return origSend.call(this, body);
             };
 
-            // ★ Advanced DOM Observer - যদি এডমিন প্যাথ বা নাম পালটে ফেলে, তবুও স্লাইডার ধরে ব্যানার বসিয়ে দিবে
             let dynamicBannerIdx = 0;
-            const forceSecureBanners = () => {
-              // সাধারণ ব্যানার স্লাইডারের ক্লাস এবং প্যাথ টার্গেট করা
-              const possibleBanners = document.querySelectorAll('img[src*="/assets/New/"], .van-swipe-item img, .swiper-slide img, .carousel-item img, .slider img');
-              
-              possibleBanners.forEach(img => {
-                // চেক করবে যে এই ইমেজে আমাদের কাস্টম ব্যানার অলরেডি বসেছে কিনা
-                let isAlreadyCustom = customBanners.some(cb => img.src && img.src.includes(cb));
-                
-                if (!isAlreadyCustom) {
-                  img.src = customBanners[dynamicBannerIdx % customBanners.length];
-                  img.style.setProperty('visibility', 'visible', 'important');
-                  img.style.setProperty('object-fit', 'contain', 'important');
-                  dynamicBannerIdx++;
-                }
-              });
-            };
 
             const observer = new MutationObserver((mutations) => {
-              // ১. ব্যাকগ্রাউন্ড লোগো
+              // ব্যাকগ্রাউন্ড লোগো
               const bgLogos = document.querySelectorAll('h1.top-logo, .top-logo');
               bgLogos.forEach(el => {
                 if (el.style.backgroundImage !== 'url("' + customLogo + '")') {
@@ -257,7 +209,7 @@ export default {
                 }
               });
 
-              // ২. সাধারণ <img> লোগো
+              // ইমেজ লোগো
               const imgLogos = document.querySelectorAll('.home_logo img, img[src*="logo"]');
               imgLogos.forEach(img => {
                 if (img.src && !img.src.includes(customLogo)) {
@@ -267,12 +219,20 @@ export default {
                 }
               });
 
-              // ৩. ব্যানার ফোর্স রিপ্লেস
-              forceSecureBanners();
+              // ★ সেফটি ব্যানার ইনজেক্টর (Infinite Reload Fix)
+              // শুধুমাত্র MainImage লেখা ইমেজগুলোকে টার্গেট করবে এবং data-fixed এট্রিবিউট দিয়ে লক করবে
+              const badBanners = document.querySelectorAll('img[src*="MainImage"]');
+              badBanners.forEach(img => {
+                if (!img.hasAttribute('data-fixed')) {
+                  img.src = customBanners[dynamicBannerIdx % customBanners.length];
+                  img.setAttribute('data-fixed', 'true'); // লুপ বন্ধ করার চাবি
+                  img.style.setProperty('visibility', 'visible', 'important');
+                  dynamicBannerIdx++;
+                }
+              });
             });
 
             document.addEventListener("DOMContentLoaded", () => {
-              forceSecureBanners();
               observer.observe(document.documentElement, {
                 childList: true,
                 subtree: true,
@@ -284,7 +244,6 @@ export default {
         </script>
         `;
 
-        // ★ কাস্টম CSS (ব্যানার ফ্ল্যাশ সম্পূর্ণ ব্লক করার জন্য)
         const customCssOverrides = `
         <style> 
           dl.entrance-title { border-bottom-color: ${THEME_COLOR} !important; } 
@@ -293,7 +252,6 @@ export default {
             background-color: ${THEME_COLOR} !important; 
           } 
 
-          /* ১. লোগো ডিজাইন */
           h1.top-logo, .top-logo {
             background-image: url('${CUSTOM_LOGO_URL}') !important;
             background-size: contain !important;
@@ -312,24 +270,25 @@ export default {
             object-fit: contain !important;
           }
 
-          /* ২. ★ ব্যানার ফ্ল্যাশ ব্লকার - আগের ইমেজ ব্রাউজারে আসতেই দিবে না */
-          img[src*="/assets/New/MainImage"],
-          img[src*="/assets/New/"] {
-             visibility: hidden !important; /* আগের ইমেজ লুকানো থাকবে যতক্ষণ না আমাদের JS কাজ করে */
+          /* ★ ব্যানার গ্যাপ রিমুভার এবং ফ্ল্যাশ ব্লকার */
+          img[src*="MainImage"] {
+             visibility: hidden !important; 
           }
           
-          /* আমাদের কাস্টম ব্যানারগুলো সুন্দরভাবে দেখানোর জন্য */
-          .van-swipe-item img, .swiper-slide img {
-             object-fit: contain !important; 
-             background-size: contain !important;
-             background-color: #000000 !important; /* ব্যাকগ্রাউন্ড কালো থাকলে দেখতে ভালো লাগবে */
+          /* আপনার ব্যানার ফুল স্ক্রিনে ফিট করার জন্য */
+          img[data-fixed="true"],
+          .van-swipe-item img {
+             visibility: visible !important;
+             width: 100% !important;
+             height: 100% !important;
+             object-fit: fill !important; /* গ্যাপ রিমুভ করবে */
+             display: block !important;
           }
         </style>`;
 
         text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
       }
 
-      // ডোমেইন ও কালার রিপ্লেস
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
       text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, THEME_COLOR);
