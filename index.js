@@ -1,24 +1,18 @@
 let cachedConfig = null;
 let lastCacheTime = 0;
 
-// আপনার দেওয়া ১১টি ডিফল্ট ব্যানার (যদি এডমিন প্যানেল ফাঁকা থাকে তবে এগুলো শো করবে)
-const DEFAULT_BANNERS = [
-  "https://i.postimg.cc/prhbQxqv/20260406-144304.jpg",
-  "https://i.postimg.cc/MHCkd4F9/20260406-144338.jpg",
-  "https://i.postimg.cc/4yDCBMSw/20260406-144450.jpg",
-  "https://i.postimg.cc/D09VBDMB/20260406-144633.jpg",
-  "https://i.postimg.cc/VvxyDTVj/20260406-144658.jpg",
-  "https://i.postimg.cc/66gNW25k/20260406-144724.jpg",
-  "https://i.postimg.cc/2jMfkbSb/20260406-144748.jpg",
-  "https://i.postimg.cc/bYWjyDwt/20260406-144806.jpg",
-  "https://i.postimg.cc/Y2ZwrGCL/20260406-144824.jpg",
-  "https://i.postimg.cc/kMzdJ6gK/20260406-144858.jpg",
-  "https://i.postimg.cc/CL8pzhRd/20260406-144936.jpg"
-];
+// যদি এডমিন কোনো ইমেজ আপলোড না করে, তবে এই পারফেক্ট সাইজের "NO IMAGE" প্লেসহোল্ডারটি ওয়েবসাইটে দেখাবে।
+const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="100%" height="100%">
+  <rect width="800" height="400" fill="#2a2a2a"/>
+  <rect width="780" height="380" x="10" y="10" fill="none" stroke="#444" stroke-width="4" stroke-dasharray="10,10"/>
+  <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#666">NO IMAGE</text>
+  <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#555">Upload from Control Panel</text>
+</svg>`;
 
 async function getDynamicConfig() {
   const now = Date.now();
-  if (cachedConfig && (now - lastCacheTime < 60000)) return cachedConfig;
+  // রিয়েল-টাইম আপডেটের জন্য ক্যাশ টাইম মাত্র ৫ সেকেন্ড করা হয়েছে।
+  if (cachedConfig && (now - lastCacheTime < 5000)) return cachedConfig;
 
   try {
     const firestoreUrl = "https://firestore.googleapis.com/v1/projects/rivers-proxy/databases/(default)/documents/config/main";
@@ -28,10 +22,9 @@ async function getDynamicConfig() {
       const fields = json.fields || {};
       
       let dbBanners = fields.banners?.arrayValue?.values?.map(v => v.stringValue) || [];
-      // যদি এডমিন প্যানেলের স্লট ফাঁকা থাকে, তাহলে ডিফল্ট ইমেজ বসিয়ে দিবে
-      let finalBanners = [];
-      for(let i=0; i<11; i++) {
-          finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : DEFAULT_BANNERS[i];
+      let finalBanners = new Array(10).fill(""); // ১০টি স্লট
+      for(let i=0; i<10; i++) {
+          finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : ""; // ফাঁকা থাকলে ফাঁকাই থাকবে, Worker SVG বানাবে
       }
 
       cachedConfig = {
@@ -47,7 +40,7 @@ async function getDynamicConfig() {
     }
   } catch (err) {}
   
-  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: DEFAULT_BANNERS };
+  return cachedConfig || { targetDomain: "pori365.live", themeColor: "#FCAF04", favicon: "", logo: "", loginBg: "", banners: new Array(10).fill("") };
 }
 
 export default {
@@ -57,32 +50,37 @@ export default {
     const targetDomain = config.targetDomain;
     const proxyDomain = url.hostname;
 
-    // অটো ব্র্যান্ড নেম জেনারেটর (Proxy URL থেকে)
     let autoBrandName = proxyDomain.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
     // ==========================================
-    // ১. গেম ব্যানার / স্লাইডার স্পুফার (MainImage Network Intercept)
+    // ১. গেম ব্যানার স্পুফার + NO IMAGE প্লেসহোল্ডার
     // ==========================================
     if (url.pathname.includes('/assets/New/MainImage')) {
       let bannerIndex = 0;
-      // MainImage.webp -> 0, MainImage (1).webp -> 1, MainImage (2).webp -> 2 ইত্যাদি বের করা
       const match = url.pathname.match(/MainImage(?:\s*%20|\s)*\(?(\d+)\)?/i);
       if (match && match[1]) { bannerIndex = parseInt(match[1]); }
       
-      let customImageUrl = config.banners[bannerIndex % 11];
+      // শুধুমাত্র ১০টি স্লটের হিসাব করবে
+      let customImageUrl = config.banners[bannerIndex % 10];
+      
+      // যদি এডমিন প্যানেলে কোনো ইমেজ আপলোড করা না থাকে
+      if (!customImageUrl || customImageUrl === "") {
+         return new Response(NO_IMAGE_SVG, {
+            headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' }
+         });
+      }
       
       if (customImageUrl.startsWith('data:image')) {
           const base64Data = customImageUrl.split(',')[1];
           const binaryStr = atob(base64Data);
           const bytes = new Uint8Array(binaryStr.length);
           for (let i = 0; i < binaryStr.length; i++) { bytes[i] = binaryStr.charCodeAt(i); }
-          return new Response(bytes.buffer, { headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*' } });
+          return new Response(bytes.buffer, { headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=60', 'Access-Control-Allow-Origin': '*' } });
       }
 
-      // যদি URL হয়
       const imgResponse = await fetch(customImageUrl);
       let newHeaders = new Headers(imgResponse.headers);
-      newHeaders.set('Cache-Control', 'public, max-age=86400');
+      newHeaders.set('Cache-Control', 'public, max-age=60');
       newHeaders.set('Access-Control-Allow-Origin', '*');
       return new Response(imgResponse.body, { status: 200, headers: newHeaders });
     }
@@ -142,12 +140,11 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML/CSS মডিফিকেশন (ম্যাজিক পার্ট)
+    // ৪. HTML/CSS মডিফিকেশন (Play Now Color Fix)
     // ==========================================
     if (contentType.includes("text/html") || contentType.includes("application/javascript")) {
       let text = await response.text();
 
-      // অটোমেটিক ব্র্যান্ড নেম পরিবর্তন (pori365 -> Your Domain Name)
       text = text.replace(/(?<![\/\.a-zA-Z-])pori365(?![a-zA-Z-])/gi, autoBrandName);
       text = text.replace(/(?<![\/\.a-zA-Z-])pori(?![a-zA-Z-])/gi, autoBrandName.split(' ')[0]);
 
@@ -155,7 +152,6 @@ export default {
 
       if (contentType.includes("text/html")) {
         
-        // Favicon Injector
         if(config.favicon) {
            text = text.replace(/<link rel="icon"[^>]+>/gi, '');
            text = text.replace(/<link rel="shortcut icon"[^>]+>/gi, '');
@@ -197,9 +193,16 @@ export default {
         const customCssOverrides = `
         <style> 
           :root { --theme-color: ${config.themeColor}; }
+          
+          /* Play Now Button & Triangle Color Overrides */
+          .play-btn, .btn-play, [class*="play-now"], [class*="btn-primary"] { background-color: var(--theme-color) !important; border-color: var(--theme-color) !important; }
+          .game-tag, .ribbon { background-color: var(--theme-color) !important; }
+          [style*="#009999"], [style*="#14805e"], [style*="#00cccc"], [style*="#0bcfa1"] { background-color: var(--theme-color) !important; border-color: var(--theme-color) !important; color: var(--theme-color) !important;}
+          
+          /* General Theme Colors */
           dl.entrance-title { border-bottom-color: var(--theme-color) !important; } 
           div.login_main { background-image: linear-gradient(235deg, var(--theme-color) 21%, var(--theme-color)) !important; background-color: var(--theme-color) !important; } 
-          .bg-theme, .btn-primary { background-color: var(--theme-color) !important; }
+          .bg-theme { background-color: var(--theme-color) !important; }
           .text-theme { color: var(--theme-color) !important; }
 
           ${config.logo ? `
@@ -215,34 +218,33 @@ export default {
           }
           ` : ''}
 
-          /* ব্যানার গ্যাপ ফিক্সার */
-          img[src*="/assets/New/MainImage"] { 
-             width: 100% !important; 
-             height: 100% !important; 
-             object-fit: fill !important; 
-             display: block !important; 
-          }
+          img[src*="/assets/New/MainImage"] { width: 100% !important; height: 100% !important; object-fit: fill !important; display: block !important; }
         </style>`;
 
         text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
       }
 
-      // Domain Replace
+      // Hard Replace Original Play Now Colors
+      text = text.replace(/#009999/gi, config.themeColor);
+      text = text.replace(/#14805e/gi, config.themeColor);
+      text = text.replace(/#00cccc/gi, config.themeColor);
+      text = text.replace(/#0bcfa1/gi, config.themeColor);
+      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, config.themeColor);
+      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
+
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       text = text.replace(new RegExp(`http://${proxyDomain}`, 'g'), `https://${proxyDomain}`);
-      
-      // Color Replace
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
-      text = text.replace(/#14805e/gi, config.themeColor);
 
       return new Response(text, { status: response.status, headers: resHeaders });
     }
 
     if (contentType.includes("text/css")) {
       let text = await response.text();
-      text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
-      text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
+      text = text.replace(/#009999/gi, config.themeColor);
       text = text.replace(/#14805e/gi, config.themeColor);
+      text = text.replace(/#00cccc/gi, config.themeColor);
+      text = text.replace(/#0bcfa1/gi, config.themeColor);
+      text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       return new Response(text, { status: response.status, headers: resHeaders });
     }
 
