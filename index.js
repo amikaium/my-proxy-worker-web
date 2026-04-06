@@ -1,7 +1,7 @@
 let cachedConfig = null;
 let lastCacheTime = 0;
 
-// যদি এডমিন কোনো ইমেজ আপলোড না করে, তবে এই পারফেক্ট সাইজের "NO IMAGE" প্লেসহোল্ডারটি ওয়েবসাইটে দেখাবে।
+// NO IMAGE SVG (Exactly the same perfect size)
 const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="100%" height="100%">
   <rect width="800" height="400" fill="#2a2a2a"/>
   <rect width="780" height="380" x="10" y="10" fill="none" stroke="#444" stroke-width="4" stroke-dasharray="10,10"/>
@@ -11,7 +11,6 @@ const NO_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 4
 
 async function getDynamicConfig() {
   const now = Date.now();
-  // রিয়েল-টাইম আপডেটের জন্য ক্যাশ টাইম মাত্র ৫ সেকেন্ড করা হয়েছে।
   if (cachedConfig && (now - lastCacheTime < 5000)) return cachedConfig;
 
   try {
@@ -22,9 +21,9 @@ async function getDynamicConfig() {
       const fields = json.fields || {};
       
       let dbBanners = fields.banners?.arrayValue?.values?.map(v => v.stringValue) || [];
-      let finalBanners = new Array(10).fill(""); // ১০টি স্লট
+      let finalBanners = new Array(10).fill(""); 
       for(let i=0; i<10; i++) {
-          finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : ""; // ফাঁকা থাকলে ফাঁকাই থাকবে, Worker SVG বানাবে
+          finalBanners[i] = (dbBanners[i] && dbBanners[i] !== "") ? dbBanners[i] : ""; 
       }
 
       cachedConfig = {
@@ -53,21 +52,17 @@ export default {
     let autoBrandName = proxyDomain.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
     // ==========================================
-    // ১. গেম ব্যানার স্পুফার + NO IMAGE প্লেসহোল্ডার
+    // ১. গেম ব্যানার ஸ்பুফার + NO IMAGE প্লেসহোল্ডার
     // ==========================================
     if (url.pathname.includes('/assets/New/MainImage')) {
       let bannerIndex = 0;
       const match = url.pathname.match(/MainImage(?:\s*%20|\s)*\(?(\d+)\)?/i);
       if (match && match[1]) { bannerIndex = parseInt(match[1]); }
       
-      // শুধুমাত্র ১০টি স্লটের হিসাব করবে
       let customImageUrl = config.banners[bannerIndex % 10];
       
-      // যদি এডমিন প্যানেলে কোনো ইমেজ আপলোড করা না থাকে
       if (!customImageUrl || customImageUrl === "") {
-         return new Response(NO_IMAGE_SVG, {
-            headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' }
-         });
+         return new Response(NO_IMAGE_SVG, { headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' } });
       }
       
       if (customImageUrl.startsWith('data:image')) {
@@ -86,7 +81,15 @@ export default {
     }
 
     // ==========================================
-    // ২. API ইন্টারসেপ্টর
+    // ২. কাস্টম SVG ইন্টারসেপ্টর (Play Now Color)
+    // ==========================================
+    if (url.pathname.includes('gamex.689a2e64e46ee4d9cc7e.svg')) {
+      const customSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"> <polygon points="15,0 100,0 100,100 0,100" fill="${config.themeColor}" /> </svg>`;
+      return new Response(customSvg, { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Access-Control-Allow-Origin": "*", "Cache-Control": "max-age=86400" } });
+    }
+
+    // ==========================================
+    // ৩. API ইন্টারসেপ্টর
     // ==========================================
     if (url.pathname.startsWith('/_api_proxy/')) {
       const targetApiUrlStr = request.url.replace(new RegExp(`^https?://${proxyDomain}/_api_proxy/`), '');
@@ -113,7 +116,7 @@ export default {
     }
 
     // ==========================================
-    // ৩. রিভার্স প্রক্সি রিকোয়েস্ট
+    // ৪. রিভার্স প্রক্সি রিকোয়েস্ট
     // ==========================================
     const targetUrl = new URL(request.url);
     targetUrl.hostname = targetDomain;
@@ -140,7 +143,7 @@ export default {
     const contentType = resHeaders.get("Content-Type") || "";
 
     // ==========================================
-    // ৪. HTML/CSS মডিফিকেশন (Play Now Color Fix)
+    // ৫. HTML/CSS মডিফিকেশন (Advanced CSS Inject)
     // ==========================================
     if (contentType.includes("text/html") || contentType.includes("application/javascript")) {
       let text = await response.text();
@@ -157,6 +160,10 @@ export default {
            text = text.replace(/<link rel="shortcut icon"[^>]+>/gi, '');
            text = text.replace('<head>', `<head>\n<link rel="icon" type="image/x-icon" href="${config.favicon}">\n<link rel="shortcut icon" href="${config.favicon}">`);
         }
+
+        // কাস্টম হেলানো (Slanted) Data URI তৈরি
+        const encodedColor = encodeURIComponent(config.themeColor);
+        const slantedSvgDataUri = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='15,0 100,0 100,100 0,100' fill='${encodedColor}' /%3E%3C/svg%3E`;
 
         const interceptorScript = `
         <script>
@@ -184,7 +191,6 @@ export default {
                   imgLogos.forEach(img => { if (img.src && !img.src.includes(customLogo) && (img.closest('.home_logo') || img.src.includes('/static/media/logo'))) img.src = customLogo; });
               }
             });
-
             document.addEventListener("DOMContentLoaded", () => { observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'src'] }); });
           })();
         </script>
@@ -194,11 +200,11 @@ export default {
         <style> 
           :root { --theme-color: ${config.themeColor}; }
           
-          /* Play Now Button & Triangle Color Overrides */
-          .play-btn, .btn-play, [class*="play-now"], [class*="btn-primary"] { background-color: var(--theme-color) !important; border-color: var(--theme-color) !important; }
-          .game-tag, .ribbon { background-color: var(--theme-color) !important; }
-          [style*="#009999"], [style*="#14805e"], [style*="#00cccc"], [style*="#0bcfa1"] { background-color: var(--theme-color) !important; border-color: var(--theme-color) !important; color: var(--theme-color) !important;}
-          
+          /* ★ Play Now Slanted Triangle Override */
+          dd, .play-btn dd, .game-item dd, [class*="gamex"] {
+              background-image: url("${slantedSvgDataUri}") !important;
+          }
+
           /* General Theme Colors */
           dl.entrance-title { border-bottom-color: var(--theme-color) !important; } 
           div.login_main { background-image: linear-gradient(235deg, var(--theme-color) 21%, var(--theme-color)) !important; background-color: var(--theme-color) !important; } 
@@ -211,11 +217,7 @@ export default {
           ` : ''}
 
           ${config.loginBg ? `
-          header.login-head, .login-head, .login-bg { 
-            background-image: url('${config.loginBg}') !important; 
-            background-size: cover !important; 
-            background-position: center !important; 
-          }
+          header.login-head, .login-head, .login-bg { background-image: url('${config.loginBg}') !important; background-size: cover !important; background-position: center !important; }
           ` : ''}
 
           img[src*="/assets/New/MainImage"] { width: 100% !important; height: 100% !important; object-fit: fill !important; display: block !important; }
@@ -224,12 +226,8 @@ export default {
         text = text.replace('<head>', '<head>' + interceptorScript + customCssOverrides);
       }
 
-      // Hard Replace Original Play Now Colors
       text = text.replace(/#009999/gi, config.themeColor);
       text = text.replace(/#14805e/gi, config.themeColor);
-      text = text.replace(/#00cccc/gi, config.themeColor);
-      text = text.replace(/#0bcfa1/gi, config.themeColor);
-      text = text.replace(/rgb\(\s*0\s*,\s*153\s*,\s*153\s*\)/gi, config.themeColor);
       text = text.replace(/rgb\(\s*20\s*,\s*128\s*,\s*94\s*\)/gi, config.themeColor);
 
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
@@ -242,8 +240,6 @@ export default {
       let text = await response.text();
       text = text.replace(/#009999/gi, config.themeColor);
       text = text.replace(/#14805e/gi, config.themeColor);
-      text = text.replace(/#00cccc/gi, config.themeColor);
-      text = text.replace(/#0bcfa1/gi, config.themeColor);
       text = text.replace(new RegExp(targetDomain, 'g'), proxyDomain);
       return new Response(text, { status: response.status, headers: resHeaders });
     }
