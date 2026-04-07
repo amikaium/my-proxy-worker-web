@@ -1,6 +1,6 @@
 export default {
   async fetch(request, env, ctx) {
-    const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
+    const TARGET_DOMAIN = env.TARGET_URL || "https://vellki365.app";
     
     // আলাদা করে দুই ধরনের ডোমেইন ভাগ করা হলো
     const API_DOMAINS = ["vrnlapi.com"]; // ব্যালেন্স এবং লগইন (React এর জন্য সেনসিটিভ)
