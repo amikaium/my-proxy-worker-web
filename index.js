@@ -87,8 +87,8 @@ export default {
         text = text.replace(new RegExp(TARGET_DOMAIN, 'g'), myDomain);
 
         // --- কালার রিপ্লেস করার লজিক (Yellow থেকে একটু লাইট 1xBet Blue) ---
-        const lightBlueRGB = 'rgb(30, 90, 150)'; // নতুন লাইট ব্লু RGB
-        const lightBlueHex = '#1E5A96';          // নতুন লাইট ব্লু HEX
+        const lightBlueRGB = '#FFFFFF'; // নতুন লাইট ব্লু RGB
+        const lightBlueHex = '#FFFFFF';          // নতুন লাইট ব্লু HEX
 
         // হলুদ কালার রিপ্লেস
         text = text.replace(/rgb\(\s*255\s*,\s*200\s*,\s*0\s*\)/gi, lightBlueRGB);
