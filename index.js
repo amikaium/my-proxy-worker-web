@@ -1,7 +1,6 @@
 export default {
   async fetch(request, env, ctx) {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    // এই ডোমেইনগুলোকে আমরা প্রক্সি করব (API + Video)
     const TARGET_APIS = ["vrnlapi.com", "aax-eu1314.com"]; 
     
     const url = new URL(request.url);
@@ -40,24 +39,36 @@ export default {
 
         const contentType = apiRes.headers.get("content-type") || "";
         
-        // জাদুকরী ট্রিক: লাইভ টিভির m3u8 প্লেলিস্ট ফাইলের ভেতরের লিংকগুলোকেও প্রক্সি করা
         if (contentType.includes("mpegurl") || contentType.includes("m3u8") || url.pathname.endsWith(".m3u8")) {
             let m3u8Text = await apiRes.text();
             const proxyPrefix = `https://${url.host}/__api_proxy/`;
             
-            // m3u8 এর ভেতরে থাকা ভিডিও ডোমেইনগুলোকে প্রক্সিতে কনভার্ট করা
             TARGET_APIS.forEach(api => {
                 m3u8Text = m3u8Text.replaceAll(`https://${api}`, `${proxyPrefix}https://${api}`);
             });
-            newApiRes = new Response(m3u8Text, apiRes);
+            
+            const modHeaders = new Headers(apiRes.headers);
+            // বাগ ফিক্স: ফাইলের সাইজ পরিবর্তন হওয়ায় পুরোনো সাইজ মুছে দেওয়া হলো
+            modHeaders.delete("content-length"); 
+            
+            newApiRes = new Response(m3u8Text, {
+                status: apiRes.status,
+                statusText: apiRes.statusText,
+                headers: modHeaders
+            });
         } else {
-            // .ts ভিডিও ফাইল বা অন্য API ডেটার জন্য
             newApiRes = new Response(apiRes.body, apiRes);
         }
         
-        newApiRes.headers.set("Access-Control-Allow-Origin", originHeader);
-        newApiRes.headers.set("Access-Control-Allow-Credentials", "true");
-        return newApiRes;
+        const finalHeaders = new Headers(newApiRes.headers);
+        finalHeaders.set("Access-Control-Allow-Origin", originHeader);
+        finalHeaders.set("Access-Control-Allow-Credentials", "true");
+        
+        return new Response(newApiRes.body, {
+            status: newApiRes.status,
+            statusText: newApiRes.statusText,
+            headers: finalHeaders
+        });
       } catch (e) {
         return new Response(JSON.stringify({ error: "Proxy Error", message: e.message }), { status: 500 });
       }
@@ -80,7 +91,6 @@ export default {
       let responseBody;
       const newResponseHeaders = new Headers(response.headers);
 
-      // ৪. HTML এবং JS ফাইলের ভেতর ডাইনামিক রিপ্লেসমেন্ট (ভিডিও প্লেয়ারের Web Worker এর জন্য)
       if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
         let text = await response.text();
         const proxyPrefix = `https://${url.host}/__api_proxy/`;
@@ -90,23 +100,25 @@ export default {
             const proxyUrl = `${proxyPrefix}${originalUrl}`;
             text = text.replaceAll(originalUrl, proxyUrl);
             
-            // এস্কেপ করা লিংকের জন্য (যেমন: https:\/\/aax-eu...)
             const escapedOriginal = originalUrl.replace(/\//g, '\\/');
             const escapedProxy = proxyUrl.replace(/\//g, '\\/');
             text = text.replaceAll(escapedOriginal, escapedProxy);
         });
 
-        // HTML ফাইলে Interceptor Script বসানো (আগের মতোই এক্সট্রা সেফটির জন্য)
         if (contentType.includes("text/html")) {
             const interceptorScript = `
             <script>
               (function() {
                 const proxyPrefix = '/__api_proxy/';
                 const targetApis = ${JSON.stringify(TARGET_APIS)};
+                
                 function shouldIntercept(url) {
                   if (typeof url !== 'string') return false;
+                  // বাগ ফিক্স: ডাবল র‍্যাপ ঠেকানোর জন্য যদি লিংকটি আগেই প্রক্সি করা থাকে তবে ইগনোর করবে
+                  if (url.includes('__api_proxy')) return false; 
                   return targetApis.some(api => url.includes(api));
                 }
+                
                 const originalFetch = window.fetch;
                 window.fetch = async function(...args) {
                   try {
@@ -119,6 +131,7 @@ export default {
                   } catch(e) {}
                   return originalFetch.apply(this, args);
                 };
+                
                 const originalOpen = XMLHttpRequest.prototype.open;
                 XMLHttpRequest.prototype.open = function(method, url, ...rest) {
                   try {
@@ -139,7 +152,8 @@ export default {
         }
         
         responseBody = text;
-        // ব্রাউজারকে ক্যাশ করতে বারণ করা হচ্ছে 
+        // বাগ ফিক্স: মেইন ফাইলে কোড ঢোকানোর কারণে অরিজিনাল Content-Length রিমুভ করা হলো
+        newResponseHeaders.delete("content-length"); 
         newResponseHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
       } else {
         responseBody = response.body;
