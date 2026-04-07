@@ -1,8 +1,8 @@
 export default {
   async fetch(request, env, ctx) {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    // এই API ডোমেইনগুলোকে আমরা ইন্টারসেপ্ট করব
-    const API_DOMAIN = "vrnlapi.com"; 
+    // ম্যাজিক: এখানে আমরা একটি তালিকা তৈরি করেছি। ব্যালেন্স এবং লাইভ টিভি উভয়ের ডোমেইনই এখন ইন্টারসেপ্ট হবে।
+    const TARGET_APIS = ["vrnlapi.com", "aax-eu1314.com"]; 
     
     const url = new URL(request.url);
     const originHeader = request.headers.get("Origin") || `https://${url.host}`;
@@ -20,9 +20,8 @@ export default {
       });
     }
 
-    // ২. ইউনিভার্সাল API প্রক্সি (সব রিকোয়েস্ট এখান দিয়ে যাবে)
+    // ২. ইউনিভার্সাল API এবং Video Stream প্রক্সি
     if (url.pathname.startsWith('/__api_proxy/')) {
-      // ব্রাউজার থেকে পাঠানো আসল API লিংকটি বের করা হচ্ছে
       const actualApiUrl = request.url.substring(request.url.indexOf('/__api_proxy/') + 13);
       
       try {
@@ -39,6 +38,12 @@ export default {
         
         newApiRes.headers.set("Access-Control-Allow-Origin", originHeader);
         newApiRes.headers.set("Access-Control-Allow-Credentials", "true");
+        
+        // মিডিয়া (ভিডিও) ফাইলগুলো ঠিকমতো প্লে হওয়ার জন্য Content-Type ঠিক রাখা
+        if (apiRes.headers.has("content-type")) {
+           newApiRes.headers.set("content-type", apiRes.headers.get("content-type"));
+        }
+        
         return newApiRes;
       } catch (e) {
         return new Response(JSON.stringify({ error: "Proxy Error", message: e.message }), { status: 500 });
@@ -60,36 +65,41 @@ export default {
       const response = await fetch(proxyRequest);
       const contentType = response.headers.get("content-type") || "";
       
-      // ৪. শুধুমাত্র HTML ফাইলের ভেতর আমাদের "Interceptor Script" ইনজেক্ট করা হবে
+      // ৪. HTML এর ভেতর আমাদের আপডেটেড "Interceptor Script" বসানো
       if (contentType.includes("text/html")) {
         let html = await response.text();
         
-        // এই স্ক্রিপ্টটি ব্রাউজারের সমস্ত নেটওয়ার্ক কল হ্যাক করে আমাদের প্রক্সিতে পাঠিয়ে দেবে
         const interceptorScript = `
         <script>
           (function() {
             const proxyPrefix = '/__api_proxy/';
-            const targetApi = '${API_DOMAIN}';
+            const targetApis = ${JSON.stringify(TARGET_APIS)}; // আমাদের টার্গেট লিস্ট
 
-            // Fetch API ইন্টারসেপ্ট করা
+            // লিংকটা টার্গেট লিস্টের মধ্যে আছে কি না সেটা চেক করার ফাংশন
+            function shouldIntercept(url) {
+              if (typeof url !== 'string') return false;
+              return targetApis.some(api => url.includes(api));
+            }
+
+            // Fetch API ইন্টারসেপ্ট
             const originalFetch = window.fetch;
             window.fetch = async function(...args) {
               try {
                 let reqUrl = args[0];
-                if (typeof reqUrl === 'string' && reqUrl.includes(targetApi)) {
+                if (typeof reqUrl === 'string' && shouldIntercept(reqUrl)) {
                   args[0] = proxyPrefix + reqUrl;
-                } else if (reqUrl instanceof Request && reqUrl.url.includes(targetApi)) {
+                } else if (reqUrl instanceof Request && shouldIntercept(reqUrl.url)) {
                   args[0] = new Request(proxyPrefix + reqUrl.url, reqUrl);
                 }
               } catch(e) { console.error("Fetch Intercept Error", e); }
               return originalFetch.apply(this, args);
             };
 
-            // XMLHttpRequest (XHR) ইন্টারসেপ্ট করা
+            // XMLHttpRequest (XHR) ইন্টারসেপ্ট
             const originalOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url, ...rest) {
               try {
-                if (typeof url === 'string' && url.includes(targetApi)) {
+                if (typeof url === 'string' && shouldIntercept(url)) {
                   url = proxyPrefix + url;
                 }
               } catch(e) {}
@@ -100,7 +110,6 @@ export default {
         </script>
         `;
         
-        // HTML এর <head> ট্যাগের ঠিক পরেই স্ক্রিপ্টটি বসিয়ে দেওয়া হচ্ছে
         if (html.includes('<head>')) {
           html = html.replace('<head>', '<head>' + interceptorScript);
         } else {
@@ -110,7 +119,6 @@ export default {
         const newResponseHeaders = new Headers(response.headers);
         newResponseHeaders.delete("Content-Security-Policy");
         newResponseHeaders.delete("X-Frame-Options");
-        // ব্রাউজারকে ক্যাশ করতে বারণ করা হচ্ছে
         newResponseHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
         newResponseHeaders.set("Access-Control-Allow-Origin", originHeader);
 
@@ -121,7 +129,6 @@ export default {
         });
       }
 
-      // ৫. JS বা CSS ফাইলের ভেতরে আমরা কোনো হাত দেব না (যাতে ওয়েবসাইট কোনোভাবেই ব্রেক না করে)
       const newResponseHeaders = new Headers(response.headers);
       newResponseHeaders.delete("Content-Security-Policy");
       newResponseHeaders.delete("X-Frame-Options");
