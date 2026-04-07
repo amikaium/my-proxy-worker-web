@@ -1,18 +1,22 @@
 export default {
   async fetch(request, env, ctx) {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    const TARGET_APIS = ["vrnlapi.com", "aax-eu1314.com"]; 
+    
+    // আলাদা করে দুই ধরনের ডোমেইন ভাগ করা হলো
+    const API_DOMAINS = ["vrnlapi.com"]; // ব্যালেন্স এবং লগইন (React এর জন্য সেনসিটিভ)
+    const VIDEO_DOMAINS = ["aax-eu1314.com"]; // লাইভ টিভি ভিডিও স্ট্রিম
+    const ALL_TARGETS = [...API_DOMAINS, ...VIDEO_DOMAINS]; 
     
     const url = new URL(request.url);
     const originHeader = request.headers.get("Origin") || `https://${url.host}`;
 
-    // ১. CORS প্রিফ্লাইট
+    // ১. CORS প্রিফ্লাইট (Bulletproof CORS)
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
           "Access-Control-Allow-Origin": originHeader,
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-          "Access-Control-Allow-Headers": "*",
+          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, Accept, X-Requested-With",
           "Access-Control-Allow-Credentials": "true",
           "Access-Control-Max-Age": "86400",
         }
@@ -39,16 +43,16 @@ export default {
 
         const contentType = apiRes.headers.get("content-type") || "";
         
+        // m3u8 ভিডিও ফাইলের ভেতরের লিংকগুলোকে প্রক্সি করা
         if (contentType.includes("mpegurl") || contentType.includes("m3u8") || url.pathname.endsWith(".m3u8")) {
             let m3u8Text = await apiRes.text();
             const proxyPrefix = `https://${url.host}/__api_proxy/`;
             
-            TARGET_APIS.forEach(api => {
+            ALL_TARGETS.forEach(api => {
                 m3u8Text = m3u8Text.replaceAll(`https://${api}`, `${proxyPrefix}https://${api}`);
             });
             
             const modHeaders = new Headers(apiRes.headers);
-            // বাগ ফিক্স: ফাইলের সাইজ পরিবর্তন হওয়ায় পুরোনো সাইজ মুছে দেওয়া হলো
             modHeaders.delete("content-length"); 
             
             newApiRes = new Response(m3u8Text, {
@@ -95,7 +99,8 @@ export default {
         let text = await response.text();
         const proxyPrefix = `https://${url.host}/__api_proxy/`;
         
-        TARGET_APIS.forEach(api => {
+        // ট্রিকস: শুধুমাত্র ভিডিওর ডোমেইন JS এ পরিবর্তন হবে, ব্যালেন্সের ডোমেইন স্কিপ করবে!
+        VIDEO_DOMAINS.forEach(api => {
             const originalUrl = `https://${api}`;
             const proxyUrl = `${proxyPrefix}${originalUrl}`;
             text = text.replaceAll(originalUrl, proxyUrl);
@@ -105,16 +110,16 @@ export default {
             text = text.replaceAll(escapedOriginal, escapedProxy);
         });
 
+        // HTML ফাইলে Interceptor Script বসানো (ব্যালেন্সের জন্য)
         if (contentType.includes("text/html")) {
             const interceptorScript = `
             <script>
               (function() {
                 const proxyPrefix = '/__api_proxy/';
-                const targetApis = ${JSON.stringify(TARGET_APIS)};
+                const targetApis = ${JSON.stringify(ALL_TARGETS)};
                 
                 function shouldIntercept(url) {
                   if (typeof url !== 'string') return false;
-                  // বাগ ফিক্স: ডাবল র‍্যাপ ঠেকানোর জন্য যদি লিংকটি আগেই প্রক্সি করা থাকে তবে ইগনোর করবে
                   if (url.includes('__api_proxy')) return false; 
                   return targetApis.some(api => url.includes(api));
                 }
@@ -152,7 +157,6 @@ export default {
         }
         
         responseBody = text;
-        // বাগ ফিক্স: মেইন ফাইলে কোড ঢোকানোর কারণে অরিজিনাল Content-Length রিমুভ করা হলো
         newResponseHeaders.delete("content-length"); 
         newResponseHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
       } else {
