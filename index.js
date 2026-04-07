@@ -5,16 +5,19 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
     const myDomain = url.hostname;
-    const clientOrigin = request.headers.get("Origin") || `https://${myDomain}`;
+    
+    // ব্রাউজারের অরিজিন বের করা (যাতে শুধু "https" না আসে, সম্পূর্ণ URL আসে)
+    const originHeader = request.headers.get("Origin");
+    const safeOrigin = originHeader ? originHeader : url.origin;
 
-    // ১. গ্লোবাল CORS (Preflight Request)
+    // ১. গ্লোবাল CORS (Preflight Request - API রিকোয়েস্ট অ্যালাউ করার জন্য)
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
         headers: {
-          "Access-Control-Allow-Origin": clientOrigin, // '*' এর বদলে স্পেসিফিক ডোমেইন (খুবই জরুরি)
-          "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Authorization, Content-Type, Accept, Origin, User-Agent, Referer, Cache-Control, token",
+          "Access-Control-Allow-Origin": safeOrigin,
+          "Access-Control-Allow-Methods": "*",
+          "Access-Control-Allow-Headers": "*", // সব ধরনের হেডার (Authorization Token) অ্যালাউ করা হলো
           "Access-Control-Allow-Credentials": "true",
           "Access-Control-Max-Age": "86400",
         }
@@ -22,7 +25,7 @@ export default {
     }
 
     // ==========================================
-    // ২. API বাইপাস রাউট
+    // ২. API ও WebSocket বাইপাস রাউট (ম্যাজিক ব্রিজ)
     // ==========================================
     if (url.pathname.startsWith('/__api')) {
       const targetUrl = new URL(request.url);
@@ -36,6 +39,7 @@ export default {
       apiHeaders.set("Origin", `https://${TARGET_DOMAIN}`);
       apiHeaders.set("Referer", `https://${TARGET_DOMAIN}/`);
       
+      // ক্লাউডফ্লেয়ারের রিয়েল আইপি হেডার রিমুভ (সার্ভার যেন ব্লক না করে)
       apiHeaders.delete("cf-connecting-ip");
       apiHeaders.delete("cf-ipcountry");
 
@@ -50,10 +54,10 @@ export default {
         const apiResponse = await fetch(apiRequest);
         const responseHeaders = new Headers(apiResponse.headers);
         
-        // CORS ফিক্স (আপনার স্ক্রিনশটের এররটি এখান থেকেই হচ্ছিল)
-        responseHeaders.set("Access-Control-Allow-Origin", clientOrigin);
+        // API থেকে ব্রাউজারে ডেটা যাওয়ার সময় CORS ঠিক করে দেওয়া
+        responseHeaders.set("Access-Control-Allow-Origin", safeOrigin);
         responseHeaders.set("Access-Control-Allow-Credentials", "true");
-        responseHeaders.delete("content-length"); // সেফটির জন্য
+        responseHeaders.delete("content-length"); 
         
         return new Response(apiResponse.body, {
           status: apiResponse.status,
@@ -61,7 +65,7 @@ export default {
           headers: responseHeaders
         });
       } catch (e) {
-        return new Response(JSON.stringify({ error: "API Server Unreachable" }), { status: 500 });
+        return new Response(JSON.stringify({ error: "API Failed", details: e.message }), { status: 500 });
       }
     }
 
@@ -88,12 +92,10 @@ export default {
       const response = await fetch(proxyRequest);
       const responseHeaders = new Headers(response.headers);
 
-      responseHeaders.set("Access-Control-Allow-Origin", clientOrigin);
+      responseHeaders.set("Access-Control-Allow-Origin", safeOrigin);
       responseHeaders.set("Access-Control-Allow-Credentials", "true");
       responseHeaders.delete("Content-Security-Policy");
       responseHeaders.delete("X-Frame-Options");
-
-      // ওয়েবসাইটের টেক্সট মডিফাই করলে Content-Length মুছে দেওয়া বাধ্যতামূলক, নইলে সাইট লোড হয়ে ঘুরতে থাকবে
       responseHeaders.delete("content-length"); 
 
       if ([301, 302, 303, 307, 308].includes(response.status) && responseHeaders.has("Location")) {
@@ -108,7 +110,7 @@ export default {
         cookies.forEach(cookie => {
           let newCookie = cookie.replace(new RegExp(`domain=${TARGET_DOMAIN}`, 'gi'), `domain=${myDomain}`);
           newCookie = newCookie.replace(new RegExp(`domain=\\.${TARGET_DOMAIN}`, 'gi'), `domain=${myDomain}`);
-          newCookie = newCookie.replace(/SameSite=Strict/gi, "SameSite=None; Secure"); // লগিন ইস্যু ফিক্স
+          newCookie = newCookie.replace(/SameSite=Strict/gi, "SameSite=None; Secure"); 
           responseHeaders.append("Set-Cookie", newCookie);
         });
       }
@@ -116,59 +118,58 @@ export default {
       let body = response.body;
       const contentType = responseHeaders.get("content-type") || "";
 
-      // ৪. স্মার্ট লিংক রিপ্লেসমেন্ট (যাতে প্রোফাইল বা অন্যান্য লিংক ব্রেক না করে)
+      // ৪. স্মার্ট লিংক ও API ইন্টারসেপ্টর (Frontend Hook)
       if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
         let text = await response.text();
         
-        // শুধু ফুল URL গুলো চেঞ্জ হবে, যেকোনো র‍্যান্ডম টেক্সট নয়
+        // ডোমেইন রিপ্লেস
         text = text.replace(new RegExp(`https://${TARGET_DOMAIN}`, 'g'), `https://${myDomain}`);
-        text = text.replace(new RegExp(`wss://${TARGET_DOMAIN}`, 'g'), `wss://${myDomain}`);
         
-        // API ডোমেইন রিপ্লেস (নিখুঁত ভাবে)
-        text = text.replace(new RegExp(`https://${API_TARGET_HOST}`, 'g'), `https://${myDomain}/__api`);
-        text = text.replace(new RegExp(`http://${API_TARGET_HOST}`, 'g'), `https://${myDomain}/__api`);
-        
-        // বিকল্প API হোস্ট (যদি কোথাও শুধু ডোমেইন থাকে)
-        text = text.split(`"${API_TARGET_HOST}"`).join(`"${myDomain}/__api"`);
-        text = text.split(`'${API_TARGET_HOST}'`).join(`'${myDomain}/__api'`);
-
-        // HTML পেজের একেবারে শুরুতে API ইন্টারসেপ্টর হুক 
+        // HTML পেজের একেবারে শুরুতে API এবং WebSocket হুক ইনজেক্ট করা
         if (contentType.includes("text/html")) {
           const headInject = `
             <script>
-              if ('serviceWorker' in navigator) {
-                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                      for(let registration of registrations) { registration.unregister(); }
-                  });
-              }
               (function() {
-                const proxyUrl = 'https://' + window.location.host + '/__api';
+                const proxyUrl = window.location.origin + '/__api';
                 const targetHost = '${API_TARGET_HOST}';
                 
                 function fixUrl(url) {
-                    if(typeof url === 'string' && url.includes(targetHost)) {
-                        return url.replace(new RegExp('https?://' + targetHost, 'g'), proxyUrl)
-                                  .replace(new RegExp(targetHost, 'g'), window.location.host + '/__api');
+                    if(typeof url === 'string') {
+                        if(url.includes(targetHost)) {
+                            return url.replace(new RegExp('https?://' + targetHost, 'g'), proxyUrl)
+                                      .replace(new RegExp('wss?://' + targetHost, 'g'), 'wss://' + window.location.host + '/__api')
+                                      .replace(new RegExp(targetHost, 'g'), window.location.host + '/__api');
+                        }
                     }
                     return url;
                 }
 
+                // 1. Fetch API Hook (For Balance/Login requests)
                 const origFetch = window.fetch;
-                window.fetch = function() {
+                window.fetch = async function() {
                     let args = Array.from(arguments);
-                    if (args[0] instanceof Request && args[0].url.includes(targetHost)) {
+                    if (args[0] instanceof Request && args[0].url.includes('vrnlapi')) {
                         args[0] = new Request(fixUrl(args[0].url), args[0]);
-                    } else if (typeof args[0] === 'string') {
+                    } else if (typeof args[0] === 'string' && args[0].includes('vrnlapi')) {
                         args[0] = fixUrl(args[0]);
                     }
                     return origFetch.apply(this, args);
                 };
 
+                // 2. XMLHttpRequest Hook
                 const origOpen = XMLHttpRequest.prototype.open;
                 XMLHttpRequest.prototype.open = function() {
                     let args = Array.from(arguments);
                     if(args[1]) args[1] = fixUrl(args[1]);
                     return origOpen.apply(this, args);
+                };
+
+                // 3. WebSocket Hook (CRITICAL FOR LIVE BALANCE & ODDS)
+                const OrigWebSocket = window.WebSocket;
+                window.WebSocket = function(url, protocols) {
+                    let newUrl = fixUrl(url);
+                    if (protocols) return new OrigWebSocket(newUrl, protocols);
+                    return new OrigWebSocket(newUrl);
                 };
               })();
             </script>
