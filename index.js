@@ -1,19 +1,20 @@
 const TARGET_DOMAIN = "vellki365.app";
-const API_TARGET = "vrnlapi.com:4041"; // স্ক্রিনশট থেকে পাওয়া লগইন API সার্ভার
+const API_TARGET = "vrnlapi.com:4041";
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
     const myDomain = url.hostname;
 
-    // ১. CORS Preflight (সব রিকোয়েস্টের জন্য)
+    // ১. গ্লোবাল CORS Preflight (সব API রিকোয়েস্টের জন্য অত্যন্ত জরুরি)
+    // Authorization হেডার অ্যালাউ না করলে ব্যালেন্স লোড হবে না
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
         headers: {
           "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
           "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "*",
+          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, X-Requested-With, Accept, Origin",
           "Access-Control-Allow-Credentials": "true",
           "Access-Control-Max-Age": "86400",
         }
@@ -21,17 +22,19 @@ export default {
     }
 
     // ==========================================
-    // ২. লগইন API বাইপাস করা (CORS Error ফিক্স)
+    // ২. API বাইপাস সিস্টেম (সব API রিকোয়েস্ট এর জন্য)
     // ==========================================
     if (url.pathname.startsWith('/__api/')) {
       const targetUrl = new URL(request.url);
       targetUrl.hostname = "vrnlapi.com";
       targetUrl.port = "4041";
       targetUrl.protocol = "https:";
-      // /__api/ অংশটুকু রিমুভ করে আসল পাথ তৈরি করা
-      targetUrl.pathname = targetUrl.pathname.replace('/__api/', '/');
+      // /__api/ অংশটুকু কেটে দিয়ে আসল পাথ তৈরি করা
+      targetUrl.pathname = targetUrl.pathname.replace(/^\/__api/, '');
 
       const apiHeaders = new Headers(request.headers);
+      
+      // আসল সার্ভারকে বোঝানো যে রিকোয়েস্টটি অরিজিনাল সাইট থেকেই আসছে
       apiHeaders.set("Host", API_TARGET);
       apiHeaders.set("Origin", `https://${TARGET_DOMAIN}`);
       apiHeaders.set("Referer", `https://${TARGET_DOMAIN}/`);
@@ -47,28 +50,17 @@ export default {
         const apiResponse = await fetch(apiRequest);
         const responseHeaders = new Headers(apiResponse.headers);
         
-        // API থেকে আসা রেসপন্সে CORS ঠিক করা
+        // প্রক্সিতে API রেসপন্স পাঠানোর সময় CORS ঠিক রাখা
         responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
         responseHeaders.set("Access-Control-Allow-Credentials", "true");
         
-        // API যদি কোনো কুকি দেয়, সেটা নিজের ডোমেইনে সেট করা
-        if (typeof apiResponse.headers.getSetCookie === 'function') {
-            const cookies = apiResponse.headers.getSetCookie();
-            responseHeaders.delete("Set-Cookie");
-            cookies.forEach(cookie => {
-                let newCookie = cookie.replace(/domain=[^;]+/gi, `domain=${myDomain}`);
-                newCookie = newCookie.replace(/SameSite=Strict/gi, "SameSite=Lax");
-                responseHeaders.append("Set-Cookie", newCookie);
-            });
-        }
-
         return new Response(apiResponse.body, {
           status: apiResponse.status,
           statusText: apiResponse.statusText,
           headers: responseHeaders
         });
       } catch (e) {
-        return new Response("API Proxy Error: " + e.message, { status: 500 });
+        return new Response("API Error: " + e.message, { status: 500 });
       }
     }
 
@@ -88,7 +80,7 @@ export default {
       proxyHeaders.set('X-Forwarded-For', clientIP);
     }
     
-    proxyHeaders.delete("Accept-Encoding"); // Text replace করার জন্য এটি জরুরি
+    proxyHeaders.delete("Accept-Encoding"); // Text রিপ্লেস করার জন্য জরুরি
 
     const proxyRequest = new Request(url.toString(), {
       method: request.method,
@@ -128,17 +120,22 @@ export default {
       let body = response.body;
       const contentType = responseHeaders.get("content-type") || "";
 
-      // ৪. HTML এবং Javascript ফাইলের ভেতর থেকে লিংক চেঞ্জ করা
-      if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("application/json")) {
+      // ৪. HTML, JS এবং JSON এর ভেতর থেকে সব লিংক ও API বাইপাস করা
+      if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("application/json") || contentType.includes("text/javascript")) {
         let text = await response.text();
         
-        // মেইন ডোমেইন রিপ্লেস
+        // ১. মেইন ডোমেইন রিপ্লেস
         text = text.replace(new RegExp(`https://${TARGET_DOMAIN}`, 'g'), `https://${myDomain}`);
         text = text.replace(new RegExp(TARGET_DOMAIN, 'g'), myDomain);
 
-        // API লিংক বাইপাস (লগইন লিংকটি আমাদের ওয়ার্কার রাউটে ডাইভার্ট করা)
-        text = text.replace(/https:\/\/vrnlapi\.com:4041\//g, `https://${myDomain}/__api/`);
-        text = text.replace(/https:\/\/vrnlapi\.com:4041/g, `https://${myDomain}/__api/`);
+        // ২. সব API লিংক বাইপাস (খুব পাওয়ারফুল রিপ্লেসমেন্ট)
+        // https://vrnlapi.com:4041/ -> https://আপনার-ডোমেইন/__api/
+        text = text.replace(new RegExp(`https://${API_TARGET}/`, 'g'), `https://${myDomain}/__api/`);
+        text = text.replace(new RegExp(`https://${API_TARGET}`, 'g'), `https://${myDomain}/__api`);
+        
+        // কিছু জায়গায় জাভাস্ক্রিপ্টে http/https ছাড়া শুধু ডোমেইন লেখা থাকে, সেটাও রিপ্লেস করা হলো
+        text = text.replace(new RegExp(`//${API_TARGET}/`, 'g'), `//${myDomain}/__api/`);
+        text = text.replace(new RegExp(`//${API_TARGET}`, 'g'), `//${myDomain}/__api`);
 
         body = text;
       }
