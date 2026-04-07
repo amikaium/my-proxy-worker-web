@@ -1,160 +1,142 @@
-// =====================================================
-// অ্যাডভান্সড রিভার্স প্রক্সি – ডায়নামিক API + সেশন ম্যানেজমেন্ট
-// =====================================================
+// ===================================================
+// প্রোডাকশন-রেডি রিভার্স প্রক্সি – হোয়াইট স্ক্রিন ফিক্স + API সাপোর্ট
+// ===================================================
 
-const TARGET_WEB = 'https://velki123.win';
-const TARGET_API = 'https://vrnlapi.com:4041';
+const TARGET = 'https://velki123.win';
+const API_TARGET = 'https://vrnlapi.com:4041';
 
-// সেশন স্টোর (ক্লাউডফ্লেয়ার KV ব্যবহার করুন প্রোডাকশনে)
-let sessionStore = new Map();
+// ক্যাশে কন্ট্রোল (হোয়াইট স্ক্রিন ঠিক করার জন্য)
+const CACHE_CONTROL = 'public, max-age=3600, must-revalidate';
 
 async function handleRequest(request) {
   const url = new URL(request.url);
-  const incomingDomain = url.hostname;
+  const incomingHost = url.hostname;
   const requestPath = url.pathname;
   
-  // 1. API ডিটেকশন (স্মার্ট – সব JSON রিকোয়েস্ট ধরে)
-  const contentType = request.headers.get('content-type') || '';
-  const acceptHeader = request.headers.get('accept') || '';
-  const isApiRequest = requestPath.includes('/v1/') || 
-                       requestPath.includes('/api/') ||
-                       contentType.includes('application/json') ||
-                       acceptHeader.includes('application/json');
+  // 1. API ডিটেকশন – সঠিকভাবে চিহ্নিত করা
+  const isApiCall = requestPath.startsWith('/v1/') || 
+                    requestPath.startsWith('/api/') ||
+                    requestPath.includes('/user/login') ||
+                    requestPath.includes('/user/balance') ||
+                    request.headers.get('content-type')?.includes('application/json') ||
+                    request.headers.get('accept')?.includes('application/json');
   
-  // 2. কুকি থেকে সেশন এক্সট্র্যাক্ট
-  const cookies = request.headers.get('cookie') || '';
-  let sessionId = extractSessionId(cookies);
-  
-  // 3. টার্গেট নির্বাচন
-  const targetBase = isApiRequest ? TARGET_API : TARGET_WEB;
-  const targetUrl = new URL(requestPath + url.search, targetBase);
-  
-  // 4. হেডার প্রস্তুত (মূল সাইটের মতো)
-  const headers = new Headers(request.headers);
-  headers.set('Host', targetUrl.hostname);
-  headers.set('Origin', TARGET_WEB);
-  headers.set('Referer', TARGET_WEB + '/');
-  headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-  
-  // CSRF টোকেন যোগ (যদি সেশনে থাকে)
-  if (sessionStore.has(sessionId) && sessionStore.get(sessionId).csrfToken) {
-    headers.set('X-CSRF-Token', sessionStore.get(sessionId).csrfToken);
-  }
-  
-  // API হেডার
-  if (isApiRequest) {
-    headers.set('Accept', 'application/json, text/plain, */*');
-    headers.set('Content-Type', 'application/json');
-    headers.delete('CF-Access-Client-UID');
-    headers.delete('CF-RAY');
-  }
-  
-  // 5. বডি প্রসেস (যদি এনক্রিপ্টেড হয়)
-  let body = request.body;
-  let originalBody = null;
-  
-  if (request.method === 'POST' && requestPath.includes('/login')) {
-    // লগইন রিকোয়েস্ট – বডি পড়ে প্রয়োজনীয় ফিল্ড চেক
-    const textBody = await request.text();
-    originalBody = textBody;
-    console.log('Login attempt body:', textBody);
+  // 2. API কল হ্যান্ডেল (vrnlapi.com:4041)
+  if (isApiCall) {
+    const apiUrl = new URL(requestPath + url.search, API_TARGET);
+    const apiHeaders = new Headers(request.headers);
     
-    // কাস্টম প্রসেসিং (যদি ইউজারনেম/পাসওয়ার্ড অন্য ফরম্যাটে থাকে)
-    let jsonBody;
+    // হেডার ঠিক করা
+    apiHeaders.set('Host', apiUrl.hostname);
+    apiHeaders.set('Origin', TARGET);
+    apiHeaders.set('Referer', TARGET + '/');
+    apiHeaders.delete('cf-ray');
+    apiHeaders.delete('cf-worker');
+    
+    // API রিকোয়েস্ট ফরোয়ার্ড
+    const apiRequest = new Request(apiUrl, {
+      method: request.method,
+      headers: apiHeaders,
+      body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined
+    });
+    
     try {
-      jsonBody = JSON.parse(textBody);
-      // validationCode সরিয়ে ফেলুন (অপশনাল)
-      if (jsonBody.validationCode && !jsonBody.uniqueId) {
-        jsonBody.uniqueId = parseInt(jsonBody.validationCode);
-        delete jsonBody.validationCode;
+      const apiResponse = await fetch(apiRequest);
+      const responseHeaders = new Headers(apiResponse.headers);
+      
+      // CORS হেডার
+      responseHeaders.set('Access-Control-Allow-Origin', '*');
+      responseHeaders.set('Access-Control-Allow-Credentials', 'true');
+      
+      // কুকি ডোমেইন রিরাইট
+      const setCookie = responseHeaders.get('set-cookie');
+      if (setCookie) {
+        const newCookie = setCookie.replace(/domain=[^;]+/gi, `domain=${incomingHost}`);
+        responseHeaders.set('set-cookie', newCookie);
       }
-      body = JSON.stringify(jsonBody);
+      
+      return new Response(apiResponse.body, {
+        status: apiResponse.status,
+        headers: responseHeaders
+      });
     } catch(e) {
-      body = textBody;
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'API connection failed: ' + e.message
+      }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
   }
   
-  // 6. রিকোয়েস্ট ফরোয়ার্ড
+  // 3. ওয়েবসাইট কল হ্যান্ডেল (velki123.win)
+  const targetUrl = new URL(requestPath + url.search, TARGET);
+  const headers = new Headers(request.headers);
+  
+  headers.set('Host', targetUrl.hostname);
+  headers.set('Origin', TARGET);
+  headers.set('Referer', TARGET + '/');
+  headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+  
   const modifiedRequest = new Request(targetUrl, {
     method: request.method,
     headers: headers,
-    body: request.method !== 'GET' && request.method !== 'HEAD' ? body : undefined,
-    redirect: 'manual'
+    body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined
   });
   
-  // 7. ফেচ (রিট্রাই মেকানিজম সহ)
-  let response = await fetchWithRetry(modifiedRequest);
-  
-  // 8. রেসপন্স প্রসেস
+  const response = await fetch(modifiedRequest);
   const responseHeaders = new Headers(response.headers);
   let responseBody = response.body;
-  let responseData = null;
   
-  // API রেসপন্স পার্স ও মডিফাই
-  if (isApiRequest && response.headers.get('content-type')?.includes('application/json')) {
-    responseData = await response.json();
+  // 4. HTML প্রসেসিং – হোয়াইট স্ক্রিন ঠিক করা
+  const contentType = responseHeaders.get('content-type') || '';
+  
+  if (contentType.includes('text/html')) {
+    let html = await response.text();
     
-    // লগইন সফল হলে সেশন সেভ
-    if (requestPath.includes('/login') && responseData.success === true) {
-      sessionId = generateSessionId();
-      sessionStore.set(sessionId, {
-        userId: responseData.results?.userId,
-        token: responseData.results?.token,
-        csrfToken: responseData.results?.csrfToken || generateCsrfToken(),
-        createdAt: Date.now()
-      });
-      
-      // সফল রেসপন্সে ডোমেইন পরিবর্তন
-      responseData.proxyDomain = incomingDomain;
-      responseData.message = "Login successful via proxy";
-      responseBody = JSON.stringify(responseData);
-      
-      // সেট-কুকি তৈরি
-      const sessionCookie = `session_id=${sessionId}; Domain=${incomingDomain}; Path=/; HttpOnly; SameSite=Lax`;
-      responseHeaders.set('Set-Cookie', sessionCookie);
-    }
+    // বেস ট্যাগ যোগ করা (সব রিলেটিভ পাথ ঠিক করার জন্য)
+    html = html.replace('<head>', `<head><base href="${url.protocol}//${incomingHost}/">`);
     
-    // ব্যালেন্স রেসপন্স
-    else if (requestPath.includes('/balance') && responseData) {
-      responseData.proxyNote = "Balance fetched via proxy";
-      responseBody = JSON.stringify(responseData);
-    }
-    
-    // এরর রেসপন্স হ্যান্ডেল
-    else if (responseData?.success === false) {
-      console.log(`API Error: ${responseData.message}`);
-      // কিছু ক্ষেত্রে API ভিন্ন পোর্টে রিডাইরেক্ট করতে পারে
-      if (responseData.message?.includes('redirect')) {
-        return handleRedirect(responseData.redirectUrl, incomingDomain);
+    // সব লিংক, স্ক্রিপ্ট, ইমেজ পাথ রিরাইট
+    html = html.replace(/(src|href)=["']\/([^"']+)["']/g, `$1="${url.protocol}//${incomingHost}/$2"`);
+    html = html.replace(/(src|href)=["'](https?:)?\/\/([^"']+)["']/g, (match, attr, protocol, domain) => {
+      if (domain.includes('velki123.win') || domain.includes('vrnlapi.com')) {
+        return `${attr}="${url.protocol}//${incomingHost}/${domain.split('/').slice(1).join('/')}"`;
       }
-    }
+      return match;
+    });
+    
+    // API এন্ডপয়েন্ট রিরাইট (জাভাস্ক্রিপ্টে)
+    html = html.replace(/vrnlapi\.com:4041/g, incomingHost);
+    html = html.replace(/velki123\.win/g, incomingHost);
+    
+    // ক্যাশে কন্ট্রোল যোগ করা
+    responseHeaders.set('Cache-Control', CACHE_CONTROL);
+    responseHeaders.set('X-Proxy-By', 'Cloudflare-Worker');
+    
+    responseBody = html;
+    responseHeaders.delete('content-length');
   }
   
-  // 9. HTML/JS রিরাইট (React অ্যাপের জন্য)
-  const respContentType = responseHeaders.get('content-type') || '';
-  if (!isApiRequest && (respContentType.includes('text/html') || respContentType.includes('javascript'))) {
-    let text = responseData ? JSON.stringify(responseData) : await response.text();
+  // 5. CSS/JS ফাইলের জন্য (হোয়াইট স্ক্রিন ঠিক করতে)
+  else if (contentType.includes('javascript') || contentType.includes('css')) {
+    let text = await response.text();
     
-    // ডাইনামিক রিরাইট – সব এন্ডপয়েন্ট
-    const domains = [TARGET_WEB, TARGET_API].map(d => d.replace(/https?:\/\//, '').replace(/:\d+/, ''));
-    for (let domain of domains) {
-      const regex = new RegExp(`(https?://)?${domain.replace(/\./g, '\\.')}(:\\d+)?`, 'g');
-      text = text.replace(regex, `${url.protocol}//${incomingDomain}`);
-    }
+    // JS এর মধ্যে থাকা API কল রিরাইট
+    text = text.replace(/vrnlapi\.com:4041/g, incomingHost);
+    text = text.replace(/velki123\.win/g, incomingHost);
+    text = text.replace(/https?:\/\/[^/]+\/v1\//g, `${url.protocol}//${incomingHost}/v1/`);
     
-    // React এর build ফাইলের পাথ ঠিক করা
-    text = text.replace(/\/static\//g, `/${incomingDomain}/static/`);
-    text = text.replace(/\/manifest\.json/g, `/${incomingDomain}/manifest.json`);
-    
+    responseHeaders.set('Cache-Control', CACHE_CONTROL);
     responseBody = text;
     responseHeaders.delete('content-length');
   }
   
-  // 10. CORS হেডার
+  // 6. CORS হেডার
   responseHeaders.set('Access-Control-Allow-Origin', url.origin);
-  responseHeaders.set('Access-Control-Allow-Credentials', 'true');
   responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, X-CSRF-Token, Authorization');
+  responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   // OPTIONS প্রিফ্লাইট
   if (request.method === 'OPTIONS') {
@@ -166,47 +148,6 @@ async function handleRequest(request) {
     statusText: response.statusText,
     headers: responseHeaders
   });
-}
-
-// =============== হেল্পার ফাংশন ===============
-
-async function fetchWithRetry(request, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(request);
-      if (response.status < 500 || i === retries - 1) return response;
-      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-    } catch(e) {
-      if (i === retries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-}
-
-function extractSessionId(cookies) {
-  const match = cookies.match(/session_id=([^;]+)/);
-  return match ? match[1] : 'anonymous_' + Date.now();
-}
-
-function generateSessionId() {
-  return 'sess_' + Math.random().toString(36).substring(2) + Date.now();
-}
-
-function generateCsrfToken() {
-  return Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
-}
-
-function handleRedirect(redirectUrl, incomingDomain) {
-  try {
-    const newUrl = new URL(redirectUrl);
-    newUrl.hostname = incomingDomain;
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': newUrl.toString() }
-    });
-  } catch(e) {
-    return new Response(null, { status: 302, headers: { 'Location': '/' } });
-  }
 }
 
 addEventListener('fetch', event => {
