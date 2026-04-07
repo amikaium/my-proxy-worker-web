@@ -81,11 +81,28 @@ export default {
       let body = response.body;
       const contentType = responseHeaders.get("content-type") || "";
 
-      // ৬. HTML ও JSON থেকে ডোমেইন নেম রিপ্লেস করা
-      if (contentType.includes("text/html") || contentType.includes("application/json")) {
+      // ৬. HTML, JSON এবং CSS থেকে ডোমেইন নেম ও কালার রিপ্লেস করা
+      // এখানে text/css যুক্ত করা হয়েছে যাতে ওয়েবসাইটের স্টাইলশিটগুলো মোডিফাই করা যায়
+      if (contentType.includes("text/html") || contentType.includes("application/json") || contentType.includes("text/css")) {
         let text = await response.text();
+        
+        // ডোমেইন রিপ্লেস
         text = text.replace(new RegExp(`https://${TARGET_DOMAIN}`, 'g'), `https://${myDomain}`);
         text = text.replace(new RegExp(TARGET_DOMAIN, 'g'), myDomain);
+
+        // --- কালার রিপ্লেস করার লজিক (Yellow থেকে 1xBet Dark Blue) ---
+        
+        // 1xBet এর ডার্ক ব্লু কালার কোড
+        const darkBlueRGB = 'rgb(27, 42, 59)';
+        const darkBlueHex = '#1B2A3B';
+
+        // ১. rgb(255, 200, 0) রিপ্লেস করা (স্পেস সহ বা স্পেস ছাড়া সব ধরবে)
+        text = text.replace(/rgb\(\s*255\s*,\s*200\s*,\s*0\s*\)/gi, darkBlueRGB);
+        
+        // ২. যদি কোথাও হেক্স কোড হিসেবে হলুদ কালার ব্যবহার করা হয় (#ffc800), সেটাও রিপ্লেস করবে
+        text = text.replace(/#ffc800/gi, darkBlueHex);
+
+        // বডি আপডেট করা
         body = text;
       }
 
