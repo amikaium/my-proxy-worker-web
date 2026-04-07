@@ -1,7 +1,7 @@
 export default {
   async fetch(request, env, ctx) {
     // এটি একটি ডেমো টার্গেট ডোমেইন
-    const targetDomain = "example.com"; 
+    const targetDomain = "https://velki123.win"; 
 
     // ইনকামিং রিকোয়েস্ট থেকে একটি নতুন URL অবজেক্ট তৈরি করা
     const url = new URL(request.url);
