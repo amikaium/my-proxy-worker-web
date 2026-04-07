@@ -1,49 +1,61 @@
 export default {
-  async fetch(request, env, ctx) {
-    // আপনি যে সাইটটি প্রক্সি করতে চান তার ডোমেইন
+  async fetch(request) {
     const TARGET_DOMAIN = "vellki365.app";
-
-    // ইনকামিং রিকোয়েস্টের ইউআরএল পার্স করা হচ্ছে
     const url = new URL(request.url);
+    const myDomain = url.hostname; // আপনার বর্তমান ডোমেইন বা ওয়ার্কার লিংক ক্যাচ করবে
 
-    // ইউআরএল-এর হোস্টনেম পরিবর্তন করে টার্গেট ডোমেইনে সেট করা হচ্ছে
+    // URL-এর হোস্টনেম পরিবর্তন করে টার্গেট ডোমেইনে সেট করা
     url.hostname = TARGET_DOMAIN;
 
-    // অরিজিনাল রিকোয়েস্টের মেথড (GET, POST ইত্যাদি) এবং বডি ঠিক রেখে নতুন রিকোয়েস্ট তৈরি
-    const newRequest = new Request(url.toString(), request);
-
-    // অনেক সার্ভার Host, Origin বা Referer হেডার না মিললে রিকোয়েস্ট ব্লক করে দেয়।
-    // তাই হেডারগুলোকে টার্গেট ডোমেইনের সাথে মিলিয়ে মডিফাই করা হচ্ছে।
-    newRequest.headers.set("Host", TARGET_DOMAIN);
+    // মূল রিকোয়েস্টের হেডার কপি করে টার্গেট ডোমেইন বসানো
+    const proxyRequest = new Request(url.toString(), request);
+    proxyRequest.headers.set("Host", TARGET_DOMAIN);
+    proxyRequest.headers.set("Origin", `https://${TARGET_DOMAIN}`);
+    proxyRequest.headers.set("Referer", `https://${TARGET_DOMAIN}${url.pathname}`);
     
-    if (newRequest.headers.has("Origin")) {
-      newRequest.headers.set("Origin", `https://${TARGET_DOMAIN}`);
-    }
-    if (newRequest.headers.has("Referer")) {
-      const refererUrl = new URL(newRequest.headers.get("Referer"));
-      refererUrl.hostname = TARGET_DOMAIN;
-      newRequest.headers.set("Referer", refererUrl.toString());
-    }
+    // এনকোডিং রিমুভ করা যাতে আমরা রেসপন্স বডি টেক্সট হিসেবে মডিফাই করতে পারি
+    proxyRequest.headers.delete("Accept-Encoding");
 
     try {
-      // টার্গেট সার্ভার থেকে রেসপন্স ফেচ করা হচ্ছে
-      let response = await fetch(newRequest);
+      const response = await fetch(proxyRequest);
+      const newHeaders = new Headers(response.headers);
 
-      // রেসপন্স হেডার মডিফাই করার জন্য রেসপন্সটি রি-ক্রিয়েট করা হচ্ছে
-      response = new Response(response.body, response);
+      // সিকিউরিটি হেডারগুলো বাইপাস করা
+      newHeaders.delete("Content-Security-Policy");
+      newHeaders.delete("X-Frame-Options");
+      newHeaders.delete("Clear-Site-Data");
+      newHeaders.set("Access-Control-Allow-Origin", "*");
 
-      // সিকিউরিটি এবং ব্রাউজার কম্প্যাটিবিলিটির জন্য বেসিক CORS হেডার অ্যাড করা হলো
-      response.headers.set("Access-Control-Allow-Origin", "*");
-      response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+      // রিডাইরেক্ট (Redirect) ঠিক করা
+      if (newHeaders.has("Location")) {
+        let location = newHeaders.get("Location");
+        newHeaders.set("Location", location.replace(new RegExp(TARGET_DOMAIN, 'g'), myDomain));
+      }
+
+      // কুকি (Cookies) ডোমেইন ঠিক করা
+      if (newHeaders.has("Set-Cookie")) {
+        let cookies = newHeaders.get("Set-Cookie");
+        newHeaders.set("Set-Cookie", cookies.replace(new RegExp(TARGET_DOMAIN, 'g'), myDomain));
+      }
+
+      let body = response.body;
+      const contentType = newHeaders.get("content-type") || "";
       
-      // X-Frame-Options রিমুভ করা হচ্ছে যাতে চাইলে আইফ্রেম বা অন্য কোথাও এমবেড করা যায়
-      response.headers.delete("X-Frame-Options");
-      response.headers.delete("Content-Security-Policy");
+      // যদি রেসপন্স HTML, JS বা JSON হয়, তবে ভেতরের হার্ডকোড ডোমেইন রিপ্লেস করা
+      if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("application/json")) {
+        let text = await response.text();
+        // টার্গেট ডোমেইনের সব উল্লেখ খুঁজে আপনার ডোমেইন বসিয়ে দেওয়া
+        text = text.replace(new RegExp(TARGET_DOMAIN, 'g'), myDomain);
+        body = text;
+      }
 
-      return response;
+      return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      });
     } catch (e) {
-      // টার্গেট সাইট ডাউন থাকলে বা এরর হলে এই মেসেজ দেখাবে
-      return new Response("Error connecting to the upstream server: " + e.message, { status: 500 });
+      return new Response("Proxy Error: " + e.message, { status: 500 });
     }
-  },
+  }
 };
