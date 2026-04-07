@@ -5,21 +5,21 @@ export default {
     
     const url = new URL(request.url);
 
-    // ১. CORS প্রিফ্লাইট ফিক্স (Authorization টোকেন ও ব্যালেন্স লোড হওয়ার জন্য)
+    // ১. CORS প্রিফ্লাইট হ্যান্ডেলিং 
     if (request.method === "OPTIONS") {
+      const origin = request.headers.get("Origin") || url.origin;
       return new Response(null, {
         headers: {
-          "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
+          "Access-Control-Allow-Origin": origin, // '*' এর বদলে স্পেসিফিক অরিজিন
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-          // ডাইনামিক হেডার এলাউ করা যাতে Authorization টোকেন ব্রাউজার ব্লক না করে
           "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, Accept",
-          "Access-Control-Allow-Credentials": "true", // এটি সবচেয়ে গুরুত্বপূর্ণ ব্যালেন্স ডেটা আসার জন্য
+          "Access-Control-Allow-Credentials": "true",
           "Access-Control-Max-Age": "86400",
         }
       });
     }
 
-    // ২. API প্রক্সি (আপডেটেড CORS সহ)
+    // ২. API প্রক্সি 
     if (url.pathname.startsWith('/__api_proxy')) {
       const apiTargetUrl = new URL(request.url);
       apiTargetUrl.hostname = "vrnlapi.com";
@@ -35,8 +35,8 @@ export default {
         const apiRes = await fetch(apiReq);
         const newApiRes = new Response(apiRes.body, apiRes);
         
-        // ক্লায়েন্টের জন্য CORS পারফেক্টলি ওপেন করা
-        newApiRes.headers.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*"); 
+        const origin = request.headers.get("Origin") || url.origin;
+        newApiRes.headers.set("Access-Control-Allow-Origin", origin); 
         newApiRes.headers.set("Access-Control-Allow-Credentials", "true");
         
         return newApiRes;
@@ -64,17 +64,19 @@ export default {
       const contentType = response.headers.get("content-type") || "";
       let newResponse;
 
+      // ৪. ডাইনামিক রিপ্লেসমেন্ট (রিলেটিভ পাথ ব্যবহার করে)
       if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
         let text = await response.text();
-        const proxyApiPath = `https://${url.host}/__api_proxy`;
         
-        // রেগুলার লিংক রিপ্লেস
-        text = text.replaceAll(API_SERVER, proxyApiPath);
+        // এখানে ম্যাজিক! পুরো লিংকের বদলে শুধু রিলেটিভ পাথ ব্যবহার করছি
+        const relativeApiPath = "/__api_proxy";
         
-        // এক্সট্রা সেফটি: React ফাইলে অনেক সময় লিংক এস্কেপ (https:\/\/) করা থাকে, সেটাও রিপ্লেস করা হলো
+        text = text.replaceAll(API_SERVER, relativeApiPath);
+        
+        // এস্কেপ করা লিংকের ক্ষেত্রে
         const escapedApiServer = API_SERVER.replace(/\//g, '\\/');
-        const escapedProxyApiPath = proxyApiPath.replace(/\//g, '\\/');
-        text = text.replaceAll(escapedApiServer, escapedProxyApiPath);
+        const escapedRelativeApiPath = relativeApiPath.replace(/\//g, '\\/');
+        text = text.replaceAll(escapedApiServer, escapedRelativeApiPath);
 
         newResponse = new Response(text, {
           status: response.status,
@@ -88,7 +90,9 @@ export default {
       const responseHeaders = new Headers(newResponse.headers);
       responseHeaders.delete("Content-Security-Policy");
       responseHeaders.delete("X-Frame-Options");
-      responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
+      
+      const origin = request.headers.get("Origin") || url.origin;
+      responseHeaders.set("Access-Control-Allow-Origin", origin);
       responseHeaders.set("Access-Control-Allow-Credentials", "true");
 
       return new Response(newResponse.body, {
