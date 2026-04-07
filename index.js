@@ -1,34 +1,32 @@
 export default {
   async fetch(request, env, ctx) {
-    // Environment Variable থেকে টার্গেট ডোমেইন নেবে, না থাকলে ডিফল্টটি কাজ করবে
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    // স্ক্রিনশটে দেওয়া আপনার মেইন API সার্ভার
     const API_SERVER = "https://vrnlapi.com:4041"; 
     
     const url = new URL(request.url);
 
-    // ১. CORS প্রিফ্লাইট (OPTIONS) রিকোয়েস্ট হ্যান্ডেল করা (যাতে React এর API কল ব্লক না হয়)
+    // ১. CORS প্রিফ্লাইট ফিক্স (Authorization টোকেন ও ব্যালেন্স লোড হওয়ার জন্য)
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-          "Access-Control-Allow-Headers": "*",
+          // ডাইনামিক হেডার এলাউ করা যাতে Authorization টোকেন ব্রাউজার ব্লক না করে
+          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, Accept",
+          "Access-Control-Allow-Credentials": "true", // এটি সবচেয়ে গুরুত্বপূর্ণ ব্যালেন্স ডেটা আসার জন্য
           "Access-Control-Max-Age": "86400",
         }
       });
     }
 
-    // ২. API রিকোয়েস্টগুলোকে অরিজিনাল API সার্ভারে প্রক্সি করা
+    // ২. API প্রক্সি (আপডেটেড CORS সহ)
     if (url.pathname.startsWith('/__api_proxy')) {
       const apiTargetUrl = new URL(request.url);
       apiTargetUrl.hostname = "vrnlapi.com";
       apiTargetUrl.port = "4041";
-      // পাথ থেকে /__api_proxy অংশটুকু বাদ দিয়ে আসল API পাথ তৈরি করা
       apiTargetUrl.pathname = apiTargetUrl.pathname.replace('/__api_proxy', '');
 
       const apiReq = new Request(apiTargetUrl.toString(), request);
-      // অরিজিনাল API সার্ভারকে বোঝানো যে রিকোয়েস্ট velki123.win থেকেই আসছে
       apiReq.headers.set("Host", "vrnlapi.com:4041");
       apiReq.headers.set("Origin", "https://velki123.win"); 
       apiReq.headers.set("Referer", "https://velki123.win/");
@@ -36,8 +34,11 @@ export default {
       try {
         const apiRes = await fetch(apiReq);
         const newApiRes = new Response(apiRes.body, apiRes);
-        // ক্লায়েন্টের জন্য CORS ওপেন করে দেওয়া
-        newApiRes.headers.set("Access-Control-Allow-Origin", "*"); 
+        
+        // ক্লায়েন্টের জন্য CORS পারফেক্টলি ওপেন করা
+        newApiRes.headers.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*"); 
+        newApiRes.headers.set("Access-Control-Allow-Credentials", "true");
+        
         return newApiRes;
       } catch (e) {
         return new Response(JSON.stringify({ success: false, message: "API Proxy Error: " + e.message }), { 
@@ -47,7 +48,7 @@ export default {
       }
     }
 
-    // ৩. মেইন ওয়েবসাইটের রিকোয়েস্ট হ্যান্ডেল করা
+    // ৩. মেইন ওয়েবসাইটের রিকোয়েস্ট হ্যান্ডেলিং
     const target = new URL(TARGET_DOMAIN);
     target.pathname = url.pathname;
     target.search = url.search;
@@ -56,8 +57,6 @@ export default {
     proxyRequest.headers.set("Host", target.hostname);
     proxyRequest.headers.set("Origin", target.origin);
     proxyRequest.headers.set("Referer", target.origin);
-    
-    // ব্রাউজারের এনকোডিং মুছে দেওয়া হচ্ছে যাতে আমরা Worker-এর ভেতর JS/HTML ফাইল পড়তে ও মডিফাই করতে পারি
     proxyRequest.headers.delete("Accept-Encoding"); 
 
     try {
@@ -65,13 +64,17 @@ export default {
       const contentType = response.headers.get("content-type") || "";
       let newResponse;
 
-      // ৪. ডাইনামিক রিপ্লেসমেন্ট: React এর JS বা HTML ফাইলে API এর লিংক আপনার বর্তমান ডোমেইনে রিপ্লেস করা
       if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
         let text = await response.text();
-        
-        // যেখানেই 'https://vrnlapi.com:4041' আছে, সেখানে আপনার প্রক্সি লিংকের '/__api_proxy' বসিয়ে দেওয়া হবে
         const proxyApiPath = `https://${url.host}/__api_proxy`;
+        
+        // রেগুলার লিংক রিপ্লেস
         text = text.replaceAll(API_SERVER, proxyApiPath);
+        
+        // এক্সট্রা সেফটি: React ফাইলে অনেক সময় লিংক এস্কেপ (https:\/\/) করা থাকে, সেটাও রিপ্লেস করা হলো
+        const escapedApiServer = API_SERVER.replace(/\//g, '\\/');
+        const escapedProxyApiPath = proxyApiPath.replace(/\//g, '\\/');
+        text = text.replaceAll(escapedApiServer, escapedProxyApiPath);
 
         newResponse = new Response(text, {
           status: response.status,
@@ -79,15 +82,14 @@ export default {
           headers: response.headers
         });
       } else {
-        // ইমেজ, ফন্ট বা অন্য কোনো ফাইলের ক্ষেত্রে কোনো পরিবর্তন হবে না
         newResponse = new Response(response.body, response);
       }
 
-      // ৫. সিকিউরিটি হেডার রিমুভ ও ফ্রন্টএন্ডের জন্য CORS ফিক্স করা
       const responseHeaders = new Headers(newResponse.headers);
       responseHeaders.delete("Content-Security-Policy");
       responseHeaders.delete("X-Frame-Options");
-      responseHeaders.set("Access-Control-Allow-Origin", "*");
+      responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
+      responseHeaders.set("Access-Control-Allow-Credentials", "true");
 
       return new Response(newResponse.body, {
         status: newResponse.status,
