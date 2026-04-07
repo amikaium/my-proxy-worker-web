@@ -4,15 +4,16 @@ export default {
     const API_SERVER = "https://vrnlapi.com:4041"; 
     
     const url = new URL(request.url);
+    // ডাইনামিক অরিজিন সেট করা হচ্ছে
+    const originHeader = request.headers.get("Origin") || `https://${url.host}`;
 
-    // ১. CORS প্রিফ্লাইট হ্যান্ডেলিং 
+    // ১. CORS প্রিফ্লাইট
     if (request.method === "OPTIONS") {
-      const origin = request.headers.get("Origin") || url.origin;
       return new Response(null, {
         headers: {
-          "Access-Control-Allow-Origin": origin, // '*' এর বদলে স্পেসিফিক অরিজিন
+          "Access-Control-Allow-Origin": originHeader,
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, Accept",
+          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "*",
           "Access-Control-Allow-Credentials": "true",
           "Access-Control-Max-Age": "86400",
         }
@@ -35,10 +36,8 @@ export default {
         const apiRes = await fetch(apiReq);
         const newApiRes = new Response(apiRes.body, apiRes);
         
-        const origin = request.headers.get("Origin") || url.origin;
-        newApiRes.headers.set("Access-Control-Allow-Origin", origin); 
+        newApiRes.headers.set("Access-Control-Allow-Origin", originHeader); 
         newApiRes.headers.set("Access-Control-Allow-Credentials", "true");
-        
         return newApiRes;
       } catch (e) {
         return new Response(JSON.stringify({ success: false, message: "API Proxy Error: " + e.message }), { 
@@ -48,7 +47,7 @@ export default {
       }
     }
 
-    // ৩. মেইন ওয়েবসাইটের রিকোয়েস্ট হ্যান্ডেলিং
+    // ৩. মেইন ওয়েবসাইট
     const target = new URL(TARGET_DOMAIN);
     target.pathname = url.pathname;
     target.search = url.search;
@@ -64,16 +63,13 @@ export default {
       const contentType = response.headers.get("content-type") || "";
       let newResponse;
 
-      // ৪. ডাইনামিক রিপ্লেসমেন্ট (রিলেটিভ পাথ ব্যবহার করে)
       if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
         let text = await response.text();
         
-        // এখানে ম্যাজিক! পুরো লিংকের বদলে শুধু রিলেটিভ পাথ ব্যবহার করছি
-        const relativeApiPath = "/__api_proxy";
-        
+        // শুধু রিলেটিভ পাথ, কোনো হার্ডকোড ডোমেইন নেই
+        const relativeApiPath = `/__api_proxy`;
         text = text.replaceAll(API_SERVER, relativeApiPath);
         
-        // এস্কেপ করা লিংকের ক্ষেত্রে
         const escapedApiServer = API_SERVER.replace(/\//g, '\\/');
         const escapedRelativeApiPath = relativeApiPath.replace(/\//g, '\\/');
         text = text.replaceAll(escapedApiServer, escapedRelativeApiPath);
@@ -91,8 +87,12 @@ export default {
       responseHeaders.delete("Content-Security-Policy");
       responseHeaders.delete("X-Frame-Options");
       
-      const origin = request.headers.get("Origin") || url.origin;
-      responseHeaders.set("Access-Control-Allow-Origin", origin);
+      // এই লাইনটি ব্রাউজারকে বাধ্য করবে সবসময় নতুন কোড লোড করতে (ক্যাশ সমস্যা ফিক্স)
+      if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
+         responseHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      }
+
+      responseHeaders.set("Access-Control-Allow-Origin", originHeader);
       responseHeaders.set("Access-Control-Allow-Credentials", "true");
 
       return new Response(newResponse.body, {
