@@ -1,83 +1,71 @@
-// ===================================================
-// প্রোডাকশন-রেডি রিভার্স প্রক্সি – হোয়াইট স্ক্রিন ফিক্স + API সাপোর্ট
-// ===================================================
+// =====================================================
+// স্মার্ট রিভার্স প্রক্সি + ডাটা ইঞ্জেক্টর (UI ফিক্স)
+// =====================================================
 
 const TARGET = 'https://velki123.win';
 const API_TARGET = 'https://vrnlapi.com:4041';
 
-// ক্যাশে কন্ট্রোল (হোয়াইট স্ক্রিন ঠিক করার জন্য)
-const CACHE_CONTROL = 'public, max-age=3600, must-revalidate';
+// ইউজার ডাটা স্টোর
+let userDataCache = new Map();
 
 async function handleRequest(request) {
   const url = new URL(request.url);
   const incomingHost = url.hostname;
   const requestPath = url.pathname;
   
-  // 1. API ডিটেকশন – সঠিকভাবে চিহ্নিত করা
+  // 1. API ডিটেকশন
   const isApiCall = requestPath.startsWith('/v1/') || 
                     requestPath.startsWith('/api/') ||
-                    requestPath.includes('/user/login') ||
-                    requestPath.includes('/user/balance') ||
-                    request.headers.get('content-type')?.includes('application/json') ||
-                    request.headers.get('accept')?.includes('application/json');
+                    request.headers.get('content-type')?.includes('application/json');
   
-  // 2. API কল হ্যান্ডেল (vrnlapi.com:4041)
+  // ========== API হ্যান্ডলিং ==========
   if (isApiCall) {
     const apiUrl = new URL(requestPath + url.search, API_TARGET);
     const apiHeaders = new Headers(request.headers);
     
-    // হেডার ঠিক করা
     apiHeaders.set('Host', apiUrl.hostname);
     apiHeaders.set('Origin', TARGET);
     apiHeaders.set('Referer', TARGET + '/');
-    apiHeaders.delete('cf-ray');
-    apiHeaders.delete('cf-worker');
     
-    // API রিকোয়েস্ট ফরোয়ার্ড
     const apiRequest = new Request(apiUrl, {
       method: request.method,
       headers: apiHeaders,
       body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined
     });
     
-    try {
-      const apiResponse = await fetch(apiRequest);
-      const responseHeaders = new Headers(apiResponse.headers);
-      
-      // CORS হেডার
-      responseHeaders.set('Access-Control-Allow-Origin', '*');
-      responseHeaders.set('Access-Control-Allow-Credentials', 'true');
-      
-      // কুকি ডোমেইন রিরাইট
-      const setCookie = responseHeaders.get('set-cookie');
-      if (setCookie) {
-        const newCookie = setCookie.replace(/domain=[^;]+/gi, `domain=${incomingHost}`);
-        responseHeaders.set('set-cookie', newCookie);
+    const apiResponse = await fetch(apiRequest);
+    const responseHeaders = new Headers(apiResponse.headers);
+    let responseData = await apiResponse.json();
+    
+    // ইউজার ডাটা ক্যাশে (ব্যালেন্স, PBU, Exp)
+    if (requestPath.includes('/user/balance') || requestPath.includes('/user/info')) {
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      if (token) {
+        userDataCache.set(token, {
+          balance: responseData.results?.balance || 0,
+          pbu: responseData.results?.pbu || 0,
+          exp: responseData.results?.exp || 0,
+          username: responseData.results?.username || 'velkidemo',
+          lastUpdate: Date.now()
+        });
       }
-      
-      return new Response(apiResponse.body, {
-        status: apiResponse.status,
-        headers: responseHeaders
-      });
-    } catch(e) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'API connection failed: ' + e.message
-      }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' }
-      });
     }
+    
+    responseHeaders.set('Access-Control-Allow-Origin', '*');
+    return new Response(JSON.stringify(responseData), {
+      status: apiResponse.status,
+      headers: responseHeaders
+    });
   }
   
-  // 3. ওয়েবসাইট কল হ্যান্ডেল (velki123.win)
+  // ========== ওয়েবসাইট হ্যান্ডলিং ==========
   const targetUrl = new URL(requestPath + url.search, TARGET);
   const headers = new Headers(request.headers);
   
   headers.set('Host', targetUrl.hostname);
   headers.set('Origin', TARGET);
   headers.set('Referer', TARGET + '/');
-  headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
   
   const modifiedRequest = new Request(targetUrl, {
     method: request.method,
@@ -88,64 +76,125 @@ async function handleRequest(request) {
   const response = await fetch(modifiedRequest);
   const responseHeaders = new Headers(response.headers);
   let responseBody = response.body;
-  
-  // 4. HTML প্রসেসিং – হোয়াইট স্ক্রিন ঠিক করা
   const contentType = responseHeaders.get('content-type') || '';
   
+  // ========== HTML প্রসেসিং + UI ইঞ্জেক্ট ==========
   if (contentType.includes('text/html')) {
     let html = await response.text();
     
-    // বেস ট্যাগ যোগ করা (সব রিলেটিভ পাথ ঠিক করার জন্য)
+    // 1. বেস ট্যাগ যোগ
     html = html.replace('<head>', `<head><base href="${url.protocol}//${incomingHost}/">`);
     
-    // সব লিংক, স্ক্রিপ্ট, ইমেজ পাথ রিরাইট
+    // 2. ইমেজ পাথ ফিক্স
     html = html.replace(/(src|href)=["']\/([^"']+)["']/g, `$1="${url.protocol}//${incomingHost}/$2"`);
-    html = html.replace(/(src|href)=["'](https?:)?\/\/([^"']+)["']/g, (match, attr, protocol, domain) => {
-      if (domain.includes('velki123.win') || domain.includes('vrnlapi.com')) {
-        return `${attr}="${url.protocol}//${incomingHost}/${domain.split('/').slice(1).join('/')}"`;
+    html = html.replace(/https?:\/\/[^\/]+\.win/g, `${url.protocol}//${incomingHost}`);
+    
+    // 3. **UI ফিক্স – ইউজারনেম, ব্যালেন্স, PBU, Exp দেখানোর জন্য জাভাস্ক্রিপ্ট ইঞ্জেক্ট**
+    const uiFixScript = `
+    <script>
+    (function() {
+      console.log('Proxy UI Fixer Loaded');
+      
+      // ফাংশন: ডাটা ফেচ করে UI আপডেট
+      async function fetchAndUpdateUserData() {
+        try {
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+          if (!token) {
+            console.log('No token found');
+            return;
+          }
+          
+          // ব্যালেন্স ফেচ
+          const balanceRes = await fetch('/v1/user/balance', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          const balanceData = await balanceRes.json();
+          
+          if (balanceData.success) {
+            // ক্লাস বা আইডি অনুযায়ী আপডেট – আপনি যেটা বলবেন সেটা বসাবো
+            const balanceElements = document.querySelectorAll('[class*="balance"], [id*="balance"], .user-balance, .wallet-amount');
+            balanceElements.forEach(el => {
+              if (el.innerText.includes('0.00') || el.innerText === '0') {
+                el.innerText = balanceData.results?.balance || '0.00';
+              }
+            });
+            
+            // PBU আপডেট
+            const pbuElements = document.querySelectorAll('[class*="pbu"], [id*="pbu"], .pbu-amount');
+            pbuElements.forEach(el => {
+              el.innerText = balanceData.results?.pbu || '0.00';
+            });
+            
+            // Exp আপডেট
+            const expElements = document.querySelectorAll('[class*="exp"], [id*="exp"], .exp-amount');
+            expElements.forEach(el => {
+              el.innerText = balanceData.results?.exp || '0.00';
+            });
+          }
+          
+          // ইউজারনেম আপডেট
+          const username = localStorage.getItem('username') || 'velkidemo';
+          const usernameElements = document.querySelectorAll('[class*="username"], [class*="user-name"], .user-name, .profile-name');
+          usernameElements.forEach(el => {
+            if (el.innerText === '' || el.innerText === 'User') {
+              el.innerText = username;
+            }
+          });
+          
+        } catch(e) {
+          console.error('UI Update Error:', e);
+        }
       }
-      return match;
-    });
+      
+      // DOM লোড হলে রান
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fetchAndUpdateUserData);
+      } else {
+        fetchAndUpdateUserData();
+      }
+      
+      // প্রতি 5 সেকেন্ডে আপডেট
+      setInterval(fetchAndUpdateUserData, 5000);
+      
+      // MutationObserver – DOM পরিবর্তন হলে আপডেট
+      const observer = new MutationObserver(() => fetchAndUpdateUserData());
+      observer.observe(document.body, { childList: true, subtree: true });
+      
+    })();
+    </script>
+    `;
     
-    // API এন্ডপয়েন্ট রিরাইট (জাভাস্ক্রিপ্টে)
-    html = html.replace(/vrnlapi\.com:4041/g, incomingHost);
-    html = html.replace(/velki123\.win/g, incomingHost);
+    // স্ক্রিপ্ট ইনজেক্ট (body এর শেষে)
+    html = html.replace('</body>', uiFixScript + '</body>');
     
-    // ক্যাশে কন্ট্রোল যোগ করা
-    responseHeaders.set('Cache-Control', CACHE_CONTROL);
-    responseHeaders.set('X-Proxy-By', 'Cloudflare-Worker');
+    // স্লাইডার ইমেজ ফিক্স (যদি lazy loading থাকে)
+    html = html.replace(/data-src=/g, 'src=');
+    html = html.replace(/loading="lazy"/g, 'loading="eager"');
     
+    responseHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     responseBody = html;
     responseHeaders.delete('content-length');
   }
   
-  // 5. CSS/JS ফাইলের জন্য (হোয়াইট স্ক্রিন ঠিক করতে)
-  else if (contentType.includes('javascript') || contentType.includes('css')) {
-    let text = await response.text();
-    
-    // JS এর মধ্যে থাকা API কল রিরাইট
-    text = text.replace(/vrnlapi\.com:4041/g, incomingHost);
-    text = text.replace(/velki123\.win/g, incomingHost);
-    text = text.replace(/https?:\/\/[^/]+\/v1\//g, `${url.protocol}//${incomingHost}/v1/`);
-    
-    responseHeaders.set('Cache-Control', CACHE_CONTROL);
-    responseBody = text;
-    responseHeaders.delete('content-length');
+  // ========== CSS/JS ফিক্স ==========
+  else if (contentType.includes('javascript')) {
+    let js = await response.text();
+    // API এন্ডপয়েন্ট রিরাইট
+    js = js.replace(/vrnlapi\.com:4041/g, incomingHost);
+    js = js.replace(/velki123\.win/g, incomingHost);
+    responseBody = js;
   }
   
-  // 6. CORS হেডার
-  responseHeaders.set('Access-Control-Allow-Origin', url.origin);
-  responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // CORS হেডার
+  responseHeaders.set('Access-Control-Allow-Origin', '*');
+  responseHeaders.set('Access-Control-Allow-Credentials', 'true');
   
-  // OPTIONS প্রিফ্লাইট
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: responseHeaders });
   }
   
   return new Response(responseBody, {
     status: response.status,
-    statusText: response.statusText,
     headers: responseHeaders
   });
 }
