@@ -5,15 +5,16 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
     const myDomain = url.hostname;
+    const clientOrigin = request.headers.get("Origin") || `https://${myDomain}`;
 
-    // ১. গ্লোবাল CORS (API এর জন্য প্রয়োজনীয় সব হেডার অ্যালাউ করা হয়েছে)
+    // ১. গ্লোবাল CORS (Preflight Request)
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
         headers: {
-          "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
+          "Access-Control-Allow-Origin": clientOrigin, // '*' এর বদলে স্পেসিফিক ডোমেইন (খুবই জরুরি)
           "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Authorization, Content-Type, Accept, Origin, User-Agent, Referer, Cache-Control",
+          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Authorization, Content-Type, Accept, Origin, User-Agent, Referer, Cache-Control, token",
           "Access-Control-Allow-Credentials": "true",
           "Access-Control-Max-Age": "86400",
         }
@@ -21,30 +22,22 @@ export default {
     }
 
     // ==========================================
-    // ২. API বাইপাস রাউট (ম্যাজিক ব্রিজ)
+    // ২. API বাইপাস রাউট
     // ==========================================
     if (url.pathname.startsWith('/__api')) {
       const targetUrl = new URL(request.url);
       targetUrl.hostname = "vrnlapi.com";
       targetUrl.port = "4041";
       targetUrl.protocol = "https:";
-      
-      // /__api অংশ কেটে দিয়ে আসল পাথ তৈরি
       targetUrl.pathname = targetUrl.pathname.replace(/^\/__api/, '');
 
       const apiHeaders = new Headers(request.headers);
-      
-      // আসল সার্ভারকে ধোকা দিয়ে বোঝানো যে অরিজিনাল সাইট থেকেই রিকোয়েস্ট যাচ্ছে
       apiHeaders.set("Host", API_TARGET_HOST);
       apiHeaders.set("Origin", `https://${TARGET_DOMAIN}`);
       apiHeaders.set("Referer", `https://${TARGET_DOMAIN}/`);
       
-      // ক্লাউডফ্লেয়ারের এক্সট্রা হেডার ডিলিট করা (যেন সার্ভার ব্লক না করে)
       apiHeaders.delete("cf-connecting-ip");
       apiHeaders.delete("cf-ipcountry");
-      apiHeaders.delete("cf-ray");
-      apiHeaders.delete("cf-visitor");
-      apiHeaders.delete("x-forwarded-proto");
 
       const apiRequest = new Request(targetUrl.toString(), {
         method: request.method,
@@ -57,8 +50,10 @@ export default {
         const apiResponse = await fetch(apiRequest);
         const responseHeaders = new Headers(apiResponse.headers);
         
-        responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
+        // CORS ফিক্স (আপনার স্ক্রিনশটের এররটি এখান থেকেই হচ্ছিল)
+        responseHeaders.set("Access-Control-Allow-Origin", clientOrigin);
         responseHeaders.set("Access-Control-Allow-Credentials", "true");
+        responseHeaders.delete("content-length"); // সেফটির জন্য
         
         return new Response(apiResponse.body, {
           status: apiResponse.status,
@@ -66,7 +61,7 @@ export default {
           headers: responseHeaders
         });
       } catch (e) {
-        return new Response(JSON.stringify({ error: "API Failed", details: e.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: "API Server Unreachable" }), { status: 500 });
       }
     }
 
@@ -93,15 +88,17 @@ export default {
       const response = await fetch(proxyRequest);
       const responseHeaders = new Headers(response.headers);
 
-      responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
+      responseHeaders.set("Access-Control-Allow-Origin", clientOrigin);
       responseHeaders.set("Access-Control-Allow-Credentials", "true");
       responseHeaders.delete("Content-Security-Policy");
       responseHeaders.delete("X-Frame-Options");
 
+      // ওয়েবসাইটের টেক্সট মডিফাই করলে Content-Length মুছে দেওয়া বাধ্যতামূলক, নইলে সাইট লোড হয়ে ঘুরতে থাকবে
+      responseHeaders.delete("content-length"); 
+
       if ([301, 302, 303, 307, 308].includes(response.status) && responseHeaders.has("Location")) {
         let location = responseHeaders.get("Location");
-        location = location.split(`https://${TARGET_DOMAIN}`).join(`https://${myDomain}`);
-        location = location.split(`http://${TARGET_DOMAIN}`).join(`https://${myDomain}`);
+        location = location.replace(new RegExp(`https://${TARGET_DOMAIN}`, 'gi'), `https://${myDomain}`);
         responseHeaders.set("Location", location);
       }
 
@@ -111,7 +108,7 @@ export default {
         cookies.forEach(cookie => {
           let newCookie = cookie.replace(new RegExp(`domain=${TARGET_DOMAIN}`, 'gi'), `domain=${myDomain}`);
           newCookie = newCookie.replace(new RegExp(`domain=\\.${TARGET_DOMAIN}`, 'gi'), `domain=${myDomain}`);
-          newCookie = newCookie.replace(/SameSite=Strict/gi, "SameSite=Lax");
+          newCookie = newCookie.replace(/SameSite=Strict/gi, "SameSite=None; Secure"); // লগিন ইস্যু ফিক্স
           responseHeaders.append("Set-Cookie", newCookie);
         });
       }
@@ -119,36 +116,39 @@ export default {
       let body = response.body;
       const contentType = responseHeaders.get("content-type") || "";
 
-      // ৪. এডভান্স লিংক রিপ্লেসমেন্ট (ফোর্স বাইপাস)
-      if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript") || contentType.includes("application/json")) {
+      // ৪. স্মার্ট লিংক রিপ্লেসমেন্ট (যাতে প্রোফাইল বা অন্যান্য লিংক ব্রেক না করে)
+      if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
         let text = await response.text();
         
-        // মেইন ডোমেইন রিপ্লেস
-        text = text.split(`https://${TARGET_DOMAIN}`).join(`https://${myDomain}`);
-        text = text.split(TARGET_DOMAIN).join(myDomain);
+        // শুধু ফুল URL গুলো চেঞ্জ হবে, যেকোনো র‍্যান্ডম টেক্সট নয়
+        text = text.replace(new RegExp(`https://${TARGET_DOMAIN}`, 'g'), `https://${myDomain}`);
+        text = text.replace(new RegExp(`wss://${TARGET_DOMAIN}`, 'g'), `wss://${myDomain}`);
+        
+        // API ডোমেইন রিপ্লেস (নিখুঁত ভাবে)
+        text = text.replace(new RegExp(`https://${API_TARGET_HOST}`, 'g'), `https://${myDomain}/__api`);
+        text = text.replace(new RegExp(`http://${API_TARGET_HOST}`, 'g'), `https://${myDomain}/__api`);
+        
+        // বিকল্প API হোস্ট (যদি কোথাও শুধু ডোমেইন থাকে)
+        text = text.split(`"${API_TARGET_HOST}"`).join(`"${myDomain}/__api"`);
+        text = text.split(`'${API_TARGET_HOST}'`).join(`'${myDomain}/__api'`);
 
-        // API ডোমেইন ১০০% ফোর্স রিপ্লেস
-        text = text.split(API_TARGET_HOST).join(`${myDomain}/__api`);
-
-        // HTML পেজের একেবারে শুরুতে হুক ইনজেক্ট করা
+        // HTML পেজের একেবারে শুরুতে API ইন্টারসেপ্টর হুক 
         if (contentType.includes("text/html")) {
           const headInject = `
             <script>
-              // পুরনো ক্যাশ এবং সার্ভিস ওয়ার্কার রিমুভ করা
               if ('serviceWorker' in navigator) {
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {
                       for(let registration of registrations) { registration.unregister(); }
                   });
               }
-              
-              // জাভাস্ক্রিপ্ট হুক (ফোর্স API রাউটিং)
               (function() {
-                const proxyUrl = window.location.host + '/__api';
-                const targetHost = 'vrnlapi.com:4041';
+                const proxyUrl = 'https://' + window.location.host + '/__api';
+                const targetHost = '${API_TARGET_HOST}';
                 
                 function fixUrl(url) {
                     if(typeof url === 'string' && url.includes(targetHost)) {
-                        return url.split(targetHost).join(proxyUrl);
+                        return url.replace(new RegExp('https?://' + targetHost, 'g'), proxyUrl)
+                                  .replace(new RegExp(targetHost, 'g'), window.location.host + '/__api');
                     }
                     return url;
                 }
@@ -167,7 +167,7 @@ export default {
                 const origOpen = XMLHttpRequest.prototype.open;
                 XMLHttpRequest.prototype.open = function() {
                     let args = Array.from(arguments);
-                    args[1] = fixUrl(args[1]);
+                    if(args[1]) args[1] = fixUrl(args[1]);
                     return origOpen.apply(this, args);
                 };
               })();
