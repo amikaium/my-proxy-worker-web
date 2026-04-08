@@ -1,6 +1,6 @@
 export default {
   async fetch(request, env, ctx) {
-    const TARGET_DOMAIN = env.TARGET_URL || "https://velki123x.win";
+    const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
     const API_DOMAINS = ["vrnlapi.com"]; 
     const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"]; 
     const ALL_TARGETS = [...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
