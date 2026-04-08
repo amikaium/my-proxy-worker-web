@@ -8,6 +8,14 @@ export default {
     const url = new URL(request.url);
     const originHeader = request.headers.get("Origin") || `https://${url.host}`;
 
+    // =========================================================================
+    // ⚙️ অটোমেটিক প্যাকার ইঞ্জিন: আপনি যত কোডই দিন, এটা অটোমেটিকভাবে এনক্রিপ্ট করবে
+    // =========================================================================
+    const autoPackJS = (rawCode) => {
+        const obfuscated = btoa(unescape(encodeURIComponent(rawCode)));
+        return `!function(){var e="${obfuscated}",t=decodeURIComponent(escape(atob(e)));new Function(t)()}();`;
+    };
+
     // ==========================================
     // 🛡️ প্রফেশনাল সিকিউরিটি: Ghost Script Route
     // ==========================================
@@ -22,7 +30,7 @@ export default {
             });
         }
 
-        // 🔹 আপনার নির্দেশ অনুযায়ী শক্তিশালী IIFE Obfuscation 🔹
+        // 🔹 ইন্টারসেপ্টর কোড (এটিও এখন অটোমেটিক প্যাকারের মাধ্যমে যাচ্ছে) 🔹
         const rawJs = `
           (function() {
             const proxyPrefix = '/__api_proxy/';
@@ -56,8 +64,8 @@ export default {
           })();
         `;
         
-        const obfuscatedPayload = btoa(unescape(encodeURIComponent(rawJs)));
-        const secretCode = `!function(){var e="${obfuscatedPayload}",t=decodeURIComponent(escape(atob(e)));new Function(t)()}();`;
+        // প্যাকার ইঞ্জিনের মাধ্যমে কোডটিকে এনক্রিপ্ট করা হলো
+        const secretCode = autoPackJS(rawJs);
 
         return new Response(secretCode, {
             status: 200,
@@ -168,13 +176,13 @@ export default {
         text = text.replaceAll('class="signup" href="/"', 'class="signup" href="https://playpbu.com"');
 
         if (contentType.includes("text/html")) {
-            // 🔹 শুধুমাত্র লোগো বড় করার CSS রাখা হয়েছে, লগিন ব্যানারের CSS রিমুভ করা হয়েছে বাগ ফিক্সের জন্য 🔹
+            
             const forceCSS = `<style>
                 .logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; }
             </style>`;
             
-            // 🔹 সাইন আপ লিংকের ফোর্স জাভাস্ক্রিপ্ট 🔹
-            const forceJs = `<script>
+            // 🔹 এখানে আপনি আপনার সাধারণ কোড লিখবেন, বাকি কাজ প্যাকার সিস্টেম করবে 🔹
+            const rawForceJs = `
                 setInterval(() => {
                     document.querySelectorAll('.signup').forEach(btn => {
                         if(btn.href !== 'https://playpbu.com/') {
@@ -186,14 +194,16 @@ export default {
                         }
                     });
                 }, 500);
-            </script>`;
+            `;
 
+            // HTML এর ভেতরে পুশ করার আগে কোডটিকে প্যাকারের মাধ্যমে এনক্রিপ্ট করা হচ্ছে
+            const encryptedJsTag = `<script>${autoPackJS(rawForceJs)}</script>`;
             const ghostScriptTag = `<script src="/__secure_core.js"></script>`;
             
             if (text.includes('<head>')) {
-              text = text.replace('<head>', '<head>' + forceCSS + forceJs + ghostScriptTag);
+              text = text.replace('<head>', '<head>' + forceCSS + encryptedJsTag + ghostScriptTag);
             } else {
-              text = forceCSS + forceJs + ghostScriptTag + text;
+              text = forceCSS + encryptedJsTag + ghostScriptTag + text;
             }
         }
         
