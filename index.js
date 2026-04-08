@@ -1,1 +1,177 @@
-ZXhwb3J0IGRlZmF1bHQgewogIGFzeW5jIGZldGNoKHJlcXVlc3QsIGVudiwgY3R4KSB7CiAgICBjb25zdCBUQVJHRVRfRE9NQUlOID0gZW52LlRBUkdFVF9VUkwgfHwgImh0dHBzOi8vdmVsbGtpMzY1LmFwcCI7CiAgICAKICAgIC8vIOCmhuCmsuCmvuCmpuCmviDgppXgprDgp4cg4Kam4KeB4KaHIOCmp+CmsOCmqOCnh+CmsCDgpqHgp4vgpq7gp4fgpofgpqgg4Kat4Ka+4KaXIOCmleCmsOCmviDgprngprLgp4sKICAgIGNvbnN0IEFQSV9ET01BSU5TID0gWyJ2cm5sYXBpLmNvbSJdOyAvLyDgpqzgp43gpq/gpr7gprLgp4fgpqjgp43gprgg4KaP4Kas4KaCIOCmsuCml+Cmh+CmqCAoUmVhY3Qg4KaP4KawIOCmnOCmqOCnjeCmryDgprjgp4fgpqjgprjgpr/gpp/gpr/gpq0pCiAgICBjb25zdCBWSURFT19ET01BSU5TID0gWyJhYXgtZXUxMzE0LmNvbSJdOyAvLyDgprLgpr7gpofgpq0g4Kaf4Ka/4Kat4Ka/IOCmreCmv+CmoeCmv+CmkyDgprjgp43gpp/gp43gprDgpr/gpq4KICAgIGNvbnN0IEFMTF9UQVJHRVRTID0gWy4uLkFQSV9ET01BSU5TLCAuLi5WSURFT19ET01BSU5TXTsgCiAgICAKICAgIGNvbnN0IHVybCA9IG5ldyBVUkwocmVxdWVzdC51cmwpOwogICAgY29uc3Qgb3JpZ2luSGVhZGVyID0gcmVxdWVzdC5oZWFkZXJzLmdldCgiT3JpZ2luIikgfHwgYGh0dHBzOi8vJHt1cmwuaG9zdH1gOwoKICAgIC8vIOCnpy4gQ09SUyDgpqrgp43gprDgpr/gpqvgp43gprLgpr7gpofgpp8gKEJ1bGxldHByb29mIENPUlMpCiAgICBpZiAocmVxdWVzdC5tZXRob2QgPT09ICJPUFRJT05TIikgewogICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKG51bGwsIHsKICAgICAgICBoZWFkZXJzOiB7CiAgICAgICAgICAiQWNjZXNzLUNvbnRyb2wtQWxsb3ctT3JpZ2luIjogb3JpZ2luSGVhZGVyLAogICAgICAgICAgIkFjY2Vzcy1Db250cm9sLUFsbG93LU1ldGhvZHMiOiAiR0VULCBQT1NULCBQVVQsIERFTEVURSwgT1BUSU9OUywgUEFUQ0giLAogICAgICAgICAgIkFjY2Vzcy1Db250cm9sLUFsbG93LUhlYWRlcnMiOiByZXF1ZXN0LmhlYWRlcnMuZ2V0KCJBY2Nlc3MtQ29udHJvbC1SZXF1ZXN0LUhlYWRlcnMiKSB8fCAiQ29udGVudC1UeXBlLCBBdXRob3JpemF0aW9uLCBBY2NlcHQsIFgtUmVxdWVzdGVkLVdpdGgiLAogICAgICAgICAgIkFjY2Vzcy1Db250cm9sLUFsbG93LUNyZWRlbnRpYWxzIjogInRydWUiLAogICAgICAgICAgIkFjY2Vzcy1Db250cm9sLU1heC1BZ2UiOiAiODY0MDAiLAogICAgICAgIH0KICAgICAgfSk7CiAgICB9CgogICAgLy8g4KeoLiBBUEkg4KaP4Kas4KaCIFZpZGVvIFN0cmVhbSAobTN1OC90cykg4Kaq4KeN4Kaw4KaV4KeN4Ka44Ka/CiAgICBpZiAodXJsLnBhdGhuYW1lLnN0YXJ0c1dpdGgoJy9fX2FwaV9wcm94eS8nKSkgewogICAgICBsZXQgYWN0dWFsQXBpVXJsID0gcmVxdWVzdC51cmwuc3Vic3RyaW5nKHJlcXVlc3QudXJsLmluZGV4T2YoJy9fX2FwaV9wcm94eS8nKSArIDEzKTsKICAgICAgaWYgKCFhY3R1YWxBcGlVcmwuc3RhcnRzV2l0aCgnaHR0cCcpKSB7CiAgICAgICAgIGFjdHVhbEFwaVVybCA9ICdodHRwczovLycgKyBhY3R1YWxBcGlVcmw7CiAgICAgIH0KCiAgICAgIHRyeSB7CiAgICAgICAgY29uc3QgdGFyZ2V0QXBpID0gbmV3IFVSTChhY3R1YWxBcGlVcmwpOwogICAgICAgIGNvbnN0IGFwaVJlcSA9IG5ldyBSZXF1ZXN0KHRhcmdldEFwaS50b1N0cmluZygpLCByZXF1ZXN0KTsKICAgICAgICAKICAgICAgICBhcGlSZXEuaGVhZGVycy5zZXQoIkhvc3QiLCB0YXJnZXRBcGkuaG9zdCk7CiAgICAgICAgYXBpUmVxLmhlYWRlcnMuc2V0KCJPcmlnaW4iLCBUQVJHRVRfRE9NQUlOKTsKICAgICAgICBhcGlSZXEuaGVhZGVycy5zZXQoIlJlZmVyZXIiLCBUQVJHRVRfRE9NQUlOICsgIi8iKTsKCiAgICAgICAgY29uc3QgYXBpUmVzID0gYXdhaXQgZmV0Y2goYXBpUmVxKTsKICAgICAgICBsZXQgbmV3QXBpUmVzOwoKICAgICAgICBjb25zdCBjb250ZW50VHlwZSA9IGFwaVJlcy5oZWFkZXJzLmdldCgiY29udGVudC10eXBlIikgfHwgIiI7CiAgICAgICAgCiAgICAgICAgLy8gbTN1OCDgpq3gpr/gpqHgpr/gppMg4Kar4Ka+4KaH4Kay4KeH4KawIOCmreCnh+CmpOCmsOCnh+CmsCDgprLgpr/gpoLgppXgppfgp4HgprLgp4vgppXgp4cg4Kaq4KeN4Kaw4KaV4KeN4Ka44Ka/IOCmleCmsOCmvgogICAgICAgIGlmIChjb250ZW50VHlwZS5pbmNsdWRlcygibXBlZ3VybCIpIHx8IGNvbnRlbnRUeXBlLmluY2x1ZGVzKCJtM3U4IikgfHwgdXJsLnBhdGhuYW1lLmVuZHNXaXRoKCIubTN1OCIpKSB7CiAgICAgICAgICAgIGxldCBtM3U4VGV4dCA9IGF3YWl0IGFwaVJlcy50ZXh0KCk7CiAgICAgICAgICAgIGNvbnN0IHByb3h5UHJlZml4ID0gYGh0dHBzOi8vJHt1cmwuaG9zdH0vX19hcGlfcHJveHkvYDsKICAgICAgICAgICAgCiAgICAgICAgICAgIEFMTF9UQVJHRVRTLmZvckVhY2goYXBpID0+IHsKICAgICAgICAgICAgICAgIG0zdThUZXh0ID0gbTN1OFRleHQucmVwbGFjZUFsbChgaHR0cHM6Ly8ke2FwaX1gLCBgJHtwcm94eVByZWZpeH1odHRwczovLyR7YXBpfWApOwogICAgICAgICAgICB9KTsKICAgICAgICAgICAgCiAgICAgICAgICAgIGNvbnN0IG1vZEhlYWRlcnMgPSBuZXcgSGVhZGVycyhhcGlSZXMuaGVhZGVycyk7CiAgICAgICAgICAgIG1vZEhlYWRlcnMuZGVsZXRlKCJjb250ZW50LWxlbmd0aCIpOyAKICAgICAgICAgICAgCiAgICAgICAgICAgIG5ld0FwaVJlcyA9IG5ldyBSZXNwb25zZShtM3U4VGV4dCwgewogICAgICAgICAgICAgICAgc3RhdHVzOiBhcGlSZXMuc3RhdHVzLAogICAgICAgICAgICAgICAgc3RhdHVzVGV4dDogYXBpUmVzLnN0YXR1c1RleHQsCiAgICAgICAgICAgICAgICBoZWFkZXJzOiBtb2RIZWFkZXJzCiAgICAgICAgICAgIH0pOwogICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgIG5ld0FwaVJlcyA9IG5ldyBSZXNwb25zZShhcGlSZXMuYm9keSwgYXBpUmVzKTsKICAgICAgICB9CiAgICAgICAgCiAgICAgICAgY29uc3QgZmluYWxIZWFkZXJzID0gbmV3IEhlYWRlcnMobmV3QXBpUmVzLmhlYWRlcnMpOwogICAgICAgIGZpbmFsSGVhZGVycy5zZXQoIkFjY2Vzcy1Db250cm9sLUFsbG93LU9yaWdpbiIsIG9yaWdpbkhlYWRlcik7CiAgICAgICAgZmluYWxIZWFkZXJzLnNldCgiQWNjZXNzLUNvbnRyb2wtQWxsb3ctQ3JlZGVudGlhbHMiLCAidHJ1ZSIpOwogICAgICAgIAogICAgICAgIHJldHVybiBuZXcgUmVzcG9uc2UobmV3QXBpUmVzLmJvZHksIHsKICAgICAgICAgICAgc3RhdHVzOiBuZXdBcGlSZXMuc3RhdHVzLAogICAgICAgICAgICBzdGF0dXNUZXh0OiBuZXdBcGlSZXMuc3RhdHVzVGV4dCwKICAgICAgICAgICAgaGVhZGVyczogZmluYWxIZWFkZXJzCiAgICAgICAgfSk7CiAgICAgIH0gY2F0Y2ggKGUpIHsKICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICJQcm94eSBFcnJvciIsIG1lc3NhZ2U6IGUubWVzc2FnZSB9KSwgeyBzdGF0dXM6IDUwMCB9KTsKICAgICAgfQogICAgfQoKICAgIC8vIOCnqS4g4Kau4KeH4KaH4KaoIOCmk+Cmr+CmvOCnh+CmrOCmuOCmvuCmh+CmnyDgprLgp4vgpqEg4KaV4Kaw4Ka+CiAgICBjb25zdCB0YXJnZXQgPSBuZXcgVVJMKFRBUkdFVF9ET01BSU4pOwogICAgdGFyZ2V0LnBhdGhuYW1lID0gdXJsLnBhdGhuYW1lOwogICAgdGFyZ2V0LnNlYXJjaCA9IHVybC5zZWFyY2g7CgogICAgY29uc3QgcHJveHlSZXF1ZXN0ID0gbmV3IFJlcXVlc3QodGFyZ2V0LnRvU3RyaW5nKCksIHJlcXVlc3QpOwogICAgcHJveHlSZXF1ZXN0LmhlYWRlcnMuc2V0KCJIb3N0IiwgdGFyZ2V0Lmhvc3RuYW1lKTsKICAgIHByb3h5UmVxdWVzdC5oZWFkZXJzLnNldCgiT3JpZ2luIiwgdGFyZ2V0Lm9yaWdpbik7CiAgICBwcm94eVJlcXVlc3QuaGVhZGVycy5zZXQoIlJlZmVyZXIiLCB0YXJnZXQub3JpZ2luKTsKICAgIHByb3h5UmVxdWVzdC5oZWFkZXJzLmRlbGV0ZSgiQWNjZXB0LUVuY29kaW5nIik7IAoKICAgIHRyeSB7CiAgICAgIGNvbnN0IHJlc3BvbnNlID0gYXdhaXQgZmV0Y2gocHJveHlSZXF1ZXN0KTsKICAgICAgY29uc3QgY29udGVudFR5cGUgPSByZXNwb25zZS5oZWFkZXJzLmdldCgiY29udGVudC10eXBlIikgfHwgIiI7CiAgICAgIGxldCByZXNwb25zZUJvZHk7CiAgICAgIGNvbnN0IG5ld1Jlc3BvbnNlSGVhZGVycyA9IG5ldyBIZWFkZXJzKHJlc3BvbnNlLmhlYWRlcnMpOwoKICAgICAgaWYgKGNvbnRlbnRUeXBlLmluY2x1ZGVzKCJ0ZXh0L2h0bWwiKSB8fCBjb250ZW50VHlwZS5pbmNsdWRlcygiYXBwbGljYXRpb24vamF2YXNjcmlwdCIpIHx8IGNvbnRlbnRUeXBlLmluY2x1ZGVzKCJ0ZXh0L2phdmFzY3JpcHQiKSkgewogICAgICAgIGxldCB0ZXh0ID0gYXdhaXQgcmVzcG9uc2UudGV4dCgpOwogICAgICAgIGNvbnN0IHByb3h5UHJlZml4ID0gYGh0dHBzOi8vJHt1cmwuaG9zdH0vX19hcGlfcHJveHkvYDsKICAgICAgICAKICAgICAgICAvLyDgpp/gp43gprDgpr/gppXgprg6IOCmtuCngeCmp+CngeCmruCmvuCmpOCnjeCmsCDgpq3gpr/gpqHgpr/gppPgprAg4Kah4KeL4Kau4KeH4KaH4KaoIEpTIOCmjyDgpqrgprDgpr/gpqzgprDgp43gpqTgpqgg4Ka54Kas4KeHLCDgpqzgp43gpq/gpr7gprLgp4fgpqjgp43gprjgp4fgprAg4Kah4KeL4Kau4KeH4KaH4KaoIOCmuOCnjeCmleCmv+CmqiDgppXgprDgpqzgp4chCiAgICAgICAgVklERU9fRE9NQUlOUy5mb3JFYWNoKGFwaSA9PiB7CiAgICAgICAgICAgIGNvbnN0IG9yaWdpbmFsVXJsID0gYGh0dHBzOi8vJHthcGl9YDsKICAgICAgICAgICAgY29uc3QgcHJveHlVcmwgPSBgJHtwcm94eVByZWZpeH0ke29yaWdpbmFsVXJsfWA7CiAgICAgICAgICAgIHRleHQgPSB0ZXh0LnJlcGxhY2VBbGwob3JpZ2luYWxVcmwsIHByb3h5VXJsKTsKICAgICAgICAgICAgCiAgICAgICAgICAgIGNvbnN0IGVzY2FwZWRPcmlnaW5hbCA9IG9yaWdpbmFsVXJsLnJlcGxhY2UoL1wvL2csICdcXC8nKTsKICAgICAgICAgICAgY29uc3QgZXNjYXBlZFByb3h5ID0gcHJveHlVcmwucmVwbGFjZSgvXC8vZywgJ1xcLycpOwogICAgICAgICAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlQWxsKGVzY2FwZWRPcmlnaW5hbCwgZXNjYXBlZFByb3h5KTsKICAgICAgICB9KTsKCiAgICAgICAgLy8gSFRNTCDgpqvgpr7gpofgprLgp4cgSW50ZXJjZXB0b3IgU2NyaXB0IOCmrOCmuOCmvuCmqOCniyAo4Kas4KeN4Kav4Ka+4Kay4KeH4Kao4KeN4Ka44KeH4KawIOCmnOCmqOCnjeCmrykKICAgICAgICBpZiAoY29udGVudFR5cGUuaW5jbHVkZXMoInRleHQvaHRtbCIpKSB7CiAgICAgICAgICAgIGNvbnN0IGludGVyY2VwdG9yU2NyaXB0ID0gYAogICAgICAgICAgICA8c2NyaXB0PgogICAgICAgICAgICAgIChmdW5jdGlvbigpIHsKICAgICAgICAgICAgICAgIGNvbnN0IHByb3h5UHJlZml4ID0gJy9fX2FwaV9wcm94eS8nOwogICAgICAgICAgICAgICAgY29uc3QgdGFyZ2V0QXBpcyA9ICR7SlNPTi5zdHJpbmdpZnkoQUxMX1RBUkdFVFMpfTsKICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgZnVuY3Rpb24gc2hvdWxkSW50ZXJjZXB0KHVybCkgewogICAgICAgICAgICAgICAgICBpZiAodHlwZW9mIHVybCAhPT0gJ3N0cmluZycpIHJldHVybiBmYWxzZTsKICAgICAgICAgICAgICAgICAgaWYgKHVybC5pbmNsdWRlcygnX19hcGlfcHJveHknKSkgcmV0dXJuIGZhbHNlOyAKICAgICAgICAgICAgICAgICAgcmV0dXJuIHRhcmdldEFwaXMuc29tZShhcGkgPT4gdXJsLmluY2x1ZGVzKGFwaSkpOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICBjb25zdCBvcmlnaW5hbEZldGNoID0gd2luZG93LmZldGNoOwogICAgICAgICAgICAgICAgd2luZG93LmZldGNoID0gYXN5bmMgZnVuY3Rpb24oLi4uYXJncykgewogICAgICAgICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgICAgIGxldCByZXFVcmwgPSBhcmdzWzBdOwogICAgICAgICAgICAgICAgICAgIGlmICh0eXBlb2YgcmVxVXJsID09PSAnc3RyaW5nJyAmJiBzaG91bGRJbnRlcmNlcHQocmVxVXJsKSkgewogICAgICAgICAgICAgICAgICAgICAgYXJnc1swXSA9IHByb3h5UHJlZml4ICsgcmVxVXJsOwogICAgICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAocmVxVXJsIGluc3RhbmNlb2YgUmVxdWVzdCAmJiBzaG91bGRJbnRlcmNlcHQocmVxVXJsLnVybCkpIHsKICAgICAgICAgICAgICAgICAgICAgIGFyZ3NbMF0gPSBuZXcgUmVxdWVzdChwcm94eVByZWZpeCArIHJlcVVybC51cmwsIHJlcVVybCk7CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICB9IGNhdGNoKGUpIHt9CiAgICAgICAgICAgICAgICAgIHJldHVybiBvcmlnaW5hbEZldGNoLmFwcGx5KHRoaXMsIGFyZ3MpOwogICAgICAgICAgICAgICAgfTsKICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgY29uc3Qgb3JpZ2luYWxPcGVuID0gWE1MSHR0cFJlcXVlc3QucHJvdG90eXBlLm9wZW47CiAgICAgICAgICAgICAgICBYTUxIdHRwUmVxdWVzdC5wcm90b3R5cGUub3BlbiA9IGZ1bmN0aW9uKG1ldGhvZCwgdXJsLCAuLi5yZXN0KSB7CiAgICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgaWYgKHR5cGVvZiB1cmwgPT09ICdzdHJpbmcnICYmIHNob3VsZEludGVyY2VwdCh1cmwpKSB7CiAgICAgICAgICAgICAgICAgICAgICB1cmwgPSBwcm94eVByZWZpeCArIHVybDsKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgIH0gY2F0Y2goZSkge30KICAgICAgICAgICAgICAgICAgcmV0dXJuIG9yaWdpbmFsT3Blbi5jYWxsKHRoaXMsIG1ldGhvZCwgdXJsLCAuLi5yZXN0KTsKICAgICAgICAgICAgICAgIH07CiAgICAgICAgICAgICAgfSkoKTsKICAgICAgICAgICAgPC9zY3JpcHQ+CiAgICAgICAgICAgIGA7CiAgICAgICAgICAgIGlmICh0ZXh0LmluY2x1ZGVzKCc8aGVhZD4nKSkgewogICAgICAgICAgICAgIHRleHQgPSB0ZXh0LnJlcGxhY2UoJzxoZWFkPicsICc8aGVhZD4nICsgaW50ZXJjZXB0b3JTY3JpcHQpOwogICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgIHRleHQgPSBpbnRlcmNlcHRvclNjcmlwdCArIHRleHQ7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICAgICAgCiAgICAgICAgcmVzcG9uc2VCb2R5ID0gdGV4dDsKICAgICAgICBuZXdSZXNwb25zZUhlYWRlcnMuZGVsZXRlKCJjb250ZW50LWxlbmd0aCIpOyAKICAgICAgICBuZXdSZXNwb25zZUhlYWRlcnMuc2V0KCJDYWNoZS1Db250cm9sIiwgIm5vLWNhY2hlLCBuby1zdG9yZSwgbXVzdC1yZXZhbGlkYXRlIik7CiAgICAgIH0gZWxzZSB7CiAgICAgICAgcmVzcG9uc2VCb2R5ID0gcmVzcG9uc2UuYm9keTsKICAgICAgfQoKICAgICAgbmV3UmVzcG9uc2VIZWFkZXJzLmRlbGV0ZSgiQ29udGVudC1TZWN1cml0eS1Qb2xpY3kiKTsKICAgICAgbmV3UmVzcG9uc2VIZWFkZXJzLmRlbGV0ZSgiWC1GcmFtZS1PcHRpb25zIik7CiAgICAgIG5ld1Jlc3BvbnNlSGVhZGVycy5zZXQoIkFjY2Vzcy1Db250cm9sLUFsbG93LU9yaWdpbiIsIG9yaWdpbkhlYWRlcik7CiAgICAgIAogICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKHJlc3BvbnNlQm9keSwgewogICAgICAgIHN0YXR1czogcmVzcG9uc2Uuc3RhdHVzLAogICAgICAgIHN0YXR1c1RleHQ6IHJlc3BvbnNlLnN0YXR1c1RleHQsCiAgICAgICAgaGVhZGVyczogbmV3UmVzcG9uc2VIZWFkZXJzCiAgICAgIH0pOwogICAgICAKICAgIH0gY2F0Y2ggKGVycm9yKSB7CiAgICAgIHJldHVybiBuZXcgUmVzcG9uc2UoIlN5c3RlbSBFcnJvcjogIiArIGVycm9yLm1lc3NhZ2UsIHsgc3RhdHVzOiA1MDAgfSk7CiAgICB9CiAgfQp9Owo=
+export default {
+  async fetch(request, env, ctx) {
+    const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
+    const API_DOMAINS = ["vrnlapi.com"]; 
+    const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"]; 
+    const ALL_TARGETS = [...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
+    
+    const url = new URL(request.url);
+    const originHeader = request.headers.get("Origin") || `https://${url.host}`;
+
+    // ==========================================
+    // 🛡️ প্রফেশনাল সিকিউরিটি: Ghost Script Route
+    // ==========================================
+    if (url.pathname === '/__secure_core.js') {
+        const referer = request.headers.get("Referer");
+        
+        // যদি কেউ সরাসরি লিংক ওপেন করে কোড চুরি করতে চায়, তবে তাকে ফেক কোড দেখানো হবে
+        if (!referer || !referer.includes(url.hostname)) {
+            return new Response(`console.log("Access Denied: Nice try, but you can't copy this code! 😎");`, {
+                status: 200,
+                headers: { "Content-Type": "application/javascript" }
+            });
+        }
+
+        // আপনার আসল ইন্টারসেপ্টর কোড (আপনি চাইলে obfuscator.io থেকে এনক্রিপ্ট করে এখানে বসাতে পারেন)
+        const secretCode = `
+          (function() {
+            const proxyPrefix = '/__api_proxy/';
+            const targetApis = ${JSON.stringify(ALL_TARGETS)};
+            function shouldIntercept(url) {
+              if (typeof url !== 'string') return false;
+              if (url.includes('__api_proxy')) return false; 
+              return targetApis.some(api => url.includes(api));
+            }
+            const originalFetch = window.fetch;
+            window.fetch = async function(...args) {
+              try {
+                let reqUrl = args[0];
+                if (typeof reqUrl === 'string' && shouldIntercept(reqUrl)) {
+                  args[0] = proxyPrefix + reqUrl;
+                } else if (reqUrl instanceof Request && shouldIntercept(reqUrl.url)) {
+                  args[0] = new Request(proxyPrefix + reqUrl.url, reqUrl);
+                }
+              } catch(e) {}
+              return originalFetch.apply(this, args);
+            };
+            const originalOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+              try {
+                if (typeof url === 'string' && shouldIntercept(url)) {
+                  url = proxyPrefix + url;
+                }
+              } catch(e) {}
+              return originalOpen.call(this, method, url, ...rest);
+            };
+          })();
+        `;
+
+        return new Response(secretCode, {
+            status: 200,
+            headers: { 
+                "Content-Type": "application/javascript",
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+        });
+    }
+
+    // ১. CORS প্রিফ্লাইট
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": originHeader,
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+          "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "*",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Max-Age": "86400",
+        }
+      });
+    }
+
+    // ২. API এবং Video Stream প্রক্সি
+    if (url.pathname.startsWith('/__api_proxy/')) {
+      let actualApiUrl = request.url.substring(request.url.indexOf('/__api_proxy/') + 13);
+      if (!actualApiUrl.startsWith('http')) {
+         actualApiUrl = 'https://' + actualApiUrl;
+      }
+      try {
+        const targetApi = new URL(actualApiUrl);
+        const apiReq = new Request(targetApi.toString(), request);
+        apiReq.headers.set("Host", targetApi.host);
+        apiReq.headers.set("Origin", TARGET_DOMAIN);
+        apiReq.headers.set("Referer", TARGET_DOMAIN + "/");
+
+        const apiRes = await fetch(apiReq);
+        let newApiRes;
+        const contentType = apiRes.headers.get("content-type") || "";
+        
+        if (contentType.includes("mpegurl") || contentType.includes("m3u8") || url.pathname.endsWith(".m3u8")) {
+            let m3u8Text = await apiRes.text();
+            const proxyPrefix = `https://${url.host}/__api_proxy/`;
+            ALL_TARGETS.forEach(api => {
+                m3u8Text = m3u8Text.replaceAll(`https://${api}`, `${proxyPrefix}https://${api}`);
+            });
+            const modHeaders = new Headers(apiRes.headers);
+            modHeaders.delete("content-length"); 
+            newApiRes = new Response(m3u8Text, { status: apiRes.status, statusText: apiRes.statusText, headers: modHeaders });
+        } else {
+            newApiRes = new Response(apiRes.body, apiRes);
+        }
+        
+        const finalHeaders = new Headers(newApiRes.headers);
+        finalHeaders.set("Access-Control-Allow-Origin", originHeader);
+        finalHeaders.set("Access-Control-Allow-Credentials", "true");
+        return new Response(newApiRes.body, { status: newApiRes.status, statusText: newApiRes.statusText, headers: finalHeaders });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Proxy Error" }), { status: 500 });
+      }
+    }
+
+    // ৩. মেইন ওয়েবসাইট লোড করা
+    const target = new URL(TARGET_DOMAIN);
+    target.pathname = url.pathname;
+    target.search = url.search;
+    const proxyRequest = new Request(target.toString(), request);
+    proxyRequest.headers.set("Host", target.hostname);
+    proxyRequest.headers.set("Origin", target.origin);
+    proxyRequest.headers.set("Referer", target.origin);
+    proxyRequest.headers.delete("Accept-Encoding"); 
+
+    try {
+      const response = await fetch(proxyRequest);
+      const contentType = response.headers.get("content-type") || "";
+      let responseBody;
+      const newResponseHeaders = new Headers(response.headers);
+
+      if (contentType.includes("text/html") || contentType.includes("application/javascript") || contentType.includes("text/javascript")) {
+        let text = await response.text();
+        const proxyPrefix = `https://${url.host}/__api_proxy/`;
+        
+        MEDIA_AND_SCORE_DOMAINS.forEach(api => {
+            const originalUrl = `https://${api}`;
+            const proxyUrl = `${proxyPrefix}${originalUrl}`;
+            text = text.replaceAll(originalUrl, proxyUrl);
+            text = text.replaceAll(originalUrl.replace(/\//g, '\\/'), proxyUrl.replace(/\//g, '\\/'));
+        });
+
+        // 🔒 প্রফেশনাল ইনজেকশন: এখানে কোনো বিশাল কোড বা Base64 নেই, শুধু একটা ছোট লিংক!
+        if (contentType.includes("text/html")) {
+            const ghostScriptTag = `<script src="/__secure_core.js"></script>`;
+            if (text.includes('<head>')) {
+              text = text.replace('<head>', '<head>' + ghostScriptTag);
+            } else {
+              text = ghostScriptTag + text;
+            }
+        }
+        
+        responseBody = text;
+        newResponseHeaders.delete("content-length"); 
+        newResponseHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      } else {
+        responseBody = response.body;
+      }
+
+      newResponseHeaders.delete("Content-Security-Policy");
+      newResponseHeaders.delete("X-Frame-Options");
+      newResponseHeaders.set("Access-Control-Allow-Origin", originHeader);
+      
+      return new Response(responseBody, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newResponseHeaders
+      });
+    } catch (error) {
+      return new Response("System Error", { status: 500 });
+    }
+  }
+};
