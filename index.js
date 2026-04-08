@@ -163,8 +163,8 @@ export default {
 
         // 🔒 প্রফেশনাল ইনজেকশন (Logo CSS Force + Security JS)
         if (contentType.includes("text/html")) {
-            // এই CSS আগের লোগোকে ফোর্স করে আপনার লোগো বসিয়ে দিবে (যদি কোনোভাবে পুরনোটা আসতেই চায়)
-            const forceLogoCSS = `<style>.logo-sec img { content: url("${newLogoUrl}") !important; }</style>`;
+            // 🔹 এখানে width: 170px দেওয়া হয়েছে লোগো বড় দেখানোর জন্য 🔹
+            const forceLogoCSS = `<style>.logo-sec img { content: url("${newLogoUrl}") !important; width: 170px !important; height: auto !important; max-width: none !important; }</style>`;
             const ghostScriptTag = `<script src="/__secure_core.js"></script>`;
             
             if (text.includes('<head>')) {
