@@ -157,23 +157,24 @@ export default {
         text = text.replaceAll(/velki123/gi, "velkix.live");
 
         const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
-        text = text.replaceAll("../../assets/images/velki-logo.png", newLogoUrl);
-        text = text.replaceAll("/assets/images/velki-logo.png", newLogoUrl);
-        text = text.replaceAll("assets/images/velki-logo.png", newLogoUrl);
-
         const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
-        text = text.replaceAll("../../assets/images/velki-login-signup-banner.png", newLoginBanner);
-        text = text.replaceAll("../assets/images/velki-login-signup-banner.png", newLoginBanner);
-        text = text.replaceAll("/assets/images/velki-login-signup-banner.png", newLoginBanner);
-        text = text.replaceAll("assets/images/velki-login-signup-banner.png", newLoginBanner);
+
+        // 🔹 আল্ট্রা-ফাস্ট লোডিং: শক্তিশালী Regex দিয়ে React এর জেনারেট করা সকল হ্যাশড পাথ ডিরেক্ট রিপ্লেস 🔹
+        text = text.replace(/([a-zA-Z0-9_./-]*velki-logo[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLogoUrl);
+        text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
 
         text = text.replaceAll('class="signup" href="/"', 'class="signup" href="https://playpbu.com"');
 
         // 🔹 আল্ট্রা সিকিউরিটি আপডেট: CSS এবং সিকিউর স্ক্রিপ্ট ইনজেকশন এখন জাভাস্ক্রিপ্টের ভেতরে 🔹
         if (contentType.includes("text/html")) {
             
-            // 🔹 প্রো-লেভেল শাইনিং ইফেক্ট (স্মুথ, সফট গ্লো এবং রিল্যাক্সড পজ) 🔹
+            // 🔹 প্রো-লেভেল শাইনিং ইফেক্ট এবং ইনস্ট্যান্ট ইমেজ প্রি-লোড 🔹
             const rawForceJs = `
+                // ০. ইমেজ প্রি-লোড (ব্রাউজারকে আগেই ইমেজ মেমোরিতে রাখতে বাধ্য করবে, ফলে ফ্লিকার হবে না)
+                var p1 = document.createElement('link'); p1.rel = 'preload'; p1.as = 'image'; p1.href = '${newLogoUrl}';
+                var p2 = document.createElement('link'); p2.rel = 'preload'; p2.as = 'image'; p2.href = '${newLoginBanner}';
+                document.head.appendChild(p1); document.head.appendChild(p2);
+
                 // ১. ডাইনামিক CSS ইনজেকশন (লোগো সাইজ এবং ভিডিও প্লেয়ার ওভারলে)
                 var s = document.createElement('style');
                 s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; } ' +
