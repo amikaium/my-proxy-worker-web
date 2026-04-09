@@ -177,9 +177,9 @@ export default {
                 // ১. ডাইনামিক CSS ইনজেকশন (লোগো সাইজ এবং ভিডিও প্লেয়ার ওভারলে)
                 var s = document.createElement('style');
                 s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; } ' +
-                              '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.75) !important; border-radius: 6px !important; position: relative !important; overflow: hidden !important; padding: 4px 6px !important; display: flex; align-items: center; justify-content: center; } ' +
-                              '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 80px !important; height: auto !important; max-width: none !important; margin: 0 !important; } ' +
-                              '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: videoShimmer 5s infinite; } ' +
+                              '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.85) !important; border-radius: 5px !important; overflow: hidden !important; } ' +
+                              '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 100% !important; height: auto !important; object-fit: contain !important; } ' +
+                              '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: videoShimmer 5s infinite; pointer-events: none; } ' +
                               '@keyframes videoShimmer { 0% { left: -150%; } 15% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
 
