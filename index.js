@@ -174,9 +174,13 @@ export default {
             
             // এই সমস্ত কোড এনক্রিপ্ট হয়ে যাবে, সোর্স কোডে কিছুই বোঝা যাবে না
             const rawForceJs = `
-                // ১. ডাইনামিক CSS ইনজেকশন (লোগো সাইজ)
+                // ১. ডাইনামিক CSS ইনজেকশন (লোগো সাইজ এবং ভিডিও প্লেয়ার ওভারলে)
                 var s = document.createElement('style');
-                s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; }';
+                s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; } ' +
+                              '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.75) !important; border-radius: 6px !important; position: relative !important; overflow: hidden !important; padding: 4px 6px !important; display: flex; align-items: center; justify-content: center; } ' +
+                              '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 80px !important; height: auto !important; max-width: none !important; margin: 0 !important; } ' +
+                              '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: videoShimmer 5s infinite; } ' +
+                              '@keyframes videoShimmer { 0% { left: -150%; } 15% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
 
                 // ২. সিকিউর কোর স্ক্রিপ্ট ইনজেকশন
