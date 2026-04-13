@@ -3,22 +3,20 @@ addEventListener('fetch', event => {
 })
 
 async function handleRequest(request) {
-  // আপনার মেইন ব্যাকএন্ড সাইট (এখান থেকে ডাটা আসবে)
   const TARGET_DOMAIN = "velki123.win";
   const url = new URL(request.url);
 
-  // ১. ইউজার যখন মূল সাইটে (Root URL '/') ঢুকবে, তখন আপনার কাস্টম ডিজাইনটি শো করবে
+  // ১. মূল কাস্টম ডিজাইন (App Shell) লোড হবে
   if (url.pathname === '/' || url.pathname === '/index.html') {
     return new Response(customHTML, {
       headers: { 'content-type': 'text/html;charset=UTF-8' },
     });
   }
 
-  // ২. অন্যান্য সব রিকোয়েস্ট (যেমন /login, /sports, /casino) মেইন সাইটে প্রক্সি হয়ে যাবে
+  // ২. প্রক্সি রিকোয়েস্ট (এখানে আমরা মেইন সাইট লোড করব)
   url.hostname = TARGET_DOMAIN;
   url.protocol = 'https:';
 
-  // মেইন সাইট যেন বুঝতে না পারে এটি প্রক্সি, তাই হেডার পরিবর্তন করা হচ্ছে
   let newHeaders = new Headers(request.headers);
   newHeaders.set('Host', TARGET_DOMAIN);
   newHeaders.set('Origin', `https://${TARGET_DOMAIN}`);
@@ -33,16 +31,45 @@ async function handleRequest(request) {
 
   const response = await fetch(modifiedRequest);
   
-  // ব্রাউজারকে ডাইনামিক ডোমেইন সাপোর্ট দেওয়ার জন্য CORS পলিসি ওপেন করে দেওয়া
+  // ৩. HTMLRewriter দিয়ে মেইন সাইটের হেডার/ফুটার গায়েব করার জন্য CSS ইনজেক্ট করা
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    let newResponse = new Response(response.body, response);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    newResponse.headers.delete('X-Frame-Options'); // আইফ্রেম সাপোর্ট করার জন্য
+    newResponse.headers.delete('Content-Security-Policy');
+
+    return new HTMLRewriter()
+      .on('head', {
+        element(el) {
+          // মেইন সাইটের অরিজিনাল হেডার ও ফুটার লুকানোর CSS
+          el.append(`
+            <style>
+              /* এখানে সাধারণ হেডার/ফুটারের ট্যাগ হাইড করা হয়েছে */
+              header, footer, nav, .header, .footer, .bottom-nav, .mobile-nav, #header, #footer {
+                  display: none !important;
+                  opacity: 0 !important;
+                  height: 0 !important;
+                  visibility: hidden !important;
+              }
+              /* বডির উপরে ও নিচে যে এক্সট্রা জায়গা থাকে তা রিমুভ করা */
+              body { padding-top: 0 !important; padding-bottom: 0 !important; }
+            </style>
+          `, { html: true });
+        }
+      })
+      .transform(newResponse);
+  }
+
+  // HTML ছাড়া অন্য ফাইল (যেমন ছবি, JS) সরাসরি পাস করে দেবে
   let newResponse = new Response(response.body, response);
   newResponse.headers.set('Access-Control-Allow-Origin', '*');
-  newResponse.headers.delete('X-Frame-Options'); // ফ্রেম বা পপ-আপ ঠিকমতো লোড হওয়ার জন্য
-  
+  newResponse.headers.delete('X-Frame-Options');
   return newResponse;
 }
 
 // ==========================================
-// আপনার কাস্টম 1XBDT HTML, CSS এবং JS কোড
+// আপনার কাস্টম 1XBDT HTML + Iframe Logic
 // ==========================================
 const customHTML = `
 <!DOCTYPE html>
@@ -50,7 +77,7 @@ const customHTML = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1XBDT App UI - Custom Proxy</title>
+    <title>1XBDT App UI</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
@@ -59,11 +86,20 @@ const customHTML = `
         body { background-color: #0f172a; display: flex; justify-content: center; height: 100vh; }
         
         .app-container { width: 100%; max-width: 480px; background-color: #0f172a; height: 100vh; display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
-        .header { background-color: #0b2246; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; height: 60px; flex-shrink: 0; z-index: 10; }
-        .logo { font-size: 26px; font-weight: 800; font-style: italic; display: flex; align-items: center; }
+        .header { background-color: #0b2246; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; height: 60px; flex-shrink: 0; z-index: 20; position: relative; }
+        .logo { font-size: 26px; font-weight: 800; font-style: italic; display: flex; align-items: center; cursor: pointer; }
         .logo .part-1 { color: #ffffff; } .logo .part-2 { color: #2196f3; }
         
         .login-btn { background-color: #1e88e5; color: white; border: none; padding: 8px 18px; border-radius: 4px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        
+        /* Iframe Container */
+        #iframe-container { display: none; position: absolute; top: 60px; bottom: 60px; left: 0; right: 0; z-index: 15; background-color: #0f172a; }
+        #content-frame { width: 100%; height: 100%; border: none; }
+        
+        /* Scrollable Area */
+        #main-content-area { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        #main-content-area::-webkit-scrollbar { width: 0; }
+
         .slider-container { width: 100%; height: 120px; overflow: hidden; position: relative; flex-shrink: 0; background-color: #0b2246; }
         .slider-track { display: flex; width: 300%; height: 100%; transition: transform 0.5s ease-in-out; }
         .slide { width: 100%; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding: 15px; color: white; text-align: right; }
@@ -117,7 +153,7 @@ const customHTML = `
         .bg-slots4 { background: linear-gradient(135deg, #388e3c, #81c784); }
         
         .bottom-nav { position: absolute; bottom: 0; width: 100%; height: 60px; background-color: #0b2246; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #1e3a8a; z-index: 20; }
-        .bottom-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-decoration: none; width: 20%; height: 100%; position: relative; transition: all 0.2s ease; }
+        .bottom-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-decoration: none; width: 20%; height: 100%; position: relative; transition: all 0.2s ease; cursor: pointer; }
         .bottom-nav-item i { font-size: 20px; margin-bottom: 4px; }
         .bottom-nav-item span { font-size: 11px; font-weight: 600; }
         .bottom-nav-item.active { color: #3b82f6; }
@@ -127,131 +163,103 @@ const customHTML = `
 <body>
 <div class="app-container">
     <header class="header">
-        <div class="logo">
+        <div class="logo" onclick="closeIframe()">
             <span class="part-1">1X</span><span class="part-2">BDT</span>
         </div>
-        <button class="login-btn" onclick="window.location.href='/login'">
+        <button class="login-btn" onclick="openIframe('/login')">
             <i class="fa-solid fa-user"></i> Login
         </button>
     </header>
 
-    <div class="slider-container">
-        <div class="slider-track" id="sliderTrack">
-            <div class="slide slide-1">
-                <div class="slide-content">
-                    <h2>ফ্রি ২০৩ <span>JILI</span> স্পিন</h2>
-                    <p>দাবি করতে প্রতিদিন লগইন করুন</p>
-                </div>
-            </div>
-            <div class="slide slide-2">
-                <div class="slide-content">
-                    <h2>১০০% <span>ওয়েলকাম</span> বোনাস</h2>
-                    <p>প্রথম ডিপোজিটে দ্বিগুণ মজা</p>
-                </div>
-            </div>
-            <div class="slide slide-3">
-                <div class="slide-content">
-                    <h2>সাপ্তাহিক <span>ক্যাশব্যাক</span> ১০%</h2>
-                    <p>খেলুন নিশ্চিন্তে, ক্যাশব্যাক গ্যারান্টি</p>
-                </div>
-            </div>
-        </div>
-        <div class="slider-dots">
-            <div class="dot active"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
+    <div id="iframe-container">
+        <iframe id="content-frame" src=""></iframe>
     </div>
 
-    <div class="announcement-bar">
-        <div class="megaphone-icon"><i class="fa-solid fa-bullhorn"></i></div>
-        <div class="scrolling-text">
-            <marquee scrollamount="5">নতুন সদস্যদের জন্য ৩ টি বোনাস , ১০০% ক্যাশব্যাক! ক্যাসিনো এবং স্লট গেমসে বিশাল প্রাইজ পুল!</marquee>
+    <div id="main-content-area">
+        <div class="slider-container">
+            <div class="slider-track" id="sliderTrack">
+                <div class="slide slide-1">
+                    <div class="slide-content"><h2>ফ্রি ২০৩ <span>JILI</span> স্পিন</h2><p>দাবি করতে প্রতিদিন লগইন করুন</p></div>
+                </div>
+                <div class="slide slide-2">
+                    <div class="slide-content"><h2>১০০% <span>ওয়েলকাম</span> বোনাস</h2><p>প্রথম ডিপোজিটে দ্বিগুণ মজা</p></div>
+                </div>
+                <div class="slide slide-3">
+                    <div class="slide-content"><h2>সাপ্তাহিক <span>ক্যাশব্যাক</span> ১০%</h2><p>খেলুন নিশ্চিন্তে, ক্যাশব্যাক গ্যারান্টি</p></div>
+                </div>
+            </div>
+            <div class="slider-dots">
+                <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+            </div>
         </div>
-    </div>
 
-    <div class="main-layout">
-        <aside class="sidebar">
-            <div onclick="switchTab('hot', this)" class="nav-item-left active">
-                <i class="fa-solid fa-fire"></i><span>হট গেম</span>
+        <div class="announcement-bar">
+            <div class="megaphone-icon"><i class="fa-solid fa-bullhorn"></i></div>
+            <div class="scrolling-text">
+                <marquee scrollamount="5">নতুন সদস্যদের জন্য ৩ টি বোনাস , ১০০% ক্যাশব্যাক! ক্যাসিনো এবং স্লট গেমসে বিশাল প্রাইজ পুল!</marquee>
             </div>
-            <div onclick="switchTab('sports', this)" class="nav-item-left">
-                <i class="fa-solid fa-futbol"></i><span>স্পোর্টস</span>
-            </div>
-            <div onclick="switchTab('casino', this)" class="nav-item-left">
-                <i class="fa-solid fa-diamond"></i><span>ক্যাসিনো</span>
-            </div>
-            <div onclick="switchTab('slots', this)" class="nav-item-left">
-                <i class="fa-solid fa-slot-machine"></i><i class="fa-solid fa-7"></i><span>স্লট</span>
-            </div>
-            <div onclick="switchTab('crash', this)" class="nav-item-left">
-                <i class="fa-solid fa-rocket"></i><span>ক্র্যাশ</span>
-            </div>
-            <div onclick="switchTab('table', this)" class="nav-item-left">
-                <i class="fa-solid fa-table"></i><span>টেবিল</span>
-            </div>
-        </aside>
+        </div>
 
-        <main class="game-feed">
-            <div id="hot" class="tab-content list-layout active">
-                <div class="list-card bg-superace" onclick="window.location.href='/casino'">SUPER ACE<div class="card-label">JILI GAMES</div></div>
-                <div class="list-card bg-crazytime" onclick="window.location.href='/casino'">CRAZY TIME<div class="card-label">EVOLUTION</div></div>
-                <div class="list-card bg-slots1" onclick="window.location.href='/casino'">FORTUNE TIGER<div class="card-label">PG SOFT</div></div>
-            </div>
+        <div class="main-layout">
+            <aside class="sidebar">
+                <div onclick="switchTab('hot', this)" class="nav-item-left active"><i class="fa-solid fa-fire"></i><span>হট গেম</span></div>
+                <div onclick="switchTab('sports', this)" class="nav-item-left"><i class="fa-solid fa-futbol"></i><span>স্পোর্টস</span></div>
+                <div onclick="switchTab('casino', this)" class="nav-item-left"><i class="fa-solid fa-diamond"></i><span>ক্যাসিনো</span></div>
+                <div onclick="switchTab('slots', this)" class="nav-item-left"><i class="fa-solid fa-slot-machine"></i><i class="fa-solid fa-7"></i><span>স্লট</span></div>
+                <div onclick="switchTab('crash', this)" class="nav-item-left"><i class="fa-solid fa-rocket"></i><span>ক্র্যাশ</span></div>
+                <div onclick="switchTab('table', this)" class="nav-item-left"><i class="fa-solid fa-table"></i><span>টেবিল</span></div>
+            </aside>
 
-            <div id="sports" class="tab-content list-layout">
-                <div class="list-card bg-sports1" onclick="window.location.href='/sports'">1X SPORTS<div class="card-label">PREMIUM SPORTSBOOK</div></div>
-                <div class="list-card bg-sports2" onclick="window.location.href='/sports'">SABA SPORTS<div class="card-label">ASIAN HANDICAP</div></div>
-            </div>
-
-            <div id="casino" class="tab-content grid-layout">
-                <div class="grid-card bg-roulette" onclick="window.location.href='/casino'">
-                    <i class="fa-solid fa-dharmachakra"></i>ROULETTE<div class="card-label">EVO LIVE</div>
+            <main class="game-feed">
+                <div id="hot" class="tab-content list-layout active">
+                    <div class="list-card bg-superace" onclick="openIframe('/casino')">SUPER ACE<div class="card-label">JILI GAMES</div></div>
+                    <div class="list-card bg-crazytime" onclick="openIframe('/casino')">CRAZY TIME<div class="card-label">EVOLUTION</div></div>
+                    <div class="list-card bg-slots1" onclick="openIframe('/casino')">FORTUNE TIGER<div class="card-label">PG SOFT</div></div>
                 </div>
-                <div class="grid-card bg-baccarat" onclick="window.location.href='/casino'">
-                    <i class="fa-solid fa-cards"></i>BACCARAT<div class="card-label">SEXY GAMING</div>
-                </div>
-                <div class="grid-card bg-poker" onclick="window.location.href='/casino'">
-                    <i class="fa-solid fa-spade"></i>POKER<div class="card-label">TEXAS HOLD'EM</div>
-                </div>
-                <div class="grid-card bg-dice" onclick="window.location.href='/casino'">
-                    <i class="fa-solid fa-dice"></i>SIC BO<div class="card-label">LIVE DEALER</div>
-                </div>
-            </div>
 
-            <div id="slots" class="tab-content grid-layout">
-                <div class="grid-card bg-slots1" onclick="window.location.href='/casino'"><i class="fa-solid fa-gem"></i>BONANZA<div class="card-label">PRAGMATIC</div></div>
-                <div class="grid-card bg-slots2" onclick="window.location.href='/casino'"><i class="fa-solid fa-crown"></i>OLYMPUS<div class="card-label">JACKPOT</div></div>
-                <div class="grid-card bg-slots3" onclick="window.location.href='/casino'"><i class="fa-solid fa-star"></i>STARBURST<div class="card-label">NETENT</div></div>
-                <div class="grid-card bg-slots4" onclick="window.location.href='/casino'"><i class="fa-solid fa-clover"></i>IRISH LUCK<div class="card-label">PLAYTECH</div></div>
-            </div>
-
-            <div id="crash" class="tab-content grid-layout">
-                <div class="grid-card bg-baccarat" style="background: radial-gradient(circle, #d84315, #3e2723);" onclick="window.location.href='/casino'">
-                    <i class="fa-solid fa-plane-departure"></i>AVIATOR<div class="card-label">SPRIBE</div>
+                <div id="sports" class="tab-content list-layout">
+                    <div class="list-card bg-sports1" onclick="openIframe('/sports')">1X SPORTS<div class="card-label">PREMIUM SPORTSBOOK</div></div>
+                    <div class="list-card bg-sports2" onclick="openIframe('/sports')">SABA SPORTS<div class="card-label">ASIAN HANDICAP</div></div>
                 </div>
-                <div class="grid-card bg-poker" style="background: radial-gradient(circle, #283593, #1a237e);" onclick="window.location.href='/casino'">
-                    <i class="fa-solid fa-jet-fighter"></i>JET X<div class="card-label">SMARTSOFT</div>
-                </div>
-            </div>
 
-            <div id="table" class="tab-content grid-layout">
-                <div class="grid-card bg-slots4" onclick="window.location.href='/casino'"><i class="fa-solid fa-leaf"></i>TEEN PATTI<div class="card-label">INDIAN CARD</div></div>
-                <div class="grid-card bg-dice" onclick="window.location.href='/casino'"><i class="fa-solid fa-chess-knight"></i>BLACKJACK<div class="card-label">CLASSIC</div></div>
-            </div>
-        </main>
+                <div id="casino" class="tab-content grid-layout">
+                    <div class="grid-card bg-roulette" onclick="openIframe('/casino')"><i class="fa-solid fa-dharmachakra"></i>ROULETTE<div class="card-label">EVO LIVE</div></div>
+                    <div class="grid-card bg-baccarat" onclick="openIframe('/casino')"><i class="fa-solid fa-cards"></i>BACCARAT<div class="card-label">SEXY GAMING</div></div>
+                    <div class="grid-card bg-poker" onclick="openIframe('/casino')"><i class="fa-solid fa-spade"></i>POKER<div class="card-label">TEXAS HOLD'EM</div></div>
+                    <div class="grid-card bg-dice" onclick="openIframe('/casino')"><i class="fa-solid fa-dice"></i>SIC BO<div class="card-label">LIVE DEALER</div></div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <nav class="bottom-nav">
-        <a href="#" class="bottom-nav-item"><i class="fa-solid fa-chart-line"></i><span>Exch</span></a>
-        <a href="#" class="bottom-nav-item"><i class="fa-regular fa-clock"></i><span>In-Play</span></a>
-        <a href="/" class="bottom-nav-item active"><i class="fa-solid fa-house"></i><span>Home</span></a>
-        <a href="/sports" class="bottom-nav-item"><i class="fa-solid fa-users"></i><span>Sports</span></a>
-        <a href="/login" class="bottom-nav-item"><i class="fa-regular fa-circle-user"></i><span>Account</span></a>
+        <div class="bottom-nav-item" onclick="openIframe('/sports')"><i class="fa-solid fa-chart-line"></i><span>Exch</span></div>
+        <div class="bottom-nav-item" onclick="openIframe('/sports')"><i class="fa-regular fa-clock"></i><span>In-Play</span></div>
+        <div class="bottom-nav-item active" onclick="closeIframe(); setActiveNav(this)"><i class="fa-solid fa-house"></i><span>Home</span></div>
+        <div class="bottom-nav-item" onclick="openIframe('/sports'); setActiveNav(this)"><i class="fa-solid fa-users"></i><span>Sports</span></div>
+        <div class="bottom-nav-item" onclick="openIframe('/login'); setActiveNav(this)"><i class="fa-regular fa-circle-user"></i><span>Account</span></div>
     </nav>
 </div>
 
 <script>
+    // Iframe কন্ট্রোল করার ফাংশন
+    function openIframe(url) {
+        document.getElementById('iframe-container').style.display = 'block';
+        document.getElementById('main-content-area').style.display = 'none';
+        document.getElementById('content-frame').src = url;
+    }
+
+    function closeIframe() {
+        document.getElementById('iframe-container').style.display = 'none';
+        document.getElementById('main-content-area').style.display = 'flex';
+        document.getElementById('content-frame').src = '';
+    }
+
+    function setActiveNav(el) {
+        document.querySelectorAll('.bottom-nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+
     function switchTab(tabId, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.nav-item-left').forEach(n => n.classList.remove('active'));
