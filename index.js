@@ -5,7 +5,7 @@ export default {
     // ==========================================
     
     const TARGET_DOMAIN = env.TARGET_URL || "https://www.baji11.live";
-    const API_DOMAINS =["liveapi247.live"]; 
+    const API_DOMAINS = ["liveapi247.live"]; 
     const MEDIA_AND_SCORE_DOMAINS =["tv.nginx0.com"]; 
     
     const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
@@ -122,7 +122,7 @@ export default {
                 <style>
                   /* 📱 অ্যাপ ইন্সটল ব্যানার ডিজাইন */
                   #custom-install-banner {
-                      width: 100%; background-color: #1a1a1a; color: white; display: none; align-items: center; /* initially hidden */
+                      width: 100%; background-color: #1a1a1a; color: white; display: none; align-items: center; 
                       padding: 10px 15px; box-sizing: border-box; font-family: Arial, sans-serif;
                       border-bottom: 1px solid #333; z-index: 9999999; position: relative; 
                   }
@@ -138,8 +138,8 @@ export default {
                   }
 
                   /* 🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড */
-                  img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] { content: url("\${banner1_New}") !important; object-fit: cover !important; }
-                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"] { content: url("\${banner2_New}") !important; object-fit: cover !important; }
+                  img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] { content: url("${banner1_New}") !important; object-fit: cover !important; }
+                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"] { content: url("${banner2_New}") !important; object-fit: cover !important; }
                   .css-blq8bd { display: none !important; }
 
                   /* 🎨 সাইনআপ এবং লগইন পেজের আপডেট ডিজাইন */
@@ -180,16 +180,16 @@ export default {
 
                 <script>
                   (function(){
-                    // ⚙️ PWA ব্রাউজার কানেকশন (ইন্সটল থাকলে কখনোই আসবে না)
+                    // ⚙️ PWA ব্রাউজার কানেকশন 
                     let deferredPrompt;
                     window.addEventListener('beforeinstallprompt', (e) => {
                         e.preventDefault(); 
                         deferredPrompt = e; 
-                        showAppBanner(); // যদি ব্রাউজার বলে যে ইন্সটল নেই, তবেই ব্যানার ওপেন হবে
+                        showAppBanner(); 
                     });
 
                     window.addEventListener('appinstalled', () => {
-                        hideAppBanner(); // ইন্সটল সফল হলে চিরতরে হারিয়ে যাবে
+                        hideAppBanner(); 
                     });
 
                     function showAppBanner() {
@@ -197,16 +197,19 @@ export default {
                         if(banner && banner.style.display !== 'flex') {
                             banner.style.display = 'flex';
                             
-                            // স্মার্ট লেআউট শিফট: ব্যানার আসলে ওয়েবসাইটের ফিক্সড হেডারগুলো সুন্দর করে নিচে নেমে যাবে যাতে কনটেন্ট না কাটে
+                            // 🛠️ স্মার্ট লেআউট ফিক্স: শুধু 'Fixed' মেনুবার নিচে নামানো হবে, 'Sticky' গুলো স্বাভাবিক থাকবে তাই কিছুই কাটবে না
                             setTimeout(() => {
                                 const offset = banner.offsetHeight;
                                 document.querySelectorAll('*').forEach(el => {
                                     if(el.id === 'custom-install-banner') return;
                                     const style = window.getComputedStyle(el);
-                                    if((style.position === 'fixed' || style.position === 'sticky') && (style.top === '0px' || parseInt(style.top) === 0)) {
-                                        el.style.transition = 'transform 0.3s ease';
-                                        el.style.transform = \`translateY(\${offset}px)\`;
-                                        el.setAttribute('data-pushed', 'true');
+                                    if(style.position === 'fixed') {
+                                        const topVal = parseInt(style.top);
+                                        if(topVal === 0 || style.top === '0px') {
+                                            el.style.transition = 'top 0.3s ease';
+                                            el.style.top = offset + 'px';
+                                            el.setAttribute('data-pushed', 'true');
+                                        }
                                     }
                                 });
                             }, 50);
@@ -217,9 +220,8 @@ export default {
                         const banner = document.getElementById('custom-install-banner');
                         if(banner) {
                             banner.style.display = 'none';
-                            // ব্যানার কেটে দিলে সাইট আবার আগের জায়গায় ফিরে যাবে
                             document.querySelectorAll('[data-pushed="true"]').forEach(el => {
-                                el.style.transform = 'translateY(0px)';
+                                el.style.top = '0px';
                             });
                         }
                     }
@@ -252,7 +254,6 @@ export default {
                             if (siteLogo && siteLogo.src) document.getElementById('cib-logo-img').src = siteLogo.src;
                         }, 1000);
 
-                        // রিফ্রেশ করলে আবার আসবে, কারণ কোনো ডেটা সেভ করা হয়নি
                         closeBtn.addEventListener('click', hideAppBanner);
 
                         installBtn.addEventListener('click', async () => {
@@ -268,7 +269,6 @@ export default {
                             }
                         });
 
-                        // iOS এর জন্য বিশেষ সিস্টেম
                         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                         if (isIOS && !window.navigator.standalone) {
                             showAppBanner();
@@ -306,18 +306,23 @@ export default {
                         element.dispatchEvent(new Event('input', { bubbles: true }));
                     }
 
-                    // 🔥 Aggressive Banner Replacer (১০০% গ্যারান্টি আপনার ছবিগুলো দেখাবে)
-                    const b1 = '\${banner1_New}';
-                    const b2 = '\${banner2_New}';
+                    // 🔥 ব্লিংক (Blink) সমস্যার ১০০% সমাধান (ব্যানার বারবার রিফ্রেশ নেবে না)
+                    const b1 = '${banner1_New}';
+                    const b2 = '${banner2_New}';
                     setInterval(() => {
                         document.querySelectorAll('img').forEach(img => {
                             let src = img.getAttribute('src') || '';
                             let alt = img.getAttribute('alt') || '';
+                            
                             if (src.includes('banner-first-d.jpg') || alt.includes('banner-first-d.jpg')) {
-                                if (img.src !== b1) { img.src = b1; img.srcset = ''; img.setAttribute('src', b1); }
+                                if (img.getAttribute('src') !== b1) { 
+                                    img.src = b1; img.srcset = ''; img.setAttribute('src', b1); 
+                                }
                             }
                             if (src.includes('banner10.jpg') || alt.includes('banner10.jpg')) {
-                                if (img.src !== b2) { img.src = b2; img.srcset = ''; img.setAttribute('src', b2); }
+                                if (img.getAttribute('src') !== b2) { 
+                                    img.src = b2; img.srcset = ''; img.setAttribute('src', b2); 
+                                }
                             }
                         });
                     }, 100);
