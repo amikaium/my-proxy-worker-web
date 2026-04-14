@@ -125,6 +125,9 @@ export default {
 
             if (contentType.includes("text/html")) {
                 const customStylesAndScripts = `
+                <!-- 🚀 গ্লোবাল প্রি-লোড: সাইটে ঢোকার সাথে সাথেই ভিডিও ব্যাকগ্রাউন্ডে ডাউনলোড হবে -->
+                <link rel="preload" href="https://github.com/user-attachments/assets/2e0caaaf-d0b6-4631-827f-4b428c62bc97" as="video" type="video/mp4" fetchpriority="high">
+
                 <style>
                   /* ==========================================
                      🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড (0 Millisecond delay)
@@ -175,11 +178,10 @@ export default {
                   .page-login .css-b13tmd { height: 100vh !important; max-height: 100vh !important; overflow: hidden !important; }
                   .page-signup .css-16ff8oy, .page-signup .css-b13tmd { padding-bottom: 10px !important; margin-bottom: 0 !important; }
                   .page-login div[style*="height: 60px"], .page-signup div[style*="height: 60px"], .page-login div[style*="height: 70px"], .page-signup div[style*="height: 70px"], .page-login div[style*="height: 80px"], .page-signup div[style*="height: 80px"], .page-login div[style*="height: 90px"], .page-signup div[style*="height: 90px"], .page-signup .css-16ff8oy > div[style*="height"], .page-signup .css-b13tmd > div[style*="height"] { display: none !important; height: 0 !important; min-height: 0 !important; }
+                  
+                  /* ইনস্ট্যান্ট ভিডিও প্লেয়ার ডিজাইন (স্পিনার রিমুভড) */
                   .custom-video-wrapper { position: relative !important; width: 100% !important; padding: 0 !important; margin: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; background-color: transparent !important; min-height: 150px; }
-                  .custom-video-wrapper video { width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; pointer-events: none !important; opacity: 0; transition: opacity 0.5s ease-in-out; }
-                  .ios-spinner { position: absolute; width: 32px; height: 32px; z-index: 10; transition: opacity 0.3s ease-out; }
-                  .ios-spinner::after { content: ""; display: block; width: 100%; height: 100%; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='8' stroke-linecap='round'%3E%3Cpath d='M50 15V25' opacity='.2'/%3E%3Cpath d='M50 15V25' transform='rotate(45 50 50)' opacity='.3'/%3E%3Cpath d='M50 15V25' transform='rotate(90 50 50)' opacity='.4'/%3E%3Cpath d='M50 15V25' transform='rotate(135 50 50)' opacity='.5'/%3E%3Cpath d='M50 15V25' transform='rotate(180 50 50)' opacity='.6'/%3E%3Cpath d='M50 15V25' transform='rotate(225 50 50)' opacity='.7'/%3E%3Cpath d='M50 15V25' transform='rotate(270 50 50)' opacity='.8'/%3E%3Cpath d='M50 15V25' transform='rotate(315 50 50)' opacity='1'/%3E%3C/g%3E%3C/svg%3E"); background-size: cover; animation: ios-spin 1s steps(8, end) infinite; }
-                  @keyframes ios-spin { 100% { transform: rotate(360deg); } }
+                  .custom-video-wrapper video { width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; pointer-events: none !important; opacity: 1 !important; }
 
                   /* ==========================================
                      🛑 ডিপোজিট ও উইথড্রয়াল পেজ (/dw) কাস্টম ডিজাইন
@@ -286,36 +288,23 @@ export default {
                             }
                         });
 
+                        // 🔥 জিরো-ডিলে ইনস্ট্যান্ট ভিডিও ইনজেকশন
                         if (currentPath === 'login' || currentPath === 'signup') {
                             const targetDivForVideo = document.querySelector('div.css-lpwed4');
                             if (targetDivForVideo && !document.getElementById('arfan-custom-video')) {
-                                if (!document.getElementById('preload-custom-vid')) {
-                                    const preloadLink = document.createElement('link');
-                                    preloadLink.id = 'preload-custom-vid';
-                                    preloadLink.rel = 'preload';
-                                    preloadLink.as = 'video';
-                                    preloadLink.href = VIDEO_URL;
-                                    document.head.appendChild(preloadLink);
-                                }
                                 const videoHTML = \`
                                 <div id="arfan-custom-video" class="custom-video-wrapper">
-                                    <div id="arfan-spinner" class="ios-spinner"></div>
                                     <video id="arfan-vid" autoplay loop muted playsinline preload="auto">
                                         <source src="\${VIDEO_URL}" type="video/mp4">
                                     </video>
                                 </div>\`;
                                 targetDivForVideo.insertAdjacentHTML('afterend', videoHTML);
+                                
+                                // ফোর্স অটো-প্লে যাতে আটকে না থাকে
                                 setTimeout(() => {
                                     const vidElement = document.getElementById('arfan-vid');
-                                    const spinnerElement = document.getElementById('arfan-spinner');
-                                    if(vidElement) {
-                                        vidElement.addEventListener('playing', () => {
-                                            if(spinnerElement) spinnerElement.style.opacity = '0';
-                                            vidElement.style.opacity = '1';
-                                        });
-                                        vidElement.play().catch(e => console.log("Auto-play ready."));
-                                    }
-                                }, 100);
+                                    if(vidElement) { vidElement.play().catch(e => console.log("Play Ready")); }
+                                }, 50);
                             }
                         } else {
                             const existingVideo = document.getElementById('arfan-custom-video');
