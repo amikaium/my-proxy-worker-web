@@ -3,7 +3,7 @@ addEventListener('fetch', event => {
 })
 
 async function handleRequest(request) {
-  // আপনার নতুন মেইন ব্যাকএন্ড সাইট
+  // আপনার মেইন ব্যাকএন্ড সাইট
   const TARGET_DOMAIN = "tenx365x.live";
   const url = new URL(request.url);
 
@@ -68,7 +68,7 @@ async function handleRequest(request) {
 }
 
 // ==========================================
-// আপনার কাস্টম 1XBDT HTML (আসল লিংক ও ছবি সহ)
+// আপনার কাস্টম HTML (গ্রিড লেআউট এবং ক্যাসিনো কার্ড সহ)
 // ==========================================
 const customHTML = `
 <!DOCTYPE html>
@@ -76,7 +76,7 @@ const customHTML = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1XBDT - Premium Gaming</title>
+    <title>SKY X - Premium Gaming</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
@@ -123,40 +123,76 @@ const customHTML = `
         .nav-item-left span { font-size: 10px; font-weight: 600; text-align: center; }
         .nav-item-left.active { background-color: #1e3a8a; color: #ffffff; position: relative; }
         .nav-item-left.active i { color: #3b82f6; }
-        .nav-item-left.active::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 3px; background-color: #3b82f6; }
+        .nav-item-left.active::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 3px; background-color: #3b82f6; border-radius: 0 0 4px 4px; }
         
-        .game-feed { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 80px; }
+        /* গেম গ্রিড কন্টেইনার */
+        .game-feed.grid-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* ২টি কলামের গ্রিড */
+            gap: 10px; /* কার্ডগুলোর মধ্যে দূরত্ব */
+            padding: 8px; /* প্যাডিং */
+            padding-bottom: 80px; /* নিচের অংশ */
+        }
         .game-feed::-webkit-scrollbar { width: 0; }
-        .tab-content { display: none; }
-        .tab-content.list-layout.active { display: block; animation: fadeIn 0.3s; }
-        .tab-content.grid-layout.active { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Image Card Styles (New) */
-        .img-card { 
-            width: 100%; 
-            border-radius: 8px; 
-            margin-bottom: 10px; 
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 20px; 
-            font-weight: 900; 
-            color: white; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.9); 
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4); 
-            overflow: hidden; 
+        /* গ্রিড গেম কার্ড স্টাইল (স্কয়ার) */
+        .img-card.grid {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* নিখুঁত স্কয়ার তৈরির জন্য */
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            flex-direction: column; /* ছবি এবং নাম ভার্টিক্যালি সাজানোর জন্য */
+            align-items: center;
+            justify-content: center;
+            font-size: 14px; /* ছোট ফন্ট সাইজ */
+            font-weight: 800;
+            color: white;
+            text-align: center;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            overflow: hidden;
+            padding: 10px; /* ভেতরের প্যাডিং */
+            border: 1px solid rgba(255,255,255,0.05); /* হালকা বর্ডার */
             cursor: pointer;
             background-size: cover;
             background-position: center;
-            /* Dark overlay to make text pop */
-            box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s; /* হোভার ইফেক্ট */
         }
-        .img-card.list { height: 120px; }
-        .img-card.grid { aspect-ratio: 1 / 1; flex-direction: column; font-size: 14px; text-align: center; }
-        
-        .card-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); font-size: 10px; padding: 5px; text-align: center; letter-spacing: 0.5px; font-weight: 600; color: #ffca28; }
+        .img-card.grid:hover { transform: translateY(-3px); }
+
+        /* কার্ডের ভেতরে ছবির স্টাইল (যদি ছবিতে লেখা থাকে) */
+        .img-card.grid::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%); /* নিচ থেকে ডার্ক গ্রেডিয়েন্ট */
+            z-index: 1;
+        }
+
+        /* গেমের নাম কার্ডের ভেতরে ছবির ওপর থাকবে */
+        .img-card.grid span {
+            position: absolute;
+            bottom: 10px;
+            z-index: 2;
+        }
+
+        /* কার্ড লেবেল */
+        .card-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            font-size: 10px;
+            padding: 5px;
+            text-align: center;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: #ffca28;
+            z-index: 2;
+        }
         
         /* Fallback Gradients */
         .bg-sports1 { background: linear-gradient(45deg, #020024, #00d4ff); }
@@ -176,7 +212,7 @@ const customHTML = `
 <div class="app-container">
     <header class="header">
         <div class="logo" onclick="closeIframe()">
-            <span class="part-1">1X</span><span class="part-2">BDT</span>
+            <span class="part-1">SKY</span><span class="part-2">X</span>
         </div>
         <button class="login-btn" onclick="openIframe('/login')">
             <i class="fa-solid fa-user"></i> Login
@@ -195,62 +231,59 @@ const customHTML = `
             </div>
         </div>
 
+        <div class="announcement-bar">
+            <div class="megaphone-icon"><i class="fa-solid fa-bullhorn"></i></div>
+            <div class="scrolling-text">
+                <marquee scrollamount="5">নতুন সদস্যদের জন্য ৩ টি বোনাস , ১০০% ক্যাশব্যাক! ক্যাসিনো এবং স্লট গেমসে বিশাল প্রাইজ পুল!</marquee>
+            </div>
+        </div>
+
         <div class="main-layout">
             <aside class="sidebar">
-                <div onclick="switchTab('hot', this)" class="nav-item-left active"><i class="fa-solid fa-fire"></i><span>হট গেম</span></div>
+                <div onclick="switchTab('hot', this)" class="nav-item-left"><i class="fa-solid fa-fire"></i><span>হট গেম</span></div>
                 <div onclick="switchTab('sports', this)" class="nav-item-left"><i class="fa-solid fa-futbol"></i><span>স্পোর্টস</span></div>
-                <div onclick="switchTab('casino', this)" class="nav-item-left"><i class="fa-solid fa-diamond"></i><span>ক্যাসিনো</span></div>
+                <div onclick="switchTab('casino', this)" class="nav-item-left active"><i class="fa-solid fa-diamond"></i><span>ক্যাসিনো</span></div>
                 <div onclick="switchTab('table', this)" class="nav-item-left"><i class="fa-solid fa-table"></i><span>টেবিল</span></div>
             </aside>
 
-            <main class="game-feed">
-                <div id="hot" class="tab-content list-layout active">
-                    <div class="img-card list" style="background-image: url('https://imagedelivery.net/DYQ-dtBEBlUVzYMqxn1p5A/tenx365.live-aviator.jpeg/ClassImage?v=0.53');" onclick="openIframe('/TABLE/SPRIBE/EGAME/SPRIBE-EGAME-001')">
-                        AVIATOR<div class="card-label">SPRIBE GAMING</div>
+            <main class="game-feed grid-layout"> <div id="casino" class="tab-content active"> <div class="img-card grid bg-baccarat" onclick="openIframe('/TABLE/SPRIBE/EGAME/SPRIBE-EGAME-001')">
+                        AVIATOR
+                        <div class="card-label">SPRIBE GAMING</div>
                     </div>
-                    <div class="img-card list" style="background-image: url('https://imagedelivery.net/DYQ-dtBEBlUVzYMqxn1p5A/tenx365.live-banner-teenpatti-half.webp/ClassImage?v=0.53');" onclick="openIframe('/TABLE/KINGMAKER/TABLE/KM-TABLE-046')">
-                        TEEN PATTI<div class="card-label">KINGMAKER</div>
+                    
+                    <div class="img-card grid bg-sports1" onclick="openIframe('/TABLE/KINGMAKER/TABLE/KM-TABLE-046')">
+                        AVIATRIX
+                        <div class="card-label">KINGMAKER</div>
                     </div>
+
+                    <div class="img-card grid" style="background-image: url('https://imagedelivery.net/DYQ-dtBEBlUVzYMqxn1p5A/tenx365.live-mega-sicbo.webp/ClassImage?v=0.53');" onclick="openIframe('/TABLE/PP/LIVE/PP-LIVE-025')">
+                        MEGA SIC BO
+                        <div class="card-label">PP LIVE</div>
+                    </div>
+
+                    <div class="img-card grid" style="background-image: url('https://imagedelivery.net/DYQ-dtBEBlUVzYMqxn1p5A/tenx365.live-baccarat.webp/ClassImage?v=0.53');" onclick="openIframe('/TABLE/KINGMAKER/TABLE/KM-TABLE-041')">
+                        BACCARAT
+                        <div class="card-label">KINGMAKER</div>
+                    </div>
+
+                    <div class="img-card grid" onclick="openIframe('/TABLE/KINGMAKER/TABLE/KM-TABLE-028')">
+                        7 UP DOWN
+                        <div class="card-label">KINGMAKER</div>
+                    </div>
+                    
+                    <div class="img-card grid" onclick="openIframe('/TABLE/KINGMAKER/TABLE/KM-TABLE-015')">
+                        SIC BO
+                        <div class="card-label">KINGMAKER</div>
+                    </div>
+                    
                 </div>
+
+                <div id="hot" class="tab-content list-layout">
+                    </div>
 
                 <div id="sports" class="tab-content list-layout">
-                    <div class="img-card list bg-sports1" onclick="openIframe('/exchange/member/Matches/Inplay')">
-                        IN-PLAY MATCHES<div class="card-label">LIVE SPORTS</div>
                     </div>
-                    <div class="img-card list bg-sports2" onclick="openIframe('/sabaSports/1/3/gn001')">
-                        SABA SPORTS<div class="card-label">PREMIUM SPORTSBOOK</div>
-                    </div>
-                </div>
 
-                <div id="casino" class="tab-content grid-layout">
-                    <div class="img-card grid" style="background-image: url('https://imagedelivery.net/DYQ-dtBEBlUVzYMqxn1p5A/tenx365.live-12-red tiger.webp/ClassImage?v=0.53');" onclick="openIframe('/AELOBBY')">
-                        RED TIGER / AE<div class="card-label">AE LOBBY</div>
-                    </div>
-                    <div class="img-card grid bg-baccarat" onclick="openIframe('/TABLE/SEXYBCRT/LIVE/MX-LIVE-001')">
-                        SEXY BACCARAT<div class="card-label">LIVE DEALER</div>
-                    </div>
-                    <div class="img-card grid bg-roulette" onclick="openIframe('/DInterCasinoPage/100027/ezg_speedroulette')">
-                        SPEED ROULETTE<div class="card-label">EZUGI</div>
-                    </div>
-                    <div class="img-card grid bg-sports1" onclick="openIframe('/DInterCasinoPage/200221/evo_gameshowslobby')">
-                        GAME SHOWS<div class="card-label">EVOLUTION</div>
-                    </div>
-                </div>
-
-                <div id="table" class="tab-content grid-layout">
-                    <div class="img-card grid" style="background-image: url('https://imagedelivery.net/DYQ-dtBEBlUVzYMqxn1p5A/tenx365.live-new7upd.webp/ClassImage?v=0.53');" onclick="openIframe('/TABLE/KINGMAKER/TABLE/KM-TABLE-028')">
-                        7 UP DOWN<div class="card-label">KINGMAKER</div>
-                    </div>
-                    <div class="img-card grid" style="background-image: url('https://imagedelivery.net/DYQ-dtBEBlUVzYMqxn1p5A/tenx365.live-sicbo.webp/ClassImage?v=0.53');" onclick="openIframe('/TABLE/KINGMAKER/TABLE/KM-TABLE-015')">
-                        SIC BO<div class="card-label">KINGMAKER</div>
-                    </div>
-                    <div class="img-card grid bg-baccarat" onclick="openIframe('/DInterCasinoPage/203552/bbl_bombaylivelobby')">
-                        BOMBAY LIVE<div class="card-label">CASINO LOBBY</div>
-                    </div>
-                    <div class="img-card grid bg-sports2" onclick="openIframe('/DInterCasinoPage/900000/RG-LIVELOBBY')">
-                        RG LIVE<div class="card-label">LOBBY</div>
-                    </div>
-                </div>
             </main>
         </div>
     </div>
