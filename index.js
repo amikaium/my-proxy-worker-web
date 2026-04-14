@@ -5,7 +5,7 @@ export default {
     // ==========================================
     
     const TARGET_DOMAIN = env.TARGET_URL || "https://www.baji11.live";
-    const API_DOMAINS = ["liveapi247.live"]; 
+    const API_DOMAINS =["liveapi247.live"]; 
     const MEDIA_AND_SCORE_DOMAINS =["tv.nginx0.com"]; 
     
     const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
@@ -39,39 +39,7 @@ export default {
       });
     }
 
-    // 🔥 নতুন আপডেট: Manifest.json ইন্টারসেপশন (ইনস্টল পপআপের নাম চেঞ্জ করার জন্য)
-    if (url.pathname.endsWith('manifest.json') || url.pathname.includes('manifest')) {
-      const manifestTarget = new URL(TARGET_DOMAIN);
-      manifestTarget.pathname = url.pathname;
-      manifestTarget.search = url.search;
-      const manifestReq = new Request(manifestTarget.toString(), request);
-      manifestReq.headers.set("Host", manifestTarget.hostname);
-      manifestReq.headers.set("Origin", TARGET_DOMAIN);
-      manifestReq.headers.set("Referer", TARGET_DOMAIN + "/");
-
-      try {
-        const manifestRes = await fetch(manifestReq);
-        const manifestText = await manifestRes.text();
-        let manifestData = JSON.parse(manifestText);
-        
-        // ম্যাজিক: ওয়েবসাইটের নাম পরিবর্তন!
-        manifestData.name = "Baji11 - The only trusted site in Bangladesh";
-        manifestData.short_name = "Baji11";
-        
-        return new Response(JSON.stringify(manifestData), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Access-Control-Allow-Origin": originHeader,
-            "Access-Control-Allow-Credentials": "true"
-          }
-        });
-      } catch (e) {
-        // ফেইল করলে নিচে চলে যাবে
-      }
-    }
-
-    // ২. API এবং Video Stream প্রক্সি
+    // ২. API এবং Video Stream (m3u8/ts) প্রক্সি
     if (url.pathname.startsWith('/__api_proxy/')) {
       let actualApiUrl = request.url.substring(request.url.indexOf('/__api_proxy/') + 13);
       if (!actualApiUrl.startsWith('http')) actualApiUrl = 'https://' + actualApiUrl;
@@ -154,9 +122,9 @@ export default {
                 <style>
                   /* 📱 অ্যাপ ইন্সটল ব্যানার ডিজাইন */
                   #custom-install-banner {
-                      width: 100%; background-color: #1a1a1a; color: white; display: flex; align-items: center;
+                      width: 100%; background-color: #1a1a1a; color: white; display: none; align-items: center; /* initially hidden */
                       padding: 10px 15px; box-sizing: border-box; font-family: Arial, sans-serif;
-                      border-bottom: 1px solid #333; z-index: 999999; position: relative; 
+                      border-bottom: 1px solid #333; z-index: 9999999; position: relative; 
                   }
                   .cib-close { display: flex; align-items: center; justify-content: center; padding: 5px; cursor: pointer; margin-right: 10px; margin-left: -5px; }
                   .cib-logo { width: 38px; height: 38px; border-radius: 8px; margin-right: 12px; object-fit: contain; background: transparent; }
@@ -164,14 +132,14 @@ export default {
                   .cib-title { font-weight: 700; font-size: 15px; margin: 0 0 2px 0; color: #ffffff; line-height: 1; }
                   .cib-desc { font-size: 12px; color: #cccccc; margin: 0; line-height: 1.2; }
                   .cib-install-btn {
-                      background-color: #E53935; /* লাল রঙের বাটন */
+                      background-color: #E53935; /* 🔴 লাল রঙের বাটন */
                       color: #ffffff; border: none; border-radius: 4px; padding: 7px 16px;
                       font-weight: 800; font-size: 14px; cursor: pointer; margin-left: 10px;
                   }
 
                   /* 🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড */
-                  img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] { content: url("${banner1_New}") !important; object-fit: cover !important; }
-                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"] { content: url("${banner2_New}") !important; object-fit: cover !important; }
+                  img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] { content: url("\${banner1_New}") !important; object-fit: cover !important; }
+                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"] { content: url("\${banner2_New}") !important; object-fit: cover !important; }
                   .css-blq8bd { display: none !important; }
 
                   /* 🎨 সাইনআপ এবং লগইন পেজের আপডেট ডিজাইন */
@@ -212,30 +180,53 @@ export default {
 
                 <script>
                   (function(){
-                    // ⚙️ PWA ইন্সটল ইভেন্ট ও লজিক
+                    // ⚙️ PWA ব্রাউজার কানেকশন (ইন্সটল থাকলে কখনোই আসবে না)
                     let deferredPrompt;
                     window.addEventListener('beforeinstallprompt', (e) => {
                         e.preventDefault(); 
                         deferredPrompt = e; 
+                        showAppBanner(); // যদি ব্রাউজার বলে যে ইন্সটল নেই, তবেই ব্যানার ওপেন হবে
                     });
 
-                    // 🚀 ইন্সটল সাকসেস হলে চিরতরে হাইড করার সিস্টেম
                     window.addEventListener('appinstalled', () => {
-                        localStorage.setItem('baji11_is_installed', 'true');
-                        const banner = document.getElementById('custom-install-banner');
-                        if(banner) banner.style.display = 'none';
+                        hideAppBanner(); // ইন্সটল সফল হলে চিরতরে হারিয়ে যাবে
                     });
+
+                    function showAppBanner() {
+                        const banner = document.getElementById('custom-install-banner');
+                        if(banner && banner.style.display !== 'flex') {
+                            banner.style.display = 'flex';
+                            
+                            // স্মার্ট লেআউট শিফট: ব্যানার আসলে ওয়েবসাইটের ফিক্সড হেডারগুলো সুন্দর করে নিচে নেমে যাবে যাতে কনটেন্ট না কাটে
+                            setTimeout(() => {
+                                const offset = banner.offsetHeight;
+                                document.querySelectorAll('*').forEach(el => {
+                                    if(el.id === 'custom-install-banner') return;
+                                    const style = window.getComputedStyle(el);
+                                    if((style.position === 'fixed' || style.position === 'sticky') && (style.top === '0px' || parseInt(style.top) === 0)) {
+                                        el.style.transition = 'transform 0.3s ease';
+                                        el.style.transform = \`translateY(\${offset}px)\`;
+                                        el.setAttribute('data-pushed', 'true');
+                                    }
+                                });
+                            }, 50);
+                        }
+                    }
+
+                    function hideAppBanner() {
+                        const banner = document.getElementById('custom-install-banner');
+                        if(banner) {
+                            banner.style.display = 'none';
+                            // ব্যানার কেটে দিলে সাইট আবার আগের জায়গায় ফিরে যাবে
+                            document.querySelectorAll('[data-pushed="true"]').forEach(el => {
+                                el.style.transform = 'translateY(0px)';
+                            });
+                        }
+                    }
 
                     function initAppInstallBanner() {
                         if (document.getElementById('custom-install-banner')) return;
                         
-                        // অ্যাপ মোডে থাকলে অথবা আগে ইন্সটল করে থাকলে ব্যানার দেখাবে না
-                        if (window.matchMedia('(display-mode: standalone)').matches || 
-                            window.navigator.standalone === true || 
-                            localStorage.getItem('baji11_is_installed') === 'true') {
-                            return; 
-                        }
-
                         const bannerHTML = \`
                         <div id="custom-install-banner">
                             <div class="cib-close" id="cib-close-btn">
@@ -253,7 +244,6 @@ export default {
 
                         document.body.insertAdjacentHTML('afterbegin', bannerHTML);
 
-                        const banner = document.getElementById('custom-install-banner');
                         const closeBtn = document.getElementById('cib-close-btn');
                         const installBtn = document.getElementById('cib-install-btn');
 
@@ -262,19 +252,14 @@ export default {
                             if (siteLogo && siteLogo.src) document.getElementById('cib-logo-img').src = siteLogo.src;
                         }, 1000);
 
-                        // ক্লোজ বাটন: শুধু বর্তমান পেজের জন্য হাইড করবে। রিফ্রেশ দিলে আবার আসবে! (লোকাল স্টোরেজ সরানো হয়েছে)
-                        closeBtn.addEventListener('click', () => {
-                            banner.style.display = 'none';
-                        });
+                        // রিফ্রেশ করলে আবার আসবে, কারণ কোনো ডেটা সেভ করা হয়নি
+                        closeBtn.addEventListener('click', hideAppBanner);
 
-                        // ইন্সটল বাটন
                         installBtn.addEventListener('click', async () => {
                             if (deferredPrompt) {
                                 deferredPrompt.prompt();
                                 const { outcome } = await deferredPrompt.userChoice;
-                                if (outcome === 'accepted') {
-                                    banner.style.display = 'none';
-                                }
+                                if (outcome === 'accepted') hideAppBanner();
                                 deferredPrompt = null;
                             } else {
                                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -282,6 +267,12 @@ export default {
                                 else alert('Please tap the 3-dot menu in your browser and select "Add to Home screen" or "Install app".');
                             }
                         });
+
+                        // iOS এর জন্য বিশেষ সিস্টেম
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                        if (isIOS && !window.navigator.standalone) {
+                            showAppBanner();
+                        }
                     }
 
                     // ---------------------------------------------
@@ -315,14 +306,13 @@ export default {
                         element.dispatchEvent(new Event('input', { bubbles: true }));
                     }
 
-                    // 🔥 Aggressive Banner Replacer: রিয়েক্টকে কোনো সুযোগ না দিয়ে ইমেজ চেঞ্জ করবে
-                    const b1 = '${banner1_New}';
-                    const b2 = '${banner2_New}';
+                    // 🔥 Aggressive Banner Replacer (১০০% গ্যারান্টি আপনার ছবিগুলো দেখাবে)
+                    const b1 = '\${banner1_New}';
+                    const b2 = '\${banner2_New}';
                     setInterval(() => {
                         document.querySelectorAll('img').forEach(img => {
                             let src = img.getAttribute('src') || '';
                             let alt = img.getAttribute('alt') || '';
-                            
                             if (src.includes('banner-first-d.jpg') || alt.includes('banner-first-d.jpg')) {
                                 if (img.src !== b1) { img.src = b1; img.srcset = ''; img.setAttribute('src', b1); }
                             }
@@ -385,9 +375,7 @@ export default {
                                 
                                 setTimeout(() => {
                                     const vidElement = document.getElementById('arfan-vid');
-                                    if(vidElement) {
-                                        vidElement.play().catch(e => console.log("Auto-play ready."));
-                                    }
+                                    if(vidElement) vidElement.play().catch(e => console.log("Auto-play ready."));
                                 }, 10);
                             }
                         } else {
