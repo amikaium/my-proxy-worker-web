@@ -104,18 +104,24 @@ export default {
         if (contentType.includes("text/html") || contentType.includes("application/javascript")) {
             
             // ==========================================
-            // 🔥 রিয়েক্ট/চাকরা স্পেসিফিক ব্যানার রিপ্লেসমেন্ট 
+            // 🔥 রিয়েক্ট/চাকরা স্পেসিফিক ব্যানার রিপ্লেসমেন্ট (আলাদা আলাদা)
             // ==========================================
-            const newBannerImage = "https://i.postimg.cc/d05XnH5B/20260414-035715.webp";
-            const newBannerEscaped = newBannerImage.replace(/\//g, '\\/'); // রিয়েক্ট JSON এর জন্য
-
-            // ১. নরমাল HTML টেক্সট রিপ্লেস (বর্তমান স্ক্রিনশট banner10.jpg এবং আগের স্ক্রিনশট banner-first-d.jpg এর জন্য)
-            text = text.replaceAll("/pub-images/maza365/banner/banner10.jpg", newBannerImage);
-            text = text.replaceAll("/pub-images/maza365/banner/banner-first-d.jpg", newBannerImage);
             
-            // ২. React Hydration Data (JSON State) রিপ্লেস! এটা না করলে রিয়েক্ট পুরনো ছবি লোড করে দেয়।
-            text = text.replaceAll("\\/pub-images\\/maza365\\/banner\\/banner10.jpg", newBannerEscaped);
-            text = text.replaceAll("\\/pub-images\\/maza365\\/banner\\/banner-first-d.jpg", newBannerEscaped);
+            // ১ম ইমেজের লিংক 
+            const banner1_New = "https://i.postimg.cc/d05XnH5B/20260414-035715.webp";
+            const banner1_NewEsc = banner1_New.replace(/\//g, '\\/'); 
+            
+            // ২য় ইমেজের লিংক
+            const banner2_New = "https://i.postimg.cc/Jz7r6g1k/20260414-041553.webp";
+            const banner2_NewEsc = banner2_New.replace(/\//g, '\\/');
+
+            // ১ম ব্যানার রিপ্লেস (banner-first-d.jpg)
+            text = text.replaceAll("/pub-images/maza365/banner/banner-first-d.jpg", banner1_New);
+            text = text.replaceAll("\\/pub-images\\/maza365\\/banner\\/banner-first-d.jpg", banner1_NewEsc);
+
+            // ২য় ব্যানার রিপ্লেস (banner10.jpg)
+            text = text.replaceAll("/pub-images/maza365/banner/banner10.jpg", banner2_New);
+            text = text.replaceAll("\\/pub-images\\/maza365\\/banner\\/banner10.jpg", banner2_NewEsc);
 
             if (contentType.includes("text/html")) {
                 const customStylesAndScripts = `
@@ -123,10 +129,23 @@ export default {
                   /* ==========================================
                      🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড (0 Millisecond delay)
                      ========================================== */
-                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"],
+                  /* ১ম ব্যানার */
                   img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] {
-                      content: url("${newBannerImage}") !important;
+                      content: url("${banner1_New}") !important;
                       object-fit: cover !important;
+                  }
+                  
+                  /* ২য় ব্যানার */
+                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"] {
+                      content: url("${banner2_New}") !important;
+                      object-fit: cover !important;
+                  }
+
+                  /* ==========================================
+                     ⛔ ৩য় স্ক্রিনশটের রিকুয়েস্ট: নির্দিষ্ট ক্লাস পুরোপুরি হাইড
+                     ========================================== */
+                  .css-blq8bd {
+                      display: none !important;
                   }
 
                   /* ==========================================
@@ -212,8 +231,12 @@ export default {
                         
                         // ৩. Mutation Observer লেয়ার: রিয়েক্ট ডায়নামিক ইমেজ লোড করলে সাথে সাথে রিপ্লেস
                         document.querySelectorAll('img').forEach(img => {
-                            if (img.src.includes('banner10.jpg') || img.src.includes('banner-first-d.jpg')) {
-                                img.src = '${newBannerImage}';
+                            if (img.src.includes('banner-first-d.jpg')) {
+                                img.src = '${banner1_New}';
+                                if (img.srcset) img.srcset = '';
+                            }
+                            if (img.src.includes('banner10.jpg')) {
+                                img.src = '${banner2_New}';
                                 if (img.srcset) img.srcset = '';
                             }
                         });
