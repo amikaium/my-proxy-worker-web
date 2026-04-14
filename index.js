@@ -5,7 +5,7 @@ export default {
     // ==========================================
     
     const TARGET_DOMAIN = env.TARGET_URL || "https://www.baji11.live";
-    const API_DOMAINS =["liveapi247.live"]; 
+    const API_DOMAINS = ["liveapi247.live"]; 
     const MEDIA_AND_SCORE_DOMAINS =["tv.nginx0.com"]; 
     
     const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
@@ -104,7 +104,7 @@ export default {
         if (contentType.includes("text/html") || contentType.includes("application/javascript")) {
             
             // ==========================================
-            // 🔥 রিয়েক্ট/চাকরা স্পেসিফিক ব্যানার রিপ্লেসমেন্ট
+            // 🔥 রিয়েক্ট স্পেসিফিক ব্যানার রিপ্লেসমেন্ট 
             // ==========================================
             
             const banner1_New = "https://i.postimg.cc/d05XnH5B/20260414-035715.webp";
@@ -121,25 +121,38 @@ export default {
 
             if (contentType.includes("text/html")) {
                 const customStylesAndScripts = `
-                <!-- গ্লোবাল প্রি-লোড নেটওয়ার্ক বুস্টার -->
+                <!-- 🚀 গ্লোবাল প্রি-লোড: সাইটে ঢোকার সাথে সাথেই ভিডিও মেমোরিতে সেভ হবে -->
                 <link rel="preload" href="https://github.com/user-attachments/assets/2e0caaaf-d0b6-4631-827f-4b428c62bc97" as="video" type="video/mp4" fetchpriority="high">
 
                 <style>
                   /* ==========================================
-                     🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড
+                     🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড 
                      ========================================== */
-                  img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] { content: url("${banner1_New}") !important; object-fit: cover !important; }
-                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"] { content: url("${banner2_New}") !important; object-fit: cover !important; }
+                  img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] {
+                      content: url("${banner1_New}") !important;
+                      object-fit: cover !important;
+                  }
+                  
+                  img[src*="banner10.jpg"], img[alt*="banner10.jpg"] {
+                      content: url("${banner2_New}") !important;
+                      object-fit: cover !important;
+                  }
 
-                  .css-blq8bd { display: none !important; }
+                  /* নির্দিষ্ট ক্লাস পুরোপুরি হাইড */
+                  .css-blq8bd {
+                      display: none !important;
+                  }
 
                   /* ==========================================
-                     🎨 সাইনআপ এবং লগইন পেজের আপডেট ডিজাইন
+                     🎨 সাইনআপ এবং লগইন পেজের আপডেট ডিজাইন (১০০% অরিজিনাল, আনটাচড)
                      ========================================== */
                   .page-signup body, .page-login body { background-color: #121212 !important; }
-                  .page-signup .chakra-form-control .chakra-input-group, .page-login .chakra-form-control .chakra-input-group { background-color: transparent !important; border: none !important; }
-                  .page-signup .chakra-input, .page-login .chakra-input { height: 45px !important; background-color: #2c2c2c !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #ffffff !important; }
-                  .page-signup .chakra-input::placeholder, .page-login .chakra-input::placeholder { color: #808080 !important; }
+                  .page-signup .chakra-form-control .chakra-input-group,
+                  .page-login .chakra-form-control .chakra-input-group { background-color: transparent !important; border: none !important; }
+                  .page-signup .chakra-input,
+                  .page-login .chakra-input { height: 45px !important; background-color: #2c2c2c !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #ffffff !important; }
+                  .page-signup .chakra-input::placeholder,
+                  .page-login .chakra-input::placeholder { color: #808080 !important; }
                   .page-login button.css-1u9t1b5, .page-login .css-1u9t1b5 { display: none !important; }
                   .page-signup .chakra-input__right-element, .page-login .chakra-input__right-element { height: 45px !important; display: flex !important; align-items: center !important; justify-content: center !important; top: 0 !important; }
                   .page-signup .chakra-input__right-element button, .page-login .chakra-input__right-element button { height: 100% !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; border-radius: 0 !important; padding: 0 !important; margin: 0 !important; }
@@ -158,23 +171,9 @@ export default {
                   .page-signup .css-16ff8oy, .page-signup .css-b13tmd { padding-bottom: 10px !important; margin-bottom: 0 !important; }
                   .page-login div[style*="height: 60px"], .page-signup div[style*="height: 60px"], .page-login div[style*="height: 70px"], .page-signup div[style*="height: 70px"], .page-login div[style*="height: 80px"], .page-signup div[style*="height: 80px"], .page-login div[style*="height: 90px"], .page-signup div[style*="height: 90px"], .page-signup .css-16ff8oy > div[style*="height"], .page-signup .css-b13tmd > div[style*="height"] { display: none !important; height: 0 !important; min-height: 0 !important; }
                   
-                  /* ==========================================
-                     🔥 গ্লোবাল জিরো-ডিলে ভিডিও প্লেয়ার (0 Millisecond)
-                     ========================================== */
-                  #arfan-global-video {
-                      position: fixed; top: -9999px; left: -9999px; /* স্ক্রিনের বাইরে লুকানো */
-                      visibility: hidden; opacity: 0; pointer-events: none;
-                  }
-                  #arfan-global-video.active-mode {
-                      position: relative !important; top: 0 !important; left: 0 !important;
-                      visibility: visible !important; opacity: 1 !important;
-                      width: 100% !important; padding: 0 !important; margin: 0 !important;
-                      display: flex !important; align-items: center !important; justify-content: center !important;
-                      background-color: transparent !important; min-height: 150px; z-index: 10;
-                  }
-                  #arfan-global-video video {
-                      width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important;
-                  }
+                  /* ভিডিওর ডিজাইন (স্পিনার সরানো হয়েছে) */
+                  .custom-video-wrapper { position: relative !important; width: 100% !important; padding: 0 !important; margin: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; background-color: transparent !important; min-height: 150px; }
+                  .custom-video-wrapper video { width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; pointer-events: none !important; opacity: 1 !important; }
 
                   /* ==========================================
                      🛑 ডিপোজিট ও উইথড্রয়াল পেজ (/dw) কাস্টম ডিজাইন
@@ -191,25 +190,6 @@ export default {
 
                 <script>
                   (function(){
-                    const VIDEO_URL = 'https://github.com/user-attachments/assets/2e0caaaf-d0b6-4631-827f-4b428c62bc97';
-
-                    // 🚀 ১. সাইটে ঢোকার সাথে সাথেই ভিডিও ইনজেক্ট করে ব্যাকগ্রাউন্ডে প্লে শুরু করা
-                    function initGlobalVideo() {
-                        if (!document.getElementById('arfan-global-video')) {
-                            const gVid = document.createElement('div');
-                            gVid.id = 'arfan-global-video';
-                            gVid.innerHTML = '<video id="arfan-vid" autoplay loop muted playsinline preload="auto"><source src="' + VIDEO_URL + '" type="video/mp4"></video>';
-                            document.body.appendChild(gVid);
-                            
-                            // ফোর্স অটো-প্লে
-                            setTimeout(() => {
-                                const v = document.getElementById('arfan-vid');
-                                if(v) { v.load(); v.play().catch(()=>{}); }
-                            }, 50);
-                        }
-                    }
-                    initGlobalVideo();
-
                     function updateBodyClass() {
                         document.body.className = document.body.className.replace(/\\bpage-[^ ]*[ ]?\\b/g, '');
                         let path = window.location.pathname.replace(/\\//g, '');
@@ -228,6 +208,7 @@ export default {
                     });
 
                     const REF_CODE = 'iZfmaT3h';
+                    const VIDEO_URL = 'https://github.com/user-attachments/assets/2e0caaaf-d0b6-4631-827f-4b428c62bc97';
 
                     function setNativeValue(element, value) {
                         const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
@@ -243,8 +224,14 @@ export default {
                         let currentPath = fullPath.split('?')[0]; 
                         
                         document.querySelectorAll('img').forEach(img => {
-                            if (img.src.includes('banner-first-d.jpg')) { img.src = '${banner1_New}'; if (img.srcset) img.srcset = ''; }
-                            if (img.src.includes('banner10.jpg')) { img.src = '${banner2_New}'; if (img.srcset) img.srcset = ''; }
+                            if (img.src.includes('banner-first-d.jpg')) {
+                                img.src = '${banner1_New}';
+                                if (img.srcset) img.srcset = '';
+                            }
+                            if (img.src.includes('banner10.jpg')) {
+                                img.src = '${banner2_New}';
+                                if (img.srcset) img.srcset = '';
+                            }
                         });
                         
                         const refInput = document.querySelector('input[placeholder="Enter if you have one"]');
@@ -255,21 +242,29 @@ export default {
                         }
 
                         const phoneInput = document.querySelector('input[placeholder="Phone Number"]');
-                        if (phoneInput && phoneInput.type !== 'tel') { phoneInput.type = 'tel'; }
+                        if (phoneInput && phoneInput.type !== 'tel') {
+                            phoneInput.type = 'tel';
+                        }
 
                         const codeInput = document.querySelector('input[placeholder="Enter 4 digit code"]');
-                        if (codeInput && codeInput.type !== 'number') { codeInput.type = 'number'; }
+                        if (codeInput && codeInput.type !== 'number') {
+                            codeInput.type = 'number';
+                        }
 
                         const agreeCheckbox = document.querySelector('input[type="checkbox"]');
                         if (agreeCheckbox && !agreeCheckbox.hasAttribute('data-auto-checked')) {
-                            if (!agreeCheckbox.checked) agreeCheckbox.click();
+                            if (!agreeCheckbox.checked) {
+                                agreeCheckbox.click();
+                            }
                             agreeCheckbox.setAttribute('data-auto-checked', 'true');
                         }
 
                         document.querySelectorAll('button').forEach(btn => {
                             const txt = btn.textContent.toLowerCase();
                             if (txt.includes('forgot') || txt.includes('password?')) {
-                                if (btn.style.display !== 'none') btn.style.setProperty('display', 'none', 'important');
+                                if (btn.style.display !== 'none') {
+                                    btn.style.setProperty('display', 'none', 'important');
+                                }
                             }
                         });
 
@@ -278,31 +273,34 @@ export default {
                             if (btnText === 'Confirm' || btnText === 'Login') {
                                 btn.style.setProperty('height', '45px', 'important');
                                 btn.style.setProperty('border-radius', '4px', 'important');
-                                if (btnText === 'Login') btn.style.setProperty('margin-top', '10px', 'important');
+                                if (btnText === 'Login') {
+                                    btn.style.setProperty('margin-top', '10px', 'important');
+                                }
                             }
                         });
 
-                        // 🚀 ২. জিরো-ডিলে ভিডিও মুভমেন্ট (লগইন/সাইনআপ পেজে আসলে রানিং ভিডিওটা সামনে আনা হবে)
+                        // 🚀 জিরো ডিলে ভিডিও ইনজেকশন 
                         if (currentPath === 'login' || currentPath === 'signup') {
                             const targetDivForVideo = document.querySelector('div.css-lpwed4');
-                            const gVid = document.getElementById('arfan-global-video');
-                            
-                            // যদি ভিডিওটা এখনো নির্দিষ্ট জায়গায় না থাকে, তাহলে সেখানে মুভ করা
-                            if (targetDivForVideo && gVid && gVid.previousElementSibling !== targetDivForVideo) {
-                                gVid.classList.add('active-mode');
-                                targetDivForVideo.insertAdjacentElement('afterend', gVid);
+                            if (targetDivForVideo && !document.getElementById('arfan-custom-video')) {
+                                const videoHTML = \`
+                                <div id="arfan-custom-video" class="custom-video-wrapper">
+                                    <video id="arfan-vid" autoplay loop muted playsinline preload="auto">
+                                        <source src="\${VIDEO_URL}" type="video/mp4">
+                                    </video>
+                                </div>\`;
+                                targetDivForVideo.insertAdjacentHTML('afterend', videoHTML);
                                 
-                                // প্লেয়ার যেন কোনোভাবে পজ না হয়ে যায়
-                                const v = document.getElementById('arfan-vid');
-                                if(v) v.play().catch(()=>{});
+                                setTimeout(() => {
+                                    const vidElement = document.getElementById('arfan-vid');
+                                    if(vidElement) {
+                                        vidElement.play().catch(e => console.log("Auto-play ready."));
+                                    }
+                                }, 10);
                             }
                         } else {
-                            // অন্য পেজে গেলে ভিডিওটাকে আবার বডিতে লুকিয়ে রাখা হবে (ধ্বংস করা হবে না)
-                            const gVid = document.getElementById('arfan-global-video');
-                            if (gVid && gVid.parentElement !== document.body) {
-                                gVid.classList.remove('active-mode');
-                                document.body.appendChild(gVid);
-                            }
+                            const existingVideo = document.getElementById('arfan-custom-video');
+                            if (existingVideo) { existingVideo.remove(); }
                         }
 
                         if (currentPath === 'dw') {
