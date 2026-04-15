@@ -3,7 +3,7 @@ export default {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
     const API_DOMAINS = ["vrnlapi.com"]; 
     const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"]; 
-    const ALL_TARGETS = [...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
+    const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
     
     const url = new URL(request.url);
     const originHeader = request.headers.get("Origin") || `https://${url.host}`;
@@ -166,23 +166,28 @@ export default {
         // সাইন আপ বাটন ইনলাইনে ফোর্স হাইড করা হলো
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা সিকিউরিটি আপডেট: CSS এবং সিকিউর স্ক্রিপ্ট ইনজেকশন এখন জাভাস্ক্রিপ্টের ভেতরে 🔹
+        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং UI কাস্টমাইজেশন 🔹
         if (contentType.includes("text/html")) {
             
-            // 🔹 প্রো-লেভেল শাইনিং ইফেক্ট এবং ইনস্ট্যান্ট ইমেজ প্রি-লোড 🔹
             const rawForceJs = `
-                // ০. ইমেজ প্রি-লোড (ব্রাউজারকে আগেই ইমেজ মেমোরিতে রাখতে বাধ্য করবে, ফলে ফ্লিকার হবে না)
+                // ০. ইমেজ প্রি-লোড
                 var p1 = document.createElement('link'); p1.rel = 'preload'; p1.as = 'image'; p1.href = '${newLogoUrl}';
                 var p2 = document.createElement('link'); p2.rel = 'preload'; p2.as = 'image'; p2.href = '${newLoginBanner}';
                 document.head.appendChild(p1); document.head.appendChild(p2);
 
-                // ১. ডাইনামিক CSS ইনজেকশন (লোগো সাইজ, ভিডিও প্লেয়ার ওভারলে এবং সাইন আপ বাটন পার্মানেন্ট হাইড)
+                // ১. ডাইনামিক CSS ইনজেকশন (UI Update)
                 var s = document.createElement('style');
                 s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; } ' +
                               '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.85) !important; border-radius: 5px !important; overflow: hidden !important; } ' +
                               '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 100% !important; height: auto !important; object-fit: contain !important; } ' +
                               '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: premiumShine 6s infinite ease-in-out; pointer-events: none; } ' +
                               '.signup, a.signup, button.signup,[class*="signup"] { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; pointer-events: none !important; position: absolute !important; } ' +
+                              '/* প্রথম স্ক্রিনশটের পুরানো লিস্ট পার্মানেন্ট হাইড */ ' +
+                              'ul.sideicon, ul.p-0.m-0.sideicon { display: none !important; width: 0 !important; height: 0 !important; opacity: 0 !important; visibility: hidden !important; } ' +
+                              '/* দ্বিতীয় স্ক্রিনশটের মেনুকে বাম দিকে ভার্টিক্যাল (একটার নিচে একটা) করা */ ' +
+                              '.games-slot.new-game-slot.moved-to-sidebar { display: flex !important; flex-direction: column !important; width: 100% !important; height: max-content !important; min-height: calc(100vh - 100px) !important; background: transparent !important; padding: 10px 0 !important; margin: 0 !important; overflow-y: auto !important; align-items: center !important; gap: 10px !important; } ' +
+                              '.games-slot.new-game-slot.moved-to-sidebar::-webkit-scrollbar { display: none !important; } ' +
+                              '.games-slot.new-game-slot.moved-to-sidebar > * { margin: 0 0 15px 0 !important; width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; justify-content: center !important; } ' +
                               '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
 
@@ -191,12 +196,35 @@ export default {
                 sc.src = '/__secure_core.js';
                 document.head.appendChild(sc);
 
-                // ৩. সাইন আপ বাটন সম্পূর্ণ রিমুভ (ফোর্স রিমুভাল - যাতে ক্লিক করার প্রশ্নই না আসে)
+                // ৩. ডাইনামিক UI কাস্টমাইজেশন: বাটন রিমুভ এবং মেনু মুভমেন্ট
                 setInterval(function() {
+                    // ৩.১ সাইন আপ বাটন সম্পূর্ণ রিমুভ
                     document.querySelectorAll('.signup, [href*="signup"]').forEach(function(btn) {
                         btn.remove();
                     });
-                }, 500);
+
+                    // ৩.২ প্রথম স্ক্রিনশটের (Left Sidebar) আইটেমগুলো পার্মানেন্টলি ডিলিট করা
+                    document.querySelectorAll('ul.sideicon, ul.p-0.m-0.sideicon').forEach(function(el) {
+                        el.style.setProperty('display', 'none', 'important');
+                        el.innerHTML = ''; // ভেতরের সব লিস্ট ডিলিট
+                    });
+
+                    // ৩.৩ দ্বিতীয় স্ক্রিনশটের (Top Menu) লিস্ট প্রথম স্ক্রিনশটের জায়গায় মুভ করা
+                    var sideIcon = document.querySelector('ul.sideicon') || document.querySelector('.sideicon');
+                    var topMenu = document.querySelector('.games-slot.new-game-slot');
+                    
+                    if (sideIcon && topMenu && !topMenu.classList.contains('moved-to-sidebar')) {
+                        // Top Menu কে Left Sidebar-এর প্যারেন্টের ভেতর ঢুকিয়ে দেওয়া (যাতে ওটা বামে চলে যায়)
+                        sideIcon.parentNode.insertBefore(topMenu, sideIcon);
+                        topMenu.classList.add('moved-to-sidebar');
+                    }
+                    
+                    // React বা JS যেন পুনরায় লেআউট পরিবর্তন করতে না পারে, তার জন্য ফোর্স ভার্টিক্যাল স্টাইল
+                    if (topMenu && topMenu.classList.contains('moved-to-sidebar')) {
+                        topMenu.style.setProperty('display', 'flex', 'important');
+                        topMenu.style.setProperty('flex-direction', 'column', 'important');
+                    }
+                }, 200);
             `;
 
             // শুধুমাত্র একটিমাত্র এনক্রিপ্টেড ট্যাগ ইনজেক্ট হবে
