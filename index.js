@@ -1,8 +1,8 @@
 export default {
   async fetch(request, env, ctx) {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    const API_DOMAINS = ["vrnlapi.com"]; 
-    const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"]; 
+    const API_DOMAINS =["vrnlapi.com"]; 
+    const MEDIA_AND_SCORE_DOMAINS =["aax-eu1314.com"]; 
     const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
     
     const url = new URL(request.url);
@@ -159,14 +159,14 @@ export default {
         const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
         const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
 
-        // 🔹 আল্ট্রা-ফাস্ট লোডিং: শক্তিশালী Regex দিয়ে React এর জেনারেট করা সকল হ্যাশড পাথ ডিরেক্ট রিপ্লেস 🔹
+        // 🔹 আল্ট্রা-ফাস্ট লোডিং: শক্তিশালী Regex দিয়ে ডিরেক্ট রিপ্লেস
         text = text.replace(/([a-zA-Z0-9_./-]*velki-logo[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLogoUrl);
         text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
 
         // সাইন আপ বাটন ইনলাইনে ফোর্স হাইড করা হলো
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং UI কাস্টমাইজেশন 🔹
+        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং প্রিমিয়াম UI কাস্টমাইজেশন 🔹
         if (contentType.includes("text/html")) {
             
             const rawForceJs = `
@@ -181,13 +181,24 @@ export default {
                               '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.85) !important; border-radius: 5px !important; overflow: hidden !important; } ' +
                               '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 100% !important; height: auto !important; object-fit: contain !important; } ' +
                               '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: premiumShine 6s infinite ease-in-out; pointer-events: none; } ' +
-                              '.signup, a.signup, button.signup,[class*="signup"] { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; pointer-events: none !important; position: absolute !important; } ' +
-                              '/* প্রথম স্ক্রিনশটের পুরানো লিস্ট পার্মানেন্ট হাইড */ ' +
-                              'ul.sideicon, ul.p-0.m-0.sideicon { display: none !important; width: 0 !important; height: 0 !important; opacity: 0 !important; visibility: hidden !important; } ' +
-                              '/* দ্বিতীয় স্ক্রিনশটের মেনুকে বাম দিকে ভার্টিক্যাল (একটার নিচে একটা) করা */ ' +
-                              '.games-slot.new-game-slot.moved-to-sidebar { display: flex !important; flex-direction: column !important; width: 100% !important; height: max-content !important; min-height: calc(100vh - 100px) !important; background: transparent !important; padding: 10px 0 !important; margin: 0 !important; overflow-y: auto !important; align-items: center !important; gap: 10px !important; } ' +
-                              '.games-slot.new-game-slot.moved-to-sidebar::-webkit-scrollbar { display: none !important; } ' +
-                              '.games-slot.new-game-slot.moved-to-sidebar > * { margin: 0 0 15px 0 !important; width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; justify-content: center !important; } ' +
+                              
+                              '/* ---------------------------------------------------------------------------------- */ ' +
+                              '/* নতুন লেফট সাইডবার ডিজাইন এবং পুরনো মেনু সম্পূর্ণ হাইড */ ' +
+                              '/* ---------------------------------------------------------------------------------- */ ' +
+                              '.signup, a.signup, button.signup,[class*="signup"] { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; position: absolute !important; } ' +
+                              '.games-slot.new-game-slot, ul.sideicon, ul.p-0.m-0.sideicon, .tab-indicator-new { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0 !important; width: 0 !important; position: absolute !important; pointer-events: none !important; } ' +
+                              
+                              '#ultra-custom-sidebar { position: fixed !important; top: 60px !important; left: 0 !important; width: 75px !important; height: calc(100vh - 60px) !important; background-color: #1B1F23 !important; z-index: 999999 !important; display: flex !important; flex-direction: column !important; align-items: center !important; padding-top: 20px !important; gap: 20px !important; overflow-y: auto !important; box-shadow: 2px 0 10px rgba(0,0,0,0.5) !important; } ' +
+                              '#ultra-custom-sidebar::-webkit-scrollbar { display: none !important; } ' +
+                              
+                              '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 5px 0 !important; } ' +
+                              '.custom-sidebar-btn.active, .custom-sidebar-btn:hover { color: #F6C143 !important; transform: scale(1.05) !important; } ' +
+                              '.custom-sidebar-btn i { font-size: 2.2rem !important; font-family: icomoon !important; margin-bottom: 5px !important; } ' +
+                              '.custom-sidebar-btn span { font-size: 11px !important; font-weight: 600 !important; } ' +
+                              
+                              '/* মূল বডি ডান দিকে শিফট করা যাতে কন্টেন্ট কেটে না যায় */ ' +
+                              'body { padding-left: 75px !important; } ' +
+                              
                               '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
 
@@ -196,35 +207,64 @@ export default {
                 sc.src = '/__secure_core.js';
                 document.head.appendChild(sc);
 
-                // ৩. ডাইনামিক UI কাস্টমাইজেশন: বাটন রিমুভ এবং মেনু মুভমেন্ট
+                // ৩. ডাইনামিক UI কাস্টমাইজেশন এবং রিয়েল-টাইম ক্লিক ইভেন্ট হ্যান্ডলার
                 setInterval(function() {
-                    // ৩.১ সাইন আপ বাটন সম্পূর্ণ রিমুভ
-                    document.querySelectorAll('.signup, [href*="signup"]').forEach(function(btn) {
-                        btn.remove();
-                    });
+                    // ৩.১ সাইন আপ বাটন ফোর্স রিমুভ (আজীবন গায়েব)
+                    document.querySelectorAll('.signup, [href*="signup"]').forEach(btn => btn.remove());
 
-                    // ৩.২ প্রথম স্ক্রিনশটের (Left Sidebar) আইটেমগুলো পার্মানেন্টলি ডিলিট করা
-                    document.querySelectorAll('ul.sideicon, ul.p-0.m-0.sideicon').forEach(function(el) {
-                        el.style.setProperty('display', 'none', 'important');
-                        el.innerHTML = ''; // ভেতরের সব লিস্ট ডিলিট
-                    });
+                    // ৩.২ কাস্টম প্রিমিয়াম সাইডবার তৈরি
+                    if (!document.getElementById('ultra-custom-sidebar')) {
+                        
+                        // আপনার দেওয়া ক্লাস নেম এবং আইডি হুবহু ব্যবহার করা হয়েছে
+                        const menuItems =[
+                            { name: 'Sports', class: 'icon-game-hall-sports' },
+                            { name: 'Live', class: 'icon-game-hall-live' },
+                            { name: 'Table', class: 'icon-game-hall-table' },
+                            { name: 'Slot', class: 'icon-game-hall-slot' },
+                            { name: 'Fishing', class: 'icon-game-hall-fishing' },
+                            { name: 'Egame', class: 'icon-game-hall-egame' }
+                        ];
+                        
+                        const sidebar = document.createElement('div');
+                        sidebar.id = 'ultra-custom-sidebar';
+                        
+                        menuItems.forEach((item, idx) => {
+                            const btn = document.createElement('div');
+                            btn.className = 'custom-sidebar-btn' + (idx === 0 ? ' active' : '');
+                            // হুবহু অরিজিনাল আইকন ক্লাস দেওয়া হয়েছে
+                            btn.innerHTML = '<i class="icon ' + item.class + '"></i><span>' + item.name + '</span>';
+                            
+                            btn.onclick = () => {
+                                // ভিজ্যুয়াল অ্যাক্টিভ স্ট্যাটাস চেঞ্জ
+                                document.querySelectorAll('.custom-sidebar-btn').forEach(b => b.classList.remove('active'));
+                                btn.classList.add('active');
+                                
+                                // মূল হাইড করা মেনুতে ক্লিক ট্রিগার করা (যাতে আপনার সেকশনগুলো কাজ করে)
+                                const realIcon = document.querySelector('.games-slot.new-game-slot .' + item.class);
+                                if (realIcon) {
+                                    // React এর স্পেশাল ক্লিক রিকোয়ারমেন্ট ফুলফিলমেন্ট
+                                    const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+                                    realIcon.dispatchEvent(clickEvent);
+                                    if(realIcon.parentElement) realIcon.parentElement.dispatchEvent(clickEvent);
+                                    realIcon.click();
+                                } else {
+                                    // ফলব্যাক: যদি ক্লাস দিয়ে খুঁজে না পায়, টেক্সট দিয়ে খুঁজে ক্লিক করবে
+                                    const allOriginalItems = document.querySelectorAll('.games-slot.new-game-slot > div, .games-slot.new-game-slot .swiper-slide');
+                                    allOriginalItems.forEach(el => {
+                                        if (el.innerText.trim().toLowerCase() === item.name.toLowerCase()) {
+                                            const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+                                            el.dispatchEvent(clickEvent);
+                                            el.click();
+                                        }
+                                    });
+                                }
+                            };
+                            sidebar.appendChild(btn);
+                        });
 
-                    // ৩.৩ দ্বিতীয় স্ক্রিনশটের (Top Menu) লিস্ট প্রথম স্ক্রিনশটের জায়গায় মুভ করা
-                    var sideIcon = document.querySelector('ul.sideicon') || document.querySelector('.sideicon');
-                    var topMenu = document.querySelector('.games-slot.new-game-slot');
-                    
-                    if (sideIcon && topMenu && !topMenu.classList.contains('moved-to-sidebar')) {
-                        // Top Menu কে Left Sidebar-এর প্যারেন্টের ভেতর ঢুকিয়ে দেওয়া (যাতে ওটা বামে চলে যায়)
-                        sideIcon.parentNode.insertBefore(topMenu, sideIcon);
-                        topMenu.classList.add('moved-to-sidebar');
+                        document.body.appendChild(sidebar);
                     }
-                    
-                    // React বা JS যেন পুনরায় লেআউট পরিবর্তন করতে না পারে, তার জন্য ফোর্স ভার্টিক্যাল স্টাইল
-                    if (topMenu && topMenu.classList.contains('moved-to-sidebar')) {
-                        topMenu.style.setProperty('display', 'flex', 'important');
-                        topMenu.style.setProperty('flex-direction', 'column', 'important');
-                    }
-                }, 200);
+                }, 300);
             `;
 
             // শুধুমাত্র একটিমাত্র এনক্রিপ্টেড ট্যাগ ইনজেক্ট হবে
