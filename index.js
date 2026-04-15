@@ -9,7 +9,7 @@ export default {
     const originHeader = request.headers.get("Origin") || `https://${url.host}`;
 
     // =========================================================================
-    // ⚙️ অটোমেটিক প্যাকার ইঞ্জিন: আপনি যত কোডই দিন, এটা অটোমেটিকভাবে এনক্রিপ্ট করবে
+    // ⚙️ অটোমেটিক প্যাকার ইঞ্জিন
     // =========================================================================
     const autoPackJS = (rawCode) => {
         const obfuscated = btoa(unescape(encodeURIComponent(rawCode)));
@@ -21,7 +21,6 @@ export default {
     // ==========================================
     if (url.pathname === '/__secure_core.js') {
         const referer = request.headers.get("Referer");
-        
         if (!referer || !referer.includes(url.hostname)) {
             return new Response(`console.log("Access Denied: Nice try, but you can't copy this code! 😎");`, {
                 status: 200,
@@ -63,13 +62,9 @@ export default {
         `;
         
         const secretCode = autoPackJS(rawJs);
-
         return new Response(secretCode, {
             status: 200,
-            headers: { 
-                "Content-Type": "application/javascript",
-                "Cache-Control": "no-cache, no-store, must-revalidate"
-            }
+            headers: { "Content-Type": "application/javascript", "Cache-Control": "no-cache, no-store, must-revalidate" }
         });
     }
 
@@ -89,9 +84,7 @@ export default {
     // ২. API এবং Video Stream প্রক্সি
     if (url.pathname.startsWith('/__api_proxy/')) {
       let actualApiUrl = request.url.substring(request.url.indexOf('/__api_proxy/') + 13);
-      if (!actualApiUrl.startsWith('http')) {
-         actualApiUrl = 'https://' + actualApiUrl;
-      }
+      if (!actualApiUrl.startsWith('http')) { actualApiUrl = 'https://' + actualApiUrl; }
       try {
         const targetApi = new URL(actualApiUrl);
         const apiReq = new Request(targetApi.toString(), request);
@@ -106,9 +99,7 @@ export default {
         if (contentType.includes("mpegurl") || contentType.includes("m3u8") || url.pathname.endsWith(".m3u8")) {
             let m3u8Text = await apiRes.text();
             const proxyPrefix = `https://${url.host}/__api_proxy/`;
-            ALL_TARGETS.forEach(api => {
-                m3u8Text = m3u8Text.replaceAll(`https://${api}`, `${proxyPrefix}https://${api}`);
-            });
+            ALL_TARGETS.forEach(api => { m3u8Text = m3u8Text.replaceAll(`https://${api}`, `${proxyPrefix}https://${api}`); });
             const modHeaders = new Headers(apiRes.headers);
             modHeaders.delete("content-length"); 
             newApiRes = new Response(m3u8Text, { status: apiRes.status, statusText: apiRes.statusText, headers: modHeaders });
@@ -120,9 +111,7 @@ export default {
         finalHeaders.set("Access-Control-Allow-Origin", originHeader);
         finalHeaders.set("Access-Control-Allow-Credentials", "true");
         return new Response(newApiRes.body, { status: newApiRes.status, statusText: newApiRes.statusText, headers: finalHeaders });
-      } catch (e) {
-        return new Response(JSON.stringify({ error: "Proxy Error" }), { status: 500 });
-      }
+      } catch (e) { return new Response(JSON.stringify({ error: "Proxy Error" }), { status: 500 }); }
     }
 
     // ৩. মেইন ওয়েবসাইট লোড করা
@@ -159,14 +148,14 @@ export default {
         const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
         const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
 
-        // 🔹 আল্ট্রা-ফাস্ট লোডিং: শক্তিশালী Regex দিয়ে ডিরেক্ট রিপ্লেস
+        // আল্ট্রা-ফাস্ট লোডিং
         text = text.replace(/([a-zA-Z0-9_./-]*velki-logo[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLogoUrl);
         text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
 
         // সাইন আপ বাটন ইনলাইনে ফোর্স হাইড করা হলো
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং প্রিমিয়াম UI কাস্টমাইজেশন 🔹
+        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং aside এর ভেতরে ইনজেকশন 🔹
         if (contentType.includes("text/html")) {
             
             const rawForceJs = `
@@ -183,21 +172,22 @@ export default {
                               '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: premiumShine 6s infinite ease-in-out; pointer-events: none; } ' +
                               
                               '/* ---------------------------------------------------------------------------------- */ ' +
-                              '/* নতুন লেফট সাইডবার ডিজাইন এবং পুরনো মেনু সম্পূর্ণ হাইড */ ' +
+                              '/* নতুন aside ডিজাইন এবং পুরনো মেনু সম্পূর্ণ হাইড */ ' +
                               '/* ---------------------------------------------------------------------------------- */ ' +
                               '.signup, a.signup, button.signup,[class*="signup"] { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; position: absolute !important; } ' +
+                              
+                              '/* পুরনো উপরের মেনু এবং aside এর ভেতরের পুরানো লিস্ট হাইড করা */ ' +
                               '.games-slot.new-game-slot, ul.sideicon, ul.p-0.m-0.sideicon, .tab-indicator-new { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0 !important; width: 0 !important; position: absolute !important; pointer-events: none !important; } ' +
                               
-                              '#ultra-custom-sidebar { position: fixed !important; top: 60px !important; left: 0 !important; width: 75px !important; height: calc(100vh - 60px) !important; background-color: #1B1F23 !important; z-index: 999999 !important; display: flex !important; flex-direction: column !important; align-items: center !important; padding-top: 20px !important; gap: 20px !important; overflow-y: auto !important; box-shadow: 2px 0 10px rgba(0,0,0,0.5) !important; } ' +
-                              '#ultra-custom-sidebar::-webkit-scrollbar { display: none !important; } ' +
+                              '/* সরাসরি .games-inner aside কে ধরে তার ডিজাইন কাস্টমাইজ করা (আপনার স্ক্রিনশট ২ অনুযায়ী) */ ' +
+                              '.games-inner aside { background-color: #1B1F23 !important; max-width: 75px !important; flex-basis: 75px !important; padding: 10px 0 !important; border-radius: 6px !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 15px !important; overflow-y: auto !important; height: auto !important; min-height: 500px !important; } ' +
+                              '.games-inner aside::-webkit-scrollbar { display: none !important; } ' +
                               
-                              '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 5px 0 !important; } ' +
-                              '.custom-sidebar-btn.active, .custom-sidebar-btn:hover { color: #F6C143 !important; transform: scale(1.05) !important; } ' +
-                              '.custom-sidebar-btn i { font-size: 2.2rem !important; font-family: icomoon !important; margin-bottom: 5px !important; } ' +
+                              '/* নতুন মেনু বাটনগুলোর ডিজাইন */ ' +
+                              '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 8px 0 !important; text-align: center !important; } ' +
+                              '.custom-sidebar-btn.active, .custom-sidebar-btn:hover { color: #F6C143 !important; transform: scale(1.08) !important; } ' +
+                              '.custom-sidebar-btn i { font-size: 2rem !important; font-family: icomoon !important; margin-bottom: 5px !important; } ' +
                               '.custom-sidebar-btn span { font-size: 11px !important; font-weight: 600 !important; } ' +
-                              
-                              '/* মূল বডি ডান দিকে শিফট করা যাতে কন্টেন্ট কেটে না যায় */ ' +
-                              'body { padding-left: 75px !important; } ' +
                               
                               '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
@@ -207,15 +197,22 @@ export default {
                 sc.src = '/__secure_core.js';
                 document.head.appendChild(sc);
 
-                // ৩. ডাইনামিক UI কাস্টমাইজেশন এবং রিয়েল-টাইম ক্লিক ইভেন্ট হ্যান্ডলার
+                // ৩. ডাইনামিক UI কাস্টমাইজেশন এবং aside এর ভেতরে ইনজেকশন
                 setInterval(function() {
                     // ৩.১ সাইন আপ বাটন ফোর্স রিমুভ (আজীবন গায়েব)
                     document.querySelectorAll('.signup, [href*="signup"]').forEach(btn => btn.remove());
 
-                    // ৩.২ কাস্টম প্রিমিয়াম সাইডবার তৈরি
-                    if (!document.getElementById('ultra-custom-sidebar')) {
+                    // ৩.২ aside খুঁজে তার ভেতরে আমাদের মেনু ঢোকানো
+                    const asideContainer = document.querySelector('.games-inner aside');
+                    
+                    if (asideContainer && !document.getElementById('ultra-custom-inner')) {
                         
-                        // আপনার দেওয়া ক্লাস নেম এবং আইডি হুবহু ব্যবহার করা হয়েছে
+                        // aside এর ভেতরে থাকা অরিজিনাল লিস্টগুলো (In Play, Today) লুকিয়ে ফেলা
+                        asideContainer.querySelectorAll('ul').forEach(ul => {
+                            ul.style.setProperty('display', 'none', 'important');
+                        });
+                        
+                        // আপনার দেওয়া ক্লাস নেম দিয়ে মেনু আইটেম তৈরি
                         const menuItems =[
                             { name: 'Sports', class: 'icon-game-hall-sports' },
                             { name: 'Live', class: 'icon-game-hall-live' },
@@ -225,13 +222,13 @@ export default {
                             { name: 'Egame', class: 'icon-game-hall-egame' }
                         ];
                         
-                        const sidebar = document.createElement('div');
-                        sidebar.id = 'ultra-custom-sidebar';
+                        const sidebarInner = document.createElement('div');
+                        sidebarInner.id = 'ultra-custom-inner';
+                        sidebarInner.style.cssText = 'display: flex; flex-direction: column; align-items: center; width: 100%; gap: 10px; padding-top: 5px;';
                         
                         menuItems.forEach((item, idx) => {
                             const btn = document.createElement('div');
                             btn.className = 'custom-sidebar-btn' + (idx === 0 ? ' active' : '');
-                            // হুবহু অরিজিনাল আইকন ক্লাস দেওয়া হয়েছে
                             btn.innerHTML = '<i class="icon ' + item.class + '"></i><span>' + item.name + '</span>';
                             
                             btn.onclick = () => {
@@ -239,16 +236,14 @@ export default {
                                 document.querySelectorAll('.custom-sidebar-btn').forEach(b => b.classList.remove('active'));
                                 btn.classList.add('active');
                                 
-                                // মূল হাইড করা মেনুতে ক্লিক ট্রিগার করা (যাতে আপনার সেকশনগুলো কাজ করে)
+                                // ব্যাকগ্রাউন্ডে অরিজিনাল মেনুতে ক্লিক করা
                                 const realIcon = document.querySelector('.games-slot.new-game-slot .' + item.class);
                                 if (realIcon) {
-                                    // React এর স্পেশাল ক্লিক রিকোয়ারমেন্ট ফুলফিলমেন্ট
                                     const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
                                     realIcon.dispatchEvent(clickEvent);
                                     if(realIcon.parentElement) realIcon.parentElement.dispatchEvent(clickEvent);
                                     realIcon.click();
                                 } else {
-                                    // ফলব্যাক: যদি ক্লাস দিয়ে খুঁজে না পায়, টেক্সট দিয়ে খুঁজে ক্লিক করবে
                                     const allOriginalItems = document.querySelectorAll('.games-slot.new-game-slot > div, .games-slot.new-game-slot .swiper-slide');
                                     allOriginalItems.forEach(el => {
                                         if (el.innerText.trim().toLowerCase() === item.name.toLowerCase()) {
@@ -259,15 +254,15 @@ export default {
                                     });
                                 }
                             };
-                            sidebar.appendChild(btn);
+                            sidebarInner.appendChild(btn);
                         });
 
-                        document.body.appendChild(sidebar);
+                        // নতুন মেনু aside এর ভেতরে অ্যাড করা হলো
+                        asideContainer.appendChild(sidebarInner);
                     }
                 }, 300);
             `;
 
-            // শুধুমাত্র একটিমাত্র এনক্রিপ্টেড ট্যাগ ইনজেক্ট হবে
             const encryptedJsTag = `<script>${autoPackJS(rawForceJs)}</script>`;
             
             if (text.includes('<head>')) {
