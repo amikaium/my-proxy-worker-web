@@ -74,7 +74,7 @@ async function handleRequest(request) {
 }
 
 // ==========================================
-// SKY X HTML UI (Header > Slider > Ticker > Main Layout)
+// FULL HTML UI 
 // ==========================================
 const customHTML = `
 <!DOCTYPE html>
@@ -82,17 +82,17 @@ const customHTML = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SKY X - Premium Gaming</title>
+    <title>SKY X - Premium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Poppins:wght@600;700;800;900&display=swap');
 
         :root {
-            --bg-dark: #0f172a;        /* Main Navy Background */
-            --header-bg: #0b2246;      /* Header Color */
-            --sidebar-bg: #061933;     /* Sidebar Color */
-            --primary-blue: #1e88e5;   /* Button & Highlight Blue */
-            --ticker-bg: #1a237e;      /* Marquee background */
+            --bg-dark: #0f172a;        
+            --header-bg: #0b2246;      
+            --sidebar-bg: #061933;     
+            --primary-blue: #1e88e5;   
+            --ticker-bg: #1a237e;      
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans Bengali', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -100,12 +100,11 @@ const customHTML = `
         
         .app-container { width: 100%; max-width: 480px; background-color: var(--bg-dark); height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
         
-        /* --- 1. Header --- */
+        /* --- Header --- */
         .header { background-color: var(--header-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; height: 60px; flex-shrink: 0; z-index: 20; position: relative; }
         .logo { font-size: 26px; font-weight: 900; font-style: italic; display: flex; align-items: center; font-family: 'Poppins', sans-serif; }
         .logo .part-1 { color: #ffffff; font-family: 'Poppins', sans-serif; } 
         .logo .part-2 { color: #38bdf8; font-family: 'Poppins', sans-serif; }
-        
         .login-btn { background-color: var(--primary-blue); color: white; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
 
         /* --- Full Screen Iframe --- */
@@ -115,7 +114,7 @@ const customHTML = `
 
         #main-content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- 2. Slider --- */
+        /* --- Slider --- */
         .slider-container { width: 100%; height: 130px; overflow: hidden; position: relative; flex-shrink: 0; background-color: var(--header-bg); }
         .slider-track { display: flex; width: 300%; height: 100%; transition: transform 0.5s ease-in-out; }
         .slide { width: 100%; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding: 15px; padding-right: 30px; color: white; text-align: right; }
@@ -125,32 +124,27 @@ const customHTML = `
         .slide-content h2 { font-size: 20px; margin-bottom: 4px; font-weight: 800; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         .slide-content h2 span { color: #ffeb3b; font-weight: 900;}
         .slide-content p { font-size: 12px; color: #e0f7fa; }
-        
         .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
         .dot { width: 6px; height: 6px; background: rgba(255,255,255,0.4); border-radius: 50%; transition: 0.3s; }
         .dot.active { background: #ffffff; width: 16px; border-radius: 4px; }
 
-        /* --- 3. News Ticker (Marquee) --- */
+        /* --- News Ticker --- */
         .announcement-bar { background-color: var(--ticker-bg); color: white; display: flex; align-items: center; height: 36px; flex-shrink: 0; border-bottom: 1px solid #283593; }
         .megaphone-icon { background-color: var(--header-bg); width: 40px; height: 100%; display: flex; justify-content: center; align-items: center; color: #ffca28; z-index: 2; box-shadow: 2px 0 5px rgba(0,0,0,0.3); font-size: 16px; }
         .scrolling-text { flex: 1; overflow: hidden; font-size: 12px; font-weight: 500; padding-top: 2px; }
 
-        /* --- 4. Main Layout (Sidebar + Content) --- */
+        /* --- Main Layout --- */
         .main-layout { display: flex; flex: 1; overflow: hidden; }
         
-        /* Left Sidebar */
         .sidebar { width: 75px; background-color: var(--sidebar-bg); overflow-y: auto; flex-shrink: 0; padding-top: 5px; }
         .sidebar::-webkit-scrollbar { width: 0; }
-        
         .nav-item-left { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px 4px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.02); cursor: pointer; transition: 0.2s; }
         .nav-item-left i { font-size: 22px; margin-bottom: 6px; }
         .nav-item-left span { font-size: 11px; font-weight: 600; text-align: center; }
-        
         .nav-item-left.active { background-color: #1e3a8a; color: #ffffff; position: relative; }
         .nav-item-left.active i { color: #38bdf8; }
         .nav-item-left.active::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background-color: #38bdf8; }
 
-        /* Right Game Feed */
         .game-feed { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 80px; }
         .game-feed::-webkit-scrollbar { width: 0; }
         
@@ -158,55 +152,84 @@ const customHTML = `
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* List Cards (Like your screenshot) */
         .list-card {
-            width: 100%;
-            height: 130px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 900;
-            color: white;
-            font-family: 'Poppins', sans-serif;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-            overflow: hidden;
-            cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.05);
+            width: 100%; height: 130px; border-radius: 8px; margin-bottom: 12px; position: relative; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: white; font-family: 'Poppins', sans-serif; text-shadow: 2px 2px 5px rgba(0,0,0,0.8); box-shadow: 0 4px 8px rgba(0,0,0,0.5); overflow: hidden; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);
         }
+        .card-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); font-size: 11px; padding: 6px; text-align: center; letter-spacing: 1px; font-weight: 700; color: #e0f2fe; text-transform: uppercase; }
 
-        .card-label {
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(5px);
-            font-size: 11px;
-            padding: 6px;
-            text-align: center;
-            letter-spacing: 1px;
-            font-weight: 700;
-            color: #e0f2fe;
-            text-transform: uppercase;
-        }
-
-        /* Beautiful Gradients matching your design */
         .bg-superace { background: linear-gradient(135deg, #4d7c0f, #eab308); }
         .bg-crazytime { background: linear-gradient(135deg, #7e22ce, #be185d); }
         .bg-fortune { background: linear-gradient(135deg, #c2410c, #f59e0b); }
         .bg-sports1 { background: linear-gradient(135deg, #0f172a, #0284c7); }
         .bg-sports2 { background: linear-gradient(to right, #1e1b4b, #312e81); }
 
-        /* --- Bottom Navigation --- */
-        .bottom-nav { position: absolute; bottom: 0; width: 100%; height: 60px; background-color: var(--header-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #1e3a8a; z-index: 20; }
-        .bottom-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-decoration: none; width: 20%; height: 100%; position: relative; transition: all 0.2s ease; cursor: pointer; }
-        .bottom-nav-item i { font-size: 20px; margin-bottom: 4px; }
+        /* =========================================
+           NEW 1XBET STYLE BOTTOM NAVIGATION 
+           ========================================= */
+        .bottom-nav { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            height: 65px; 
+            background-color: #051024; /* ডার্ক ব্যাকগ্রাউন্ড */
+            display: flex; 
+            justify-content: space-around; 
+            align-items: flex-end; /* আইটেমগুলো নিচ থেকে শুরু হবে */
+            padding-bottom: 8px; 
+            z-index: 20; 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5); 
+        }
+
+        .bottom-nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-end; 
+            color: #64748b; 
+            text-decoration: none; 
+            width: 20%; 
+            height: 100%; 
+            position: relative; 
+            transition: all 0.2s ease; 
+            cursor: pointer; 
+        }
+        
+        .bottom-nav-item i { font-size: 20px; margin-bottom: 4px; transition: color 0.2s; }
         .bottom-nav-item span { font-size: 11px; font-weight: 600; }
-        .bottom-nav-item.active { color: #38bdf8; }
-        .bottom-nav-item.active::after { content: ''; position: absolute; top: -1px; width: 35%; height: 3px; background-color: #38bdf8; border-radius: 0 0 4px 4px; }
+        
+        /* Active State */
+        .bottom-nav-item.active { color: #ffffff; }
+        .bottom-nav-item.active i { color: #38bdf8; }
+
+        /* Special Center HOME Button (Bulging Effect) */
+        .home-btn { justify-content: flex-end; }
+        .home-btn span { margin-top: auto; }
+        
+        .home-icon-wrapper { 
+            position: absolute; 
+            top: -22px; /* ওপরের দিকে বেরিয়ে থাকবে */
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 54px; 
+            height: 54px; 
+            background: linear-gradient(135deg, #0ea5e9, #2563eb); /* নীল বৃত্ত */
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 6px solid #0f172a; /* ব্যাকগ্রাউন্ড কালারের বর্ডার যাতে মনে হয় কেটে বসেছে */
+            box-shadow: 0 -2px 6px rgba(0,0,0,0.3); 
+            z-index: 21; 
+            transition: transform 0.2s;
+        }
+        .home-icon-wrapper:active { transform: translateX(-50%) scale(0.95); }
+        
+        .bottom-nav-item.active .home-icon-wrapper i { color: #ffffff; }
+        .home-icon-wrapper i { 
+            font-size: 22px !important; 
+            margin-bottom: 0 !important; 
+            color: rgba(255,255,255,0.9); 
+        }
 
     </style>
 </head>
@@ -299,16 +322,34 @@ const customHTML = `
     </div>
 
     <nav class="bottom-nav">
-        <div class="bottom-nav-item" onclick="openIframe('/sports'); setActiveNav(this)"><i class="fa-solid fa-chart-line"></i><span>Exch</span></div>
-        <div class="bottom-nav-item" onclick="openIframe('/sports'); setActiveNav(this)"><i class="fa-regular fa-clock"></i><span>In-Play</span></div>
-        <div class="bottom-nav-item active" onclick="closeIframe(); setActiveNav(this)"><i class="fa-solid fa-house"></i><span>Home</span></div>
-        <div class="bottom-nav-item" onclick="openIframe('/sports'); setActiveNav(this)"><i class="fa-solid fa-users"></i><span>Sports</span></div>
-        <div class="bottom-nav-item" onclick="openIframe('/login'); setActiveNav(this)"><i class="fa-regular fa-circle-user"></i><span>Account</span></div>
+        <div class="bottom-nav-item" onclick="openIframe('/sports'); setActiveNav(this)">
+            <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg);"></i>
+            <span>Exch</span>
+        </div>
+        <div class="bottom-nav-item" onclick="openIframe('/sports'); setActiveNav(this)">
+            <i class="fa-regular fa-clock"></i>
+            <span>In-Play</span>
+        </div>
+        
+        <div class="bottom-nav-item active home-btn" onclick="closeIframe(); setActiveNav(this)">
+            <div class="home-icon-wrapper">
+                <i class="fa-solid fa-house"></i>
+            </div>
+            <span>Home</span>
+        </div>
+        
+        <div class="bottom-nav-item" onclick="openIframe('/sports'); setActiveNav(this)">
+            <i class="fa-solid fa-users"></i>
+            <span>Sports</span>
+        </div>
+        <div class="bottom-nav-item" onclick="openIframe('/login'); setActiveNav(this)">
+            <i class="fa-regular fa-circle-user"></i>
+            <span>Account</span>
+        </div>
     </nav>
 </div>
 
 <script>
-    // --- IFRAME LOGIC ---
     const iframeContainer = document.getElementById('iframe-container');
     const contentFrame = document.getElementById('content-frame');
 
@@ -341,7 +382,6 @@ const customHTML = `
         closeIframe();
     });
 
-    // --- UI LOGIC ---
     function setActiveNav(el) {
         document.querySelectorAll('.bottom-nav-item').forEach(n => n.classList.remove('active'));
         el.classList.add('active');
@@ -354,7 +394,6 @@ const customHTML = `
         el.classList.add('active');
     }
 
-    // --- AUTO SLIDER LOGIC ---
     let currentSlide = 0;
     const totalSlides = 3;
     const sliderTrack = document.getElementById('sliderTrack');
