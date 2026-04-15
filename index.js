@@ -1,8 +1,8 @@
 export default {
   async fetch(request, env, ctx) {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    const API_DOMAINS =["vrnlapi.com"]; 
-    const MEDIA_AND_SCORE_DOMAINS =["aax-eu1314.com"]; 
+    const API_DOMAINS = ["vrnlapi.com"]; 
+    const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"]; 
     const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
     
     const url = new URL(request.url);
@@ -141,78 +141,75 @@ export default {
             text = text.replaceAll(originalUrl.replace(/\//g, '\\/'), proxyUrl.replace(/\//g, '\\/'));
         });
 
-        // ডোমেইন নেম রিপ্লেসমেন্ট
         text = text.replaceAll(/velki123\.win/gi, "velkix.live");
         text = text.replaceAll(/velki123/gi, "velkix.live");
 
         const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
         const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
 
-        // আল্ট্রা-ফাস্ট লোডিং
         text = text.replace(/([a-zA-Z0-9_./-]*velki-logo[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLogoUrl);
         text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
-
-        // সাইন আপ বাটন ইনলাইনে ফোর্স হাইড করা হলো
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং aside এর ভেতরে ইনজেকশন 🔹
+        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং UI ফিক্স 🔹
         if (contentType.includes("text/html")) {
             
             const rawForceJs = `
-                // ০. ইমেজ প্রি-লোড
                 var p1 = document.createElement('link'); p1.rel = 'preload'; p1.as = 'image'; p1.href = '${newLogoUrl}';
                 var p2 = document.createElement('link'); p2.rel = 'preload'; p2.as = 'image'; p2.href = '${newLoginBanner}';
                 document.head.appendChild(p1); document.head.appendChild(p2);
 
-                // ১. ডাইনামিক CSS ইনজেকশন (UI Update)
                 var s = document.createElement('style');
                 s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; } ' +
                               '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.85) !important; border-radius: 5px !important; overflow: hidden !important; } ' +
                               '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 100% !important; height: auto !important; object-fit: contain !important; } ' +
                               '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: premiumShine 6s infinite ease-in-out; pointer-events: none; } ' +
                               
-                              '/* ---------------------------------------------------------------------------------- */ ' +
-                              '/* নতুন aside ডিজাইন এবং পুরনো মেনু সম্পূর্ণ হাইড */ ' +
-                              '/* ---------------------------------------------------------------------------------- */ ' +
                               '.signup, a.signup, button.signup,[class*="signup"] { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; position: absolute !important; } ' +
-                              
-                              '/* পুরনো উপরের মেনু এবং aside এর ভেতরের পুরানো লিস্ট হাইড করা */ ' +
                               '.games-slot.new-game-slot, ul.sideicon, ul.p-0.m-0.sideicon, .tab-indicator-new { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0 !important; width: 0 !important; position: absolute !important; pointer-events: none !important; } ' +
                               
-                              '/* সরাসরি .games-inner aside কে ধরে তার ডিজাইন কাস্টমাইজ করা (আপনার স্ক্রিনশট ২ অনুযায়ী) */ ' +
-                              '.games-inner aside { background-color: #1B1F23 !important; max-width: 75px !important; flex-basis: 75px !important; padding: 10px 0 !important; border-radius: 6px !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 15px !important; overflow-y: auto !important; height: auto !important; min-height: 500px !important; } ' +
+                              '/* ---------------------------------------------------------------------------------- */ ' +
+                              '/* 1. Sticky Sidebar Fix (স্ট্যাটিক পজিশন এবং উইথ বাড়ানো হয়েছে) */ ' +
+                              '/* ---------------------------------------------------------------------------------- */ ' +
+                              '.games-inner aside { ' +
+                              '   background-color: #1B1F23 !important; ' +
+                              '   width: 88px !important; min-width: 88px !important; max-width: 88px !important; flex-basis: 88px !important; ' +
+                              '   padding: 10px 0 !important; border-radius: 6px !important; ' +
+                              '   display: flex !important; flex-direction: column !important; align-items: center !important; ' +
+                              '   position: sticky !important; top: 15px !important; ' + /* স্ট্যাটিক করে দিবে */
+                              '   height: calc(100vh - 80px) !important; ' + /* নিজের আলাদা স্ক্রলবার এর জন্য */
+                              '   overflow-y: auto !important; z-index: 99 !important; ' +
+                              '} ' +
                               '.games-inner aside::-webkit-scrollbar { display: none !important; } ' +
                               
-                              '/* নতুন মেনু বাটনগুলোর ডিজাইন */ ' +
-                              '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 8px 0 !important; text-align: center !important; } ' +
-                              '.custom-sidebar-btn.active, .custom-sidebar-btn:hover { color: #F6C143 !important; transform: scale(1.08) !important; } ' +
-                              '.custom-sidebar-btn i { font-size: 2rem !important; font-family: icomoon !important; margin-bottom: 5px !important; } ' +
-                              '.custom-sidebar-btn span { font-size: 11px !important; font-weight: 600 !important; } ' +
+                              '/* 2. Active State Styling (ক্লিক করলে স্টাইল চেঞ্জ হবে) */ ' +
+                              '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 12px 0 !important; text-align: center !important; border-left: 3px solid transparent !important; box-sizing: border-box !important; } ' +
+                              '.custom-sidebar-btn.active, .custom-sidebar-btn:hover { color: #F6C143 !important; background: rgba(255, 255, 255, 0.05) !important; border-left: 3px solid #F6C143 !important; } ' +
+                              '.custom-sidebar-btn i { font-size: 2.2rem !important; font-family: icomoon !important; margin-bottom: 5px !important; } ' +
+                              '.custom-sidebar-btn span { font-size: 12px !important; font-weight: 600 !important; } ' +
                               
                               '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
 
-                // ২. সিকিউর কোর স্ক্রিপ্ট ইনজেকশন
                 var sc = document.createElement('script');
                 sc.src = '/__secure_core.js';
                 document.head.appendChild(sc);
 
-                // ৩. ডাইনামিক UI কাস্টমাইজেশন এবং aside এর ভেতরে ইনজেকশন
+                // গ্লোবাল ভেরিয়েবল যাতে রি-রেন্ডার হলেও ক্লিক স্ট্যাটাস মনে থাকে
+                if (typeof window.velki_active_sidebar_idx === 'undefined') {
+                    window.velki_active_sidebar_idx = 0; 
+                }
+
                 setInterval(function() {
-                    // ৩.১ সাইন আপ বাটন ফোর্স রিমুভ (আজীবন গায়েব)
                     document.querySelectorAll('.signup, [href*="signup"]').forEach(btn => btn.remove());
 
-                    // ৩.২ aside খুঁজে তার ভেতরে আমাদের মেনু ঢোকানো
                     const asideContainer = document.querySelector('.games-inner aside');
                     
                     if (asideContainer && !document.getElementById('ultra-custom-inner')) {
-                        
-                        // aside এর ভেতরে থাকা অরিজিনাল লিস্টগুলো (In Play, Today) লুকিয়ে ফেলা
                         asideContainer.querySelectorAll('ul').forEach(ul => {
                             ul.style.setProperty('display', 'none', 'important');
                         });
                         
-                        // আপনার দেওয়া ক্লাস নেম দিয়ে মেনু আইটেম তৈরি
                         const menuItems =[
                             { name: 'Sports', class: 'icon-game-hall-sports' },
                             { name: 'Live', class: 'icon-game-hall-live' },
@@ -224,19 +221,23 @@ export default {
                         
                         const sidebarInner = document.createElement('div');
                         sidebarInner.id = 'ultra-custom-inner';
-                        sidebarInner.style.cssText = 'display: flex; flex-direction: column; align-items: center; width: 100%; gap: 10px; padding-top: 5px;';
+                        sidebarInner.style.cssText = 'display: flex; flex-direction: column; align-items: center; width: 100%; gap: 5px;';
                         
                         menuItems.forEach((item, idx) => {
                             const btn = document.createElement('div');
-                            btn.className = 'custom-sidebar-btn' + (idx === 0 ? ' active' : '');
+                            // সেভ করা স্ট্যাটাস চেক করে active ক্লাস বসানো হচ্ছে
+                            btn.className = 'custom-sidebar-btn' + (window.velki_active_sidebar_idx === idx ? ' active' : '');
                             btn.innerHTML = '<i class="icon ' + item.class + '"></i><span>' + item.name + '</span>';
                             
                             btn.onclick = () => {
-                                // ভিজ্যুয়াল অ্যাক্টিভ স্ট্যাটাস চেঞ্জ
-                                document.querySelectorAll('.custom-sidebar-btn').forEach(b => b.classList.remove('active'));
-                                btn.classList.add('active');
+                                window.velki_active_sidebar_idx = idx; // স্ট্যাটাস সেভ করে রাখছি
                                 
-                                // ব্যাকগ্রাউন্ডে অরিজিনাল মেনুতে ক্লিক করা
+                                // ক্লিক করার সাথে সাথে ডিজাইন আপডেট
+                                document.querySelectorAll('.custom-sidebar-btn').forEach((b, i) => {
+                                    if(i === idx) b.classList.add('active');
+                                    else b.classList.remove('active');
+                                });
+                                
                                 const realIcon = document.querySelector('.games-slot.new-game-slot .' + item.class);
                                 if (realIcon) {
                                     const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
@@ -257,8 +258,16 @@ export default {
                             sidebarInner.appendChild(btn);
                         });
 
-                        // নতুন মেনু aside এর ভেতরে অ্যাড করা হলো
                         asideContainer.appendChild(sidebarInner);
+                    } else if (document.getElementById('ultra-custom-inner')) {
+                        // রি-রেন্ডারিং এর সময় অ্যাক্টিভ স্ট্যাটাস ঠিক রাখার ব্যাকআপ লজিক
+                        document.querySelectorAll('.custom-sidebar-btn').forEach((b, i) => {
+                             if (i === window.velki_active_sidebar_idx && !b.classList.contains('active')) {
+                                 b.classList.add('active');
+                             } else if (i !== window.velki_active_sidebar_idx && b.classList.contains('active')) {
+                                 b.classList.remove('active');
+                             }
+                        });
                     }
                 }, 300);
             `;
