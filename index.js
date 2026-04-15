@@ -149,7 +149,7 @@ export default {
         text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা-স্ট্রং STICKY FIX 🔹
+        // 🔹 আল্ট্রা-অ্যাডভান্সড APP-LIKE LAYOUT UPDATE 🔹
         if (contentType.includes("text/html")) {
             
             const rawForceJs = `
@@ -167,21 +167,30 @@ export default {
                               '.games-slot.new-game-slot, ul.sideicon, ul.p-0.m-0.sideicon, .tab-indicator-new { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0 !important; width: 0 !important; position: absolute !important; pointer-events: none !important; } ' +
                               
                               '/* ---------------------------------------------------------------------------------- */ ' +
-                              '/* 1. ULTIMATE STICKY FIX: Strong Position Sticky Code */ ' +
+                              '/* 1. APP-LIKE UI: Body Scroll Locked, Only Games Scroll */ ' +
                               '/* ---------------------------------------------------------------------------------- */ ' +
+                              'html, body { overflow: hidden !important; height: 100dvh !important; margin: 0 !important; padding: 0 !important; } ' +
+                              
                               '.games-inner { ' +
-                              '   align-items: flex-start !important; ' + 
+                              '   flex: 1 1 auto !important; ' + /* স্ক্রিনের বাকি অংশ অটোমেটিক নিয়ে নিবে */
+                              '   overflow-y: auto !important; overflow-x: hidden !important; ' + /* শুধুমাত্র গেমের এই অংশটা স্ক্রল হবে */
+                              '   display: flex !important; align-items: flex-start !important; ' +
+                              '   padding-left: 0 !important; margin-left: 0 !important; ' + /* বাম পাশের গ্যাপ দূর করা হলো */
+                              '   width: 100% !important; min-height: 0 !important; ' + 
                               '} ' +
+                              
                               '.games-inner aside { ' +
                               '   background-color: #1B1F23 !important; ' +
                               '   width: 90px !important; min-width: 90px !important; max-width: 90px !important; flex-basis: 90px !important; ' +
-                              '   padding: 10px 0 !important; border-radius: 6px !important; ' +
+                              '   padding: 10px 0 !important; ' +
+                              '   margin: 0 !important; margin-right: 10px !important; ' + /* স্ক্রিনের একেবারে বামে লেগে থাকবে */
+                              '   border-radius: 0 !important; ' + /* বাম পাশের বর্ডার সোজা করে দেওয়া হলো */
                               '   display: flex !important; flex-direction: column !important; align-items: center !important; ' +
                               '   position: -webkit-sticky !important; position: sticky !important; ' +
-                              '   top: 65px !important; ' + /* 🔹 CRITICAL FIX: এটি হলুদ হেডারের নিচে লক করে রাখবে 🔹 */
+                              '   top: 0 !important; ' + /* এখন top:0 দিলেও হেডারের নিচে লুকাবে না, কারণ গেম-ইনার আলাদা স্ক্রল হচ্ছে */
                               '   align-self: flex-start !important; ' +
-                              '   height: max-content !important; max-height: calc(100vh - 75px) !important; ' + /* নিজস্ব স্ক্রলবার তৈরি করবে */
-                              '   overflow-y: auto !important; z-index: 99999 !important; margin-right: 10px !important; ' +
+                              '   height: 100% !important; max-height: 100% !important; ' + 
+                              '   overflow-y: auto !important; z-index: 99999 !important; ' +
                               '   box-shadow: 2px 0 10px rgba(0,0,0,0.5) !important; ' +
                               '} ' +
                               '.games-inner aside::-webkit-scrollbar { display: none !important; } ' +
@@ -206,22 +215,38 @@ export default {
                 setInterval(function() {
                     document.querySelectorAll('.signup,[href*="signup"]').forEach(btn => btn.remove());
 
-                    const asideContainer = document.querySelector('.games-inner aside');
+                    const gamesInner = document.querySelector('.games-inner');
                     
-                    // 🔹 MAGIC FIX: React এর overflow: hidden সরিয়ে স্টিকিকে ১০০% কাজ করাবে 🔹
-                    if (asideContainer && asideContainer.parentElement) {
-                        let parentNode = asideContainer.parentElement;
-                        parentNode.style.setProperty('align-items', 'flex-start', 'important');
+                    // 🔹 MAGIC APP ALGORITHM: পুরো ওয়েবসাইটকে একটি মোবাইল অ্যাপের লেআউটে কনভার্ট করবে 🔹
+                    if (gamesInner) {
+                        // বডির স্ক্রল চিরতরে বন্ধ
+                        document.body.style.setProperty('height', '100dvh', 'important');
+                        document.body.style.setProperty('overflow', 'hidden', 'important');
+                        document.documentElement.style.setProperty('height', '100dvh', 'important');
+                        document.documentElement.style.setProperty('overflow', 'hidden', 'important');
                         
-                        while (parentNode && parentNode.tagName !== 'BODY' && parentNode.tagName !== 'HTML') {
-                            const style = window.getComputedStyle(parentNode);
-                            if (style.overflow === 'hidden' || style.overflowY === 'hidden' || style.overflow === 'auto') {
-                                parentNode.style.setProperty('overflow', 'visible', 'important');
+                        // গেম-কন্টেইনারের ওপরের সবকিছুকে লক করে দেওয়া হচ্ছে
+                        let current = gamesInner;
+                        while (current && current.tagName !== 'BODY' && current.tagName !== 'HTML') {
+                            let parent = current.parentElement;
+                            if (parent && parent.tagName !== 'BODY' && parent.tagName !== 'HTML') {
+                                parent.style.setProperty('display', 'flex', 'important');
+                                parent.style.setProperty('flex-direction', 'column', 'important');
+                                parent.style.setProperty('height', '100%', 'important');
+                                parent.style.setProperty('overflow', 'hidden', 'important');
+                                
+                                // হেডার, স্লাইডার এবং মারকিউ যেনো চাপ খেয়ে ছোট না হয়ে যায়
+                                Array.from(parent.children).forEach(sibling => {
+                                    if (sibling !== current) {
+                                        sibling.style.setProperty('flex-shrink', '0', 'important');
+                                    }
+                                });
                             }
-                            parentNode = parentNode.parentElement;
+                            current = parent;
                         }
                     }
-                    
+
+                    const asideContainer = document.querySelector('.games-inner aside');
                     if (asideContainer && !document.getElementById('ultra-custom-inner')) {
                         asideContainer.querySelectorAll('ul').forEach(ul => {
                             ul.style.setProperty('display', 'none', 'important');
