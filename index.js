@@ -1,8 +1,8 @@
 export default {
   async fetch(request, env, ctx) {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    const API_DOMAINS = ["vrnlapi.com"]; 
-    const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"]; 
+    const API_DOMAINS =["vrnlapi.com"]; 
+    const MEDIA_AND_SCORE_DOMAINS =["aax-eu1314.com"]; 
     const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
     
     const url = new URL(request.url);
@@ -151,7 +151,7 @@ export default {
         text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং UI ফিক্স 🔹
+        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং STICKY FIX 🔹
         if (contentType.includes("text/html")) {
             
             const rawForceJs = `
@@ -169,24 +169,28 @@ export default {
                               '.games-slot.new-game-slot, ul.sideicon, ul.p-0.m-0.sideicon, .tab-indicator-new { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0 !important; width: 0 !important; position: absolute !important; pointer-events: none !important; } ' +
                               
                               '/* ---------------------------------------------------------------------------------- */ ' +
-                              '/* 1. Sticky Sidebar Fix (স্ট্যাটিক পজিশন এবং উইথ বাড়ানো হয়েছে) */ ' +
+                              '/* 1. MAGIC FIX FOR STICKY SIDEBAR IN FLEXBOX */ ' +
                               '/* ---------------------------------------------------------------------------------- */ ' +
+                              '.games-inner { ' +
+                              '   align-items: flex-start !important; ' + /* এই কোডটি ফ্লেক্সবক্সকে সাইডবার লম্বা করা থেকে আটকাবে */
+                              '} ' +
                               '.games-inner aside { ' +
                               '   background-color: #1B1F23 !important; ' +
-                              '   width: 88px !important; min-width: 88px !important; max-width: 88px !important; flex-basis: 88px !important; ' +
+                              '   width: 90px !important; min-width: 90px !important; max-width: 90px !important; flex-basis: 90px !important; ' +
                               '   padding: 10px 0 !important; border-radius: 6px !important; ' +
                               '   display: flex !important; flex-direction: column !important; align-items: center !important; ' +
-                              '   position: sticky !important; top: 15px !important; ' + /* স্ট্যাটিক করে দিবে */
-                              '   height: calc(100vh - 80px) !important; ' + /* নিজের আলাদা স্ক্রলবার এর জন্য */
-                              '   overflow-y: auto !important; z-index: 99 !important; ' +
+                              '   position: -webkit-sticky !important; position: sticky !important; top: 10px !important; ' + /* এখন স্ট্যাটিক কাজ করবে */
+                              '   align-self: flex-start !important; ' + /* সাইডবারকে গেমের সাইজে লম্বা হতে দিবে না */
+                              '   height: calc(100vh - 20px) !important; ' + /* সাইডবারের নিজস্ব উচ্চতা */
+                              '   overflow-y: auto !important; z-index: 99 !important; margin-right: 10px !important; ' +
                               '} ' +
                               '.games-inner aside::-webkit-scrollbar { display: none !important; } ' +
                               
-                              '/* 2. Active State Styling (ক্লিক করলে স্টাইল চেঞ্জ হবে) */ ' +
-                              '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 12px 0 !important; text-align: center !important; border-left: 3px solid transparent !important; box-sizing: border-box !important; } ' +
+                              '/* 2. Active State Styling */ ' +
+                              '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 15px 0 !important; text-align: center !important; border-left: 3px solid transparent !important; box-sizing: border-box !important; } ' +
                               '.custom-sidebar-btn.active, .custom-sidebar-btn:hover { color: #F6C143 !important; background: rgba(255, 255, 255, 0.05) !important; border-left: 3px solid #F6C143 !important; } ' +
                               '.custom-sidebar-btn i { font-size: 2.2rem !important; font-family: icomoon !important; margin-bottom: 5px !important; } ' +
-                              '.custom-sidebar-btn span { font-size: 12px !important; font-weight: 600 !important; } ' +
+                              '.custom-sidebar-btn span { font-size: 13px !important; font-weight: 600 !important; } ' +
                               
                               '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
@@ -195,13 +199,12 @@ export default {
                 sc.src = '/__secure_core.js';
                 document.head.appendChild(sc);
 
-                // গ্লোবাল ভেরিয়েবল যাতে রি-রেন্ডার হলেও ক্লিক স্ট্যাটাস মনে থাকে
                 if (typeof window.velki_active_sidebar_idx === 'undefined') {
                     window.velki_active_sidebar_idx = 0; 
                 }
 
                 setInterval(function() {
-                    document.querySelectorAll('.signup, [href*="signup"]').forEach(btn => btn.remove());
+                    document.querySelectorAll('.signup,[href*="signup"]').forEach(btn => btn.remove());
 
                     const asideContainer = document.querySelector('.games-inner aside');
                     
@@ -225,14 +228,12 @@ export default {
                         
                         menuItems.forEach((item, idx) => {
                             const btn = document.createElement('div');
-                            // সেভ করা স্ট্যাটাস চেক করে active ক্লাস বসানো হচ্ছে
                             btn.className = 'custom-sidebar-btn' + (window.velki_active_sidebar_idx === idx ? ' active' : '');
                             btn.innerHTML = '<i class="icon ' + item.class + '"></i><span>' + item.name + '</span>';
                             
                             btn.onclick = () => {
-                                window.velki_active_sidebar_idx = idx; // স্ট্যাটাস সেভ করে রাখছি
+                                window.velki_active_sidebar_idx = idx; 
                                 
-                                // ক্লিক করার সাথে সাথে ডিজাইন আপডেট
                                 document.querySelectorAll('.custom-sidebar-btn').forEach((b, i) => {
                                     if(i === idx) b.classList.add('active');
                                     else b.classList.remove('active');
@@ -260,7 +261,6 @@ export default {
 
                         asideContainer.appendChild(sidebarInner);
                     } else if (document.getElementById('ultra-custom-inner')) {
-                        // রি-রেন্ডারিং এর সময় অ্যাক্টিভ স্ট্যাটাস ঠিক রাখার ব্যাকআপ লজিক
                         document.querySelectorAll('.custom-sidebar-btn').forEach((b, i) => {
                              if (i === window.velki_active_sidebar_idx && !b.classList.contains('active')) {
                                  b.classList.add('active');
