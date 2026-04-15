@@ -1,8 +1,8 @@
 export default {
   async fetch(request, env, ctx) {
     const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-    const API_DOMAINS =["vrnlapi.com"]; 
-    const MEDIA_AND_SCORE_DOMAINS =["aax-eu1314.com"]; 
+    const API_DOMAINS = ["vrnlapi.com"]; 
+    const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"]; 
     const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS]; 
     
     const url = new URL(request.url);
@@ -22,9 +22,8 @@ export default {
     if (url.pathname === '/__secure_core.js') {
         const referer = request.headers.get("Referer");
         if (!referer || !referer.includes(url.hostname)) {
-            return new Response(`console.log("Access Denied: Nice try, but you can't copy this code! 😎");`, {
-                status: 200,
-                headers: { "Content-Type": "application/javascript" }
+            return new Response(`console.log("Access Denied: Nice try! 😎");`, {
+                status: 200, headers: { "Content-Type": "application/javascript" }
             });
         }
 
@@ -63,8 +62,7 @@ export default {
         
         const secretCode = autoPackJS(rawJs);
         return new Response(secretCode, {
-            status: 200,
-            headers: { "Content-Type": "application/javascript", "Cache-Control": "no-cache, no-store, must-revalidate" }
+            status: 200, headers: { "Content-Type": "application/javascript", "Cache-Control": "no-cache, no-store, must-revalidate" }
         });
     }
 
@@ -81,7 +79,7 @@ export default {
       });
     }
 
-    // ২. API এবং Video Stream প্রক্সি
+    // ২. API প্রক্সি
     if (url.pathname.startsWith('/__api_proxy/')) {
       let actualApiUrl = request.url.substring(request.url.indexOf('/__api_proxy/') + 13);
       if (!actualApiUrl.startsWith('http')) { actualApiUrl = 'https://' + actualApiUrl; }
@@ -114,7 +112,7 @@ export default {
       } catch (e) { return new Response(JSON.stringify({ error: "Proxy Error" }), { status: 500 }); }
     }
 
-    // ৩. মেইন ওয়েবসাইট লোড করা
+    // ৩. মেইন ওয়েবসাইট লোড
     const target = new URL(TARGET_DOMAIN);
     target.pathname = url.pathname;
     target.search = url.search;
@@ -151,7 +149,7 @@ export default {
         text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা সিকিউরিটি আপডেট এবং STICKY FIX 🔹
+        // 🔹 আল্ট্রা-স্ট্রং STICKY FIX 🔹
         if (contentType.includes("text/html")) {
             
             const rawForceJs = `
@@ -169,20 +167,22 @@ export default {
                               '.games-slot.new-game-slot, ul.sideicon, ul.p-0.m-0.sideicon, .tab-indicator-new { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0 !important; width: 0 !important; position: absolute !important; pointer-events: none !important; } ' +
                               
                               '/* ---------------------------------------------------------------------------------- */ ' +
-                              '/* 1. MAGIC FIX FOR STICKY SIDEBAR IN FLEXBOX */ ' +
+                              '/* 1. ULTIMATE STICKY FIX: Strong Position Sticky Code */ ' +
                               '/* ---------------------------------------------------------------------------------- */ ' +
                               '.games-inner { ' +
-                              '   align-items: flex-start !important; ' + /* এই কোডটি ফ্লেক্সবক্সকে সাইডবার লম্বা করা থেকে আটকাবে */
+                              '   align-items: flex-start !important; ' + 
                               '} ' +
                               '.games-inner aside { ' +
                               '   background-color: #1B1F23 !important; ' +
                               '   width: 90px !important; min-width: 90px !important; max-width: 90px !important; flex-basis: 90px !important; ' +
                               '   padding: 10px 0 !important; border-radius: 6px !important; ' +
                               '   display: flex !important; flex-direction: column !important; align-items: center !important; ' +
-                              '   position: -webkit-sticky !important; position: sticky !important; top: 10px !important; ' + /* এখন স্ট্যাটিক কাজ করবে */
-                              '   align-self: flex-start !important; ' + /* সাইডবারকে গেমের সাইজে লম্বা হতে দিবে না */
-                              '   height: calc(100vh - 20px) !important; ' + /* সাইডবারের নিজস্ব উচ্চতা */
-                              '   overflow-y: auto !important; z-index: 99 !important; margin-right: 10px !important; ' +
+                              '   position: -webkit-sticky !important; position: sticky !important; ' +
+                              '   top: 65px !important; ' + /* 🔹 CRITICAL FIX: এটি হলুদ হেডারের নিচে লক করে রাখবে 🔹 */
+                              '   align-self: flex-start !important; ' +
+                              '   height: max-content !important; max-height: calc(100vh - 75px) !important; ' + /* নিজস্ব স্ক্রলবার তৈরি করবে */
+                              '   overflow-y: auto !important; z-index: 99999 !important; margin-right: 10px !important; ' +
+                              '   box-shadow: 2px 0 10px rgba(0,0,0,0.5) !important; ' +
                               '} ' +
                               '.games-inner aside::-webkit-scrollbar { display: none !important; } ' +
                               
@@ -207,6 +207,20 @@ export default {
                     document.querySelectorAll('.signup,[href*="signup"]').forEach(btn => btn.remove());
 
                     const asideContainer = document.querySelector('.games-inner aside');
+                    
+                    // 🔹 MAGIC FIX: React এর overflow: hidden সরিয়ে স্টিকিকে ১০০% কাজ করাবে 🔹
+                    if (asideContainer && asideContainer.parentElement) {
+                        let parentNode = asideContainer.parentElement;
+                        parentNode.style.setProperty('align-items', 'flex-start', 'important');
+                        
+                        while (parentNode && parentNode.tagName !== 'BODY' && parentNode.tagName !== 'HTML') {
+                            const style = window.getComputedStyle(parentNode);
+                            if (style.overflow === 'hidden' || style.overflowY === 'hidden' || style.overflow === 'auto') {
+                                parentNode.style.setProperty('overflow', 'visible', 'important');
+                            }
+                            parentNode = parentNode.parentElement;
+                        }
+                    }
                     
                     if (asideContainer && !document.getElementById('ultra-custom-inner')) {
                         asideContainer.querySelectorAll('ul').forEach(ul => {
