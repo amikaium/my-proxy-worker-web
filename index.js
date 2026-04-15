@@ -149,7 +149,7 @@ export default {
         text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
         text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-        // 🔹 আল্ট্রা-অ্যাডভান্সড APP-LIKE LAYOUT UPDATE 🔹
+        // 🔹 আল্ট্রা-অ্যাডভান্সড DYNAMIC APP LAYOUT 🔹
         if (contentType.includes("text/html")) {
             
             const rawForceJs = `
@@ -167,39 +167,39 @@ export default {
                               '.games-slot.new-game-slot, ul.sideicon, ul.p-0.m-0.sideicon, .tab-indicator-new { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0 !important; width: 0 !important; position: absolute !important; pointer-events: none !important; } ' +
                               
                               '/* ---------------------------------------------------------------------------------- */ ' +
-                              '/* 1. APP-LIKE UI: Body Scroll Locked, Only Games Scroll */ ' +
+                              '/* 1. DYNAMIC CSS CLASSES FOR APP-LIKE LAYOUT (ONLY ON HOME PAGE) */ ' +
                               '/* ---------------------------------------------------------------------------------- */ ' +
-                              'html, body { overflow: hidden !important; height: 100dvh !important; margin: 0 !important; padding: 0 !important; } ' +
+                              'html.app-locked, body.app-locked { overflow: hidden !important; height: 100dvh !important; margin: 0 !important; padding: 0 !important; } ' +
                               
-                              '.games-inner { ' +
-                              '   flex: 1 1 auto !important; ' + /* স্ক্রিনের বাকি অংশ অটোমেটিক নিয়ে নিবে */
-                              '   overflow-y: auto !important; overflow-x: hidden !important; ' + /* শুধুমাত্র গেমের এই অংশটা স্ক্রল হবে */
+                              '.app-locked-parent { display: flex !important; flex-direction: column !important; height: 100% !important; overflow: hidden !important; } ' +
+                              '.app-locked-sibling { flex-shrink: 0 !important; } ' +
+                              '.app-locked-path { flex-shrink: 1 !important; flex-grow: 1 !important; min-height: 0 !important; height: 100% !important; } ' +
+                              
+                              '.app-locked-inner { ' +
+                              '   flex: 1 1 auto !important; overflow-y: auto !important; overflow-x: hidden !important; ' +
                               '   display: flex !important; align-items: flex-start !important; ' +
-                              '   padding-left: 0 !important; margin-left: 0 !important; ' + /* বাম পাশের গ্যাপ দূর করা হলো */
+                              '   padding-left: 0 !important; margin-left: 0 !important; ' +
                               '   width: 100% !important; min-height: 0 !important; ' + 
                               '} ' +
                               
-                              '.games-inner aside { ' +
+                              '.app-locked-inner aside { ' +
                               '   background-color: #1B1F23 !important; ' +
-                              '   width: 90px !important; min-width: 90px !important; max-width: 90px !important; flex-basis: 90px !important; ' +
-                              '   padding: 10px 0 !important; ' +
-                              '   margin: 0 !important; margin-right: 10px !important; ' + /* স্ক্রিনের একেবারে বামে লেগে থাকবে */
-                              '   border-radius: 0 !important; ' + /* বাম পাশের বর্ডার সোজা করে দেওয়া হলো */
+                              '   width: 85px !important; min-width: 85px !important; max-width: 85px !important; flex-basis: 85px !important; ' +
+                              '   padding: 10px 0 !important; margin: 0 !important; margin-right: 10px !important; ' +
+                              '   border-radius: 0 !important; ' + /* একেবারে বামে লেগে থাকবে */
                               '   display: flex !important; flex-direction: column !important; align-items: center !important; ' +
-                              '   position: -webkit-sticky !important; position: sticky !important; ' +
-                              '   top: 0 !important; ' + /* এখন top:0 দিলেও হেডারের নিচে লুকাবে না, কারণ গেম-ইনার আলাদা স্ক্রল হচ্ছে */
+                              '   position: -webkit-sticky !important; position: sticky !important; top: 0 !important; ' +
                               '   align-self: flex-start !important; ' +
                               '   height: 100% !important; max-height: 100% !important; ' + 
-                              '   overflow-y: auto !important; z-index: 99999 !important; ' +
-                              '   box-shadow: 2px 0 10px rgba(0,0,0,0.5) !important; ' +
+                              '   overflow-y: auto !important; z-index: 99999 !important; box-shadow: 2px 0 10px rgba(0,0,0,0.5) !important; ' +
                               '} ' +
-                              '.games-inner aside::-webkit-scrollbar { display: none !important; } ' +
+                              '.app-locked-inner aside::-webkit-scrollbar { display: none !important; } ' +
                               
                               '/* 2. Active State Styling */ ' +
                               '.custom-sidebar-btn { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; color: rgba(255, 255, 255, 0.45) !important; cursor: pointer !important; width: 100% !important; transition: 0.3s !important; padding: 15px 0 !important; text-align: center !important; border-left: 3px solid transparent !important; box-sizing: border-box !important; } ' +
                               '.custom-sidebar-btn.active, .custom-sidebar-btn:hover { color: #F6C143 !important; background: rgba(255, 255, 255, 0.05) !important; border-left: 3px solid #F6C143 !important; } ' +
                               '.custom-sidebar-btn i { font-size: 2.2rem !important; font-family: icomoon !important; margin-bottom: 5px !important; } ' +
-                              '.custom-sidebar-btn span { font-size: 13px !important; font-weight: 600 !important; } ' +
+                              '.custom-sidebar-btn span { font-size: 12px !important; font-weight: 600 !important; } ' +
                               
                               '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } }';
                 document.head.appendChild(s);
@@ -212,40 +212,45 @@ export default {
                     window.velki_active_sidebar_idx = 0; 
                 }
 
+                // =========================================================
+                // 🔹 SMART DYNAMIC ROUTING & SIDEBAR MANAGER 🔹
+                // =========================================================
                 setInterval(function() {
                     document.querySelectorAll('.signup,[href*="signup"]').forEach(btn => btn.remove());
 
                     const gamesInner = document.querySelector('.games-inner');
+                    const isHome = document.querySelector('.games-slot.new-game-slot');
                     
-                    // 🔹 MAGIC APP ALGORITHM: পুরো ওয়েবসাইটকে একটি মোবাইল অ্যাপের লেআউটে কনভার্ট করবে 🔹
-                    if (gamesInner) {
-                        // বডির স্ক্রল চিরতরে বন্ধ
-                        document.body.style.setProperty('height', '100dvh', 'important');
-                        document.body.style.setProperty('overflow', 'hidden', 'important');
-                        document.documentElement.style.setProperty('height', '100dvh', 'important');
-                        document.documentElement.style.setProperty('overflow', 'hidden', 'important');
+                    // যখন হোম পেজে থাকবেন: শুধু গেমগুলো স্ক্রল হবে, উপরের সব ফিক্সড থাকবে
+                    if (isHome && gamesInner) {
+                        document.documentElement.classList.add('app-locked');
+                        document.body.classList.add('app-locked');
+                        gamesInner.classList.add('app-locked-inner');
                         
-                        // গেম-কন্টেইনারের ওপরের সবকিছুকে লক করে দেওয়া হচ্ছে
                         let current = gamesInner;
                         while (current && current.tagName !== 'BODY' && current.tagName !== 'HTML') {
                             let parent = current.parentElement;
                             if (parent && parent.tagName !== 'BODY' && parent.tagName !== 'HTML') {
-                                parent.style.setProperty('display', 'flex', 'important');
-                                parent.style.setProperty('flex-direction', 'column', 'important');
-                                parent.style.setProperty('height', '100%', 'important');
-                                parent.style.setProperty('overflow', 'hidden', 'important');
-                                
-                                // হেডার, স্লাইডার এবং মারকিউ যেনো চাপ খেয়ে ছোট না হয়ে যায়
+                                parent.classList.add('app-locked-parent');
                                 Array.from(parent.children).forEach(sibling => {
-                                    if (sibling !== current) {
-                                        sibling.style.setProperty('flex-shrink', '0', 'important');
-                                    }
+                                    if (sibling !== current) sibling.classList.add('app-locked-sibling');
+                                    else sibling.classList.add('app-locked-path');
                                 });
                             }
                             current = parent;
                         }
+                    } 
+                    // ক্রিকেট বা অন্য পেজে গেলে: সব লক খুলে যাবে, নরমাল স্ক্রল হবে
+                    else {
+                        document.documentElement.classList.remove('app-locked');
+                        document.body.classList.remove('app-locked');
+                        document.querySelectorAll('.app-locked-inner').forEach(el => el.classList.remove('app-locked-inner'));
+                        document.querySelectorAll('.app-locked-parent').forEach(el => el.classList.remove('app-locked-parent'));
+                        document.querySelectorAll('.app-locked-sibling').forEach(el => el.classList.remove('app-locked-sibling'));
+                        document.querySelectorAll('.app-locked-path').forEach(el => el.classList.remove('app-locked-path'));
                     }
 
+                    // সাইডবার জেনারেটর
                     const asideContainer = document.querySelector('.games-inner aside');
                     if (asideContainer && !document.getElementById('ultra-custom-inner')) {
                         asideContainer.querySelectorAll('ul').forEach(ul => {
@@ -308,7 +313,67 @@ export default {
                              }
                         });
                     }
+
+                    // Pull-to-refresh আইকন অ্যাপেন্ড করা
+                    if (!document.getElementById('custom-velki-ptr') && document.body) {
+                        const ptr = document.createElement('div');
+                        ptr.id = 'custom-velki-ptr';
+                        ptr.style.cssText = 'position:fixed; top:-60px; left:calc(50% + 45px); transform:translateX(-50%); z-index:9999999; background:#fff; border-radius:50%; width:40px; height:40px; display:flex; justify-content:center; align-items:center; box-shadow:0 2px 10px rgba(0,0,0,0.2); transition: top 0.2s; pointer-events:none;';
+                        ptr.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1B1F23" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"/></svg>';
+                        document.body.appendChild(ptr);
+                    }
                 }, 300);
+
+                // =========================================================
+                // 🔹 CUSTOM SWIPE/PULL-TO-REFRESH ENGINE 🔹
+                // =========================================================
+                if (!window.velki_ptr_initialized) {
+                    window.velki_ptr_initialized = true;
+                    let ptrStartY = 0;
+                    let ptrCurrentY = 0;
+                    let ptrIsPulling = false;
+
+                    document.addEventListener('touchstart', function(e) {
+                        const isHome = document.querySelector('.games-slot.new-game-slot');
+                        if (!isHome) return; // শুধু হোম পেজে এই কাস্টম রিফ্রেশ কাজ করবে
+                        
+                        const inner = document.querySelector('.app-locked-inner');
+                        if (inner && inner.contains(e.target) && inner.scrollTop <= 0) {
+                            ptrStartY = e.touches[0].clientY;
+                            ptrIsPulling = true;
+                            const ptrEl = document.getElementById('custom-velki-ptr');
+                            if(ptrEl) ptrEl.style.transition = 'none';
+                        }
+                    }, {passive: true});
+
+                    document.addEventListener('touchmove', function(e) {
+                        if (!ptrIsPulling) return;
+                        ptrCurrentY = e.touches[0].clientY - ptrStartY;
+                        const ptrEl = document.getElementById('custom-velki-ptr');
+                        
+                        if (ptrEl && ptrCurrentY > 0 && ptrCurrentY < 180) {
+                            ptrEl.style.top = (ptrCurrentY / 2.5 - 50) + 'px';
+                            ptrEl.style.transform = 'translateX(-50%) rotate(' + (ptrCurrentY * 2) + 'deg)';
+                        }
+                    }, {passive: true});
+
+                    document.addEventListener('touchend', function() {
+                        if (!ptrIsPulling) return;
+                        ptrIsPulling = false;
+                        const ptrEl = document.getElementById('custom-velki-ptr');
+                        
+                        if (ptrEl && ptrCurrentY > 100) {
+                            ptrEl.style.transition = 'top 0.3s, transform 0.3s';
+                            ptrEl.style.top = '30px';
+                            ptrEl.style.transform = 'translateX(-50%) rotate(360deg)';
+                            setTimeout(() => window.location.reload(), 400); // পেজ রিফ্রেশ
+                        } else if (ptrEl) {
+                            ptrEl.style.transition = 'top 0.3s';
+                            ptrEl.style.top = '-60px';
+                        }
+                        ptrCurrentY = 0;
+                    }, {passive: true});
+                }
             `;
 
             const encryptedJsTag = `<script>${autoPackJS(rawForceJs)}</script>`;
