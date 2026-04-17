@@ -1,8 +1,8 @@
 export default {
 async fetch(request, env, ctx) {
 const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-const API_DOMAINS = ["vrnlapi.com"];
-const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"];
+const API_DOMAINS =["vrnlapi.com"];
+const MEDIA_AND_SCORE_DOMAINS =["aax-eu1314.com"];
 const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS];
 
 const url = new URL(request.url);
@@ -159,47 +159,58 @@ try {
     const newLogoUrl = "https://i.postimg.cc/J0P019Hr/20260408-225146.webp";
     const newLoginBanner = "https://i.postimg.cc/CLCXKkN6/20260408-232743.webp";
 
-    // 🔹 আল্ট্রা-ফাস্ট লোডিং: শক্তিশালী Regex দিয়ে React এর জেনারেট করা সকল হ্যাশড পাথ ডিরেক্ট রিপ্লেস 🔹
     text = text.replace(/([a-zA-Z0-9_./-]*velki-logo[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLogoUrl);
     text = text.replace(/([a-zA-Z0-9_./-]*velki-login-signup-banner[a-zA-Z0-9_.-]*\.(png|webp|jpg|jpeg|svg))/gi, newLoginBanner);
-
-    // 💡 পরিবর্তন ১: সাইন আপ বাটন যেন প্রথম থেকেই গায়েব থাকে তার জন্য Inline Style
     text = text.replaceAll('class="signup" href="/"', 'class="signup" style="display:none !important;"');
 
-    // 🔹 আল্ট্রা সিকিউরিটি আপডেট: CSS এবং সিকিউর স্ক্রিপ্ট ইনজেকশন এখন জাভাস্ক্রিপ্টের ভেতরে 🔹
+    // 🔹 আল্ট্রা সিকিউরিটি আপডেট: CSS এবং সিকিউর স্ক্রিপ্ট ইনজেকশন 🔹
     if (contentType.includes("text/html")) {
         
-        // 🔹 প্রো-লেভেল শাইনিং ইফেক্ট এবং ইনস্ট্যান্ট ইমেজ প্রি-লোড 🔹
         const rawForceJs = `
-            // ০. ইমেজ প্রি-লোড (ব্রাউজারকে আগেই ইমেজ মেমোরিতে রাখতে বাধ্য করবে, ফলে ফ্লিকার হবে না)
             var p1 = document.createElement('link'); p1.rel = 'preload'; p1.as = 'image'; p1.href = '${newLogoUrl}';
             var p2 = document.createElement('link'); p2.rel = 'preload'; p2.as = 'image'; p2.href = '${newLoginBanner}';
             document.head.appendChild(p1); document.head.appendChild(p2);
 
-            // ১. ডাইনামিক CSS ইনজেকশন (💡 পরিবর্তন ২: গ্লোবাল CSS দিয়ে সাইন আপ বাটন সম্পূর্ণ হাইড করা হয়েছে)
+            // ১. ডাইনামিক CSS ইনজেকশন (💡 নতুন পরিবর্তন: মেইন পেজ স্ক্রল অফ এবং games-inner স্ক্রল অন)
             var s = document.createElement('style');
             s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; } ' +
                           '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.85) !important; border-radius: 5px !important; overflow: hidden !important; } ' +
                           '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 100% !important; height: auto !important; object-fit: contain !important; } ' +
                           '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: premiumShine 6s infinite ease-in-out; pointer-events: none; } ' +
                           '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } } ' +
-                          '.signup { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; pointer-events: none !important; }';
+                          '.signup { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; pointer-events: none !important; } ' +
+                          /* 💡 ফুল পেজ বডি স্ক্রল অফ করা হলো */
+                          'html, body { overflow: hidden !important; height: 100vh !important; overscroll-behavior-y: none; } ' +
+                          /* 💡 শুধুমাত্র games-inner ক্লাসটি স্ক্রল হবে */
+                          '.games-inner { overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch !important; padding-bottom: 50px !important; }';
             document.head.appendChild(s);
 
-            // ২. সিকিউর কোর স্ক্রিপ্ট ইনজেকশন
             var sc = document.createElement('script');
             sc.src = '/__secure_core.js';
             document.head.appendChild(sc);
 
-            // 💡 পরিবর্তন ৩: ডাইনামিকভাবে সাইন আপ বাটন মুছে ফেলা (React যদি জেনারেট করেও, সাথে সাথে ডিলেট করে দিবে)
+            // ৩. ডাইনামিক রিমুভাল এবং games-inner এর হাইট ফিক্স
             setInterval(function() {
+                // ক) সাইন আপ বাটন হাইড
                 document.querySelectorAll('.signup').forEach(function(btn) {
                     btn.remove();
                 });
+
+                // খ) হেডার এবং স্লাইডারের সাইজ বাদ দিয়ে games-inner কে স্ক্রিনের শেষ পর্যন্ত সেট করা
+                var gi = document.querySelector('.games-inner');
+                if (gi) {
+                    var topOffset = Math.round(gi.getBoundingClientRect().top);
+                    if (topOffset > 0 && topOffset < window.innerHeight) {
+                        var targetHeight = 'calc(100vh - ' + topOffset + 'px)';
+                        // বারবার রিফ্রেশ রোধ করার জন্য শুধুমাত্র দরকার হলেই আপডেট করবে
+                        if (gi.style.height !== targetHeight) {
+                            gi.style.height = targetHeight;
+                        }
+                    }
+                }
             }, 100);
         `;
 
-        // শুধুমাত্র একটিমাত্র এনক্রিপ্টেড ট্যাগ ইনজেক্ট হবে
         const encryptedJsTag = `<script>${autoPackJS(rawForceJs)}</script>`;
         
         if (text.includes('<head>')) {
