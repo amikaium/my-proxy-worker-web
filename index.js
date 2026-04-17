@@ -1,9 +1,9 @@
 export default {
 async fetch(request, env, ctx) {
 const TARGET_DOMAIN = env.TARGET_URL || "https://velki123.win";
-const API_DOMAINS =["vrnlapi.com"];
-const MEDIA_AND_SCORE_DOMAINS =["aax-eu1314.com"];
-const ALL_TARGETS =[...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS];
+const API_DOMAINS = ["vrnlapi.com"];
+const MEDIA_AND_SCORE_DOMAINS = ["aax-eu1314.com"];
+const ALL_TARGETS = [...API_DOMAINS, ...MEDIA_AND_SCORE_DOMAINS];
 
 const url = new URL(request.url);
 const originHeader = request.headers.get("Origin") || `https://${url.host}`;
@@ -171,44 +171,74 @@ try {
             var p2 = document.createElement('link'); p2.rel = 'preload'; p2.as = 'image'; p2.href = '${newLoginBanner}';
             document.head.appendChild(p1); document.head.appendChild(p2);
 
-            // ১. ডাইনামিক CSS ইনজেকশন (💡 নতুন পরিবর্তন: মেইন পেজ স্ক্রল অফ এবং games-inner স্ক্রল অন)
+            // ১. ডাইনামিক CSS ইনজেকশন (এখান থেকে স্ক্রল অফের কোড মুছে দেওয়া হয়েছে যাতে নিচে না কাটে)
             var s = document.createElement('style');
             s.innerHTML = '.logo-sec img { content: url("${newLogoUrl}") !important; width: 115px !important; height: auto !important; max-width: none !important; } ' +
                           '.is-outsite-icon-new { background-color: rgba(255, 255, 255, 0.85) !important; border-radius: 5px !important; overflow: hidden !important; } ' +
                           '.is-outsite-icon-new img { content: url("${newLogoUrl}") !important; width: 100% !important; height: auto !important; object-fit: contain !important; } ' +
                           '.is-outsite-icon-new::after { content: ""; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: premiumShine 6s infinite ease-in-out; pointer-events: none; } ' +
                           '@keyframes premiumShine { 0% { left: -150%; } 30% { left: 150%; } 100% { left: 150%; } } ' +
-                          '.signup { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; pointer-events: none !important; } ' +
-                          /* 💡 ফুল পেজ বডি স্ক্রল অফ করা হলো */
-                          'html, body { overflow: hidden !important; height: 100vh !important; overscroll-behavior-y: none; } ' +
-                          /* 💡 শুধুমাত্র games-inner ক্লাসটি স্ক্রল হবে */
-                          '.games-inner { overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch !important; padding-bottom: 50px !important; }';
+                          '.signup { display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; pointer-events: none !important; }';
             document.head.appendChild(s);
 
             var sc = document.createElement('script');
             sc.src = '/__secure_core.js';
             document.head.appendChild(sc);
 
-            // ৩. ডাইনামিক রিমুভাল এবং games-inner এর হাইট ফিক্স
+            // ২. ডাইনামিক স্টিকি হেডার এবং সাইনআপ রিমুভাল
             setInterval(function() {
-                // ক) সাইন আপ বাটন হাইড
+                // ক) সাইন আপ বাটন হাইড (সব পেজ থেকে)
                 document.querySelectorAll('.signup').forEach(function(btn) {
                     btn.remove();
                 });
 
-                // খ) হেডার এবং স্লাইডারের সাইজ বাদ দিয়ে games-inner কে স্ক্রিনের শেষ পর্যন্ত সেট করা
-                var gi = document.querySelector('.games-inner');
-                if (gi) {
-                    var topOffset = Math.round(gi.getBoundingClientRect().top);
-                    if (topOffset > 0 && topOffset < window.innerHeight) {
-                        var targetHeight = 'calc(100vh - ' + topOffset + 'px)';
-                        // বারবার রিফ্রেশ রোধ করার জন্য শুধুমাত্র দরকার হলেই আপডেট করবে
-                        if (gi.style.height !== targetHeight) {
-                            gi.style.height = targetHeight;
-                        }
+                // খ) শুধুমাত্র হোমপেজে স্টিকি সেকশন অ্যাপ্লাই
+                var path = window.location.pathname;
+                var isHomePage = (path === '/' || path === '/m' || path === '/m/');
+                
+                var header = document.querySelector('#header') || document.querySelector('.header');
+                var banner = document.querySelector('.home-banner-sec');
+                var marquee = document.querySelector('.marquee-notification');
+                var gamesSlot = document.querySelector('.games-slot');
+
+                if (isHomePage) {
+                    var currentTop = 0;
+                    
+                    // একে একে স্টিকি এবং টপ পজিশন সেট করা হচ্ছে
+                    if (header) {
+                        header.style.position = 'sticky';
+                        header.style.top = currentTop + 'px';
+                        header.style.zIndex = '9999';
+                        currentTop += header.offsetHeight; // এরপরেরটা এর নিচ থেকে শুরু হবে
                     }
+                    if (banner) {
+                        banner.style.position = 'sticky';
+                        banner.style.top = currentTop + 'px';
+                        banner.style.zIndex = '9998';
+                        currentTop += banner.offsetHeight;
+                    }
+                    if (marquee) {
+                        marquee.style.position = 'sticky';
+                        marquee.style.top = currentTop + 'px';
+                        marquee.style.zIndex = '9997';
+                        currentTop += marquee.offsetHeight;
+                    }
+                    if (gamesSlot) {
+                        gamesSlot.style.position = 'sticky';
+                        gamesSlot.style.top = currentTop + 'px';
+                        gamesSlot.style.zIndex = '9996';
+                    }
+                } else {
+                    // গ) অন্য পেজে গেলে সব নরমাল ডিফল্ট হয়ে যাবে, যাতে অন্য পেজে স্ক্রল বা অন্য কোনো সমস্যা না হয়
+                    [header, banner, marquee, gamesSlot].forEach(function(el) {
+                        if (el) {
+                            el.style.position = '';
+                            el.style.top = '';
+                            el.style.zIndex = '';
+                        }
+                    });
                 }
-            }, 100);
+            }, 150);
         `;
 
         const encryptedJsTag = `<script>${autoPackJS(rawForceJs)}</script>`;
