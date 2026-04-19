@@ -1,3 +1,5 @@
+const TARGET_DOMAIN = "1xbd.win";
+
 addEventListener("fetch", event => {
   event.respondWith(handleRequest(event.request));
 });
@@ -5,53 +7,55 @@ addEventListener("fetch", event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   
-  // ডাইনামিক ডোমেইন হ্যান্ডেলিং (হার্ডকোডেড নয়)
-  // তবে শুধুমাত্র Cloudflare Preview (.workers.dev) এর জন্য মেইন সাইট সেট করা হলো, যাতে আপনি প্রিভিউ দেখতে পারেন।
-  // লাইভ ডোমেইনে এটি আপনার এড করা ডোমেইন অনুযায়ীই কাজ করবে।
-  if (url.hostname.includes("workers.dev")) {
-      url.hostname = "1xbd.win";
-  }
+  // আপনি যে ডোমেইন (velkix.live বা অন্য কিছু) থেকেই রিকোয়েস্ট করুন না কেন,
+  // ওয়ার্কার সবসময় মেইন সাইট (1xbd.win) থেকে ডাটা নিয়ে আসবে।
+  url.hostname = TARGET_DOMAIN;
 
-  // রিকোয়েস্ট মডিফাই করা হচ্ছে যাতে Angular এর JS/CSS ফাইলগুলো ঠিকঠাক লোড হয়
   const modifiedRequest = new Request(url.toString(), {
-    headers: request.headers,
+    headers: new Headers(request.headers),
     method: request.method,
     body: request.body,
     redirect: 'follow'
   });
-  modifiedRequest.headers.set('Host', url.hostname);
+
+  // সিকিউরিটি এবং CORS বাইপাস করার জন্য অরিজিনাল হেডার সেট করা
+  modifiedRequest.headers.set('Host', TARGET_DOMAIN);
+  modifiedRequest.headers.set('Origin', `https://${TARGET_DOMAIN}`);
+  modifiedRequest.headers.set('Referer', `https://${TARGET_DOMAIN}/`);
 
   const response = await fetch(modifiedRequest);
-  const contentType = response.headers.get("Content-Type");
-  
-  // শুধু HTML পেজের ক্ষেত্রে আমরা ডিজাইন চেঞ্জ করবো, JS/CSS এর ক্ষেত্রে নয়
-  if (contentType && contentType.includes("text/html")) {
+  const contentType = response.headers.get("Content-Type") || "";
+
+  // API ব্লকিং এড়াতে নতুন রেসপন্সে CORS অ্যালাও করে দেওয়া হলো
+  const newResponse = new Response(response.body, response);
+  newResponse.headers.set('Access-Control-Allow-Origin', '*');
+
+  // শুধুমাত্র HTML পেজ হলে আমরা আমাদের ডিজাইন বসাবো
+  if (contentType.includes("text/html")) {
     return new HTMLRewriter()
       .on("head", new HeadRewriter())
       .on("body", new BodyRewriter())
-      .transform(response);
+      .transform(newResponse);
   }
-  return response;
+  
+  return newResponse;
 }
 
 // ==========================================
-// ১. Head Rewriter: আগের ডিজাইন স্ক্রিনের আড়ালে লুকানো (Angular Friendly)
+// ১. Head Rewriter: আগের ডিজাইন কভার করা (Angular Lazy-Load ঠিক রাখার জন্য)
 // ==========================================
 class HeadRewriter {
   element(element) {
     element.append(`
       <style>
-        /* HIDE OLD SITE COMPLETELY WITHOUT BREAKING ANGULAR */
+        /* আগের সাইটটি যেন ব্যাকগ্রাউন্ডে লোড হতে পারে তাই সেটিকে ডিলিট না করে কভার করা হলো */
+        body { margin: 0; padding: 0; overflow: hidden !important; }
         app-root, .mian-wrap {
-            position: fixed !important;
-            top: -9999px !important;
-            left: -9999px !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            opacity: 0.001 !important;
-            pointer-events: none !important;
-            z-index: -99999 !important;
-            overflow: auto !important;
+            position: absolute !important;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 1; /* একদম নিচে */
+            opacity: 0.01 !important; /* প্রায় অদৃশ্য কিন্তু ব্রাউজার রেন্ডার করবে */
+            pointer-events: none !important; /* কোনো ক্লিক লাগবে না */
         }
 
         /* NEW UI CSS VARIABLES & STYLES */
@@ -69,34 +73,24 @@ class HeadRewriter {
             --card-bg: #002244;
         }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000 !important;
-            display: flex;
-            justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
         #new-ui-root {
             width: 100%;
-            max-width: 480px;
             height: 100vh;
             background-color: var(--bg-dark);
             display: flex;
             flex-direction: column;
             position: fixed;
             top: 0;
-            z-index: 999999999;
+            left: 0;
+            z-index: 999999999; /* সবার উপরে */
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         header { background-color: var(--bg-header); height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; flex-shrink: 0; border-bottom: 1px solid #111;}
         .logo { color: var(--text-white); font-size: 24px; font-weight: 900; font-style: italic; }
         .logo span { color: #5bc0de; }
         .login-btn { background-color: var(--primary-blue); color: var(--text-white); border: none; padding: 6px 15px; border-radius: 4px; font-weight: bold; display: flex; align-items: center; gap: 5px; font-size: 14px; cursor: pointer; transition: 0.3s; }
-        .login-btn:hover { background-color: #1565c0; }
         
         .top-banner { width: 100%; height: 120px; background-color: #0f3966; display: flex; justify-content: center; align-items: center; color: #ccc; flex-shrink: 0; border-bottom: 2px solid var(--accent-yellow); background-size: cover; background-position: center; }
         .marquee-container { background-color: #0d1b2a; color: var(--text-white); padding: 5px 10px; display: flex; align-items: center; gap: 10px; font-size: 12px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
@@ -140,20 +134,18 @@ class HeadRewriter {
 }
 
 // ==========================================
-// ২. Body Rewriter: কাস্টম UI এবং ব্যাকগ্রাউন্ড স্ক্র্যাপার 
+// ২. Body Rewriter: কাস্টম UI এবং স্মার্ট স্ক্র্যাপার 
 // ==========================================
 class BodyRewriter {
   element(element) {
     const scriptContent = `
       <div id="new-ui-root">
-          <!-- গেম লোড না হওয়া পর্যন্ত এই লোডিং স্ক্রিন দেখাবে -->
           <div id="loading-screen">
               <div class="spinner"></div>
               <p style="margin-top: 15px; font-size: 14px; color: #ffc107;" id="load-text">ডেটা লোড হচ্ছে...</p>
           </div>
           
-          <!-- মেইন কাস্টম লেআউট -->
-          <div id="app-container" style="display: none; height: 100%; flex-direction: column;">
+          <div id="app-container" style="display: none; height: 100%; flex-direction: column; width: 100%; max-width: 480px; margin: 0 auto;">
               <header>
                   <div class="logo">1X<span>BDT</span></div>
                   <button class="login-btn" onclick="triggerLogin()"><i class="fa-solid fa-user"></i> Login</button>
@@ -187,16 +179,16 @@ class BodyRewriter {
 
         let currentState = { activeSidebar: 'all' };
 
-        // ডাইনামিক ডাটা কালেক্টর
         function startScraping() {
             const observer = new MutationObserver((mutations, obs) => {
-                // ইন্সপেক্টরের স্ক্রিনশট থেকে টার্গেট করা ক্লাস ও আইডি (casinoLoginBtn)
-                const gameNodes = document.querySelectorAll('a#casinoLoginBtn, .game-item');
                 
-                // যদি অন্তত 4-5 টি গেম লোড হয়, তখন আমরা কাস্টম ডিজাইনে মুভ করবো
-                if (gameNodes.length > 4 && !isAppReady) {
+                // স্ক্র্যাপ করার জন্য সম্ভাব্য সকল গেম লিংক খোঁজা হচ্ছে
+                const allLinks = Array.from(document.querySelectorAll('a'));
+                const gameNodes = allLinks.filter(a => a.id === 'casinoLoginBtn' || a.querySelector('.entrance-title') || a.querySelector('img[src*="Image"]'));
+                
+                // অন্তত ৪টি গেম পেলেই আমরা কাস্টম সাইট ওপেন করে দেবো
+                if (gameNodes.length >= 4 && !isAppReady) {
                     
-                    // টপ ব্যানার ক্যাপচার
                     const firstImg = document.querySelector('img[src*="banner"]');
                     if(firstImg && firstImg.src) {
                         document.getElementById('main-banner').style.backgroundImage = 'url(' + firstImg.src + ')';
@@ -208,15 +200,14 @@ class BodyRewriter {
                         const imgSrc = img ? img.src : '';
                         
                         const titleNode = node.querySelector('.entrance-title, dl');
-                        const title = titleNode ? titleNode.innerText.trim() : ('Game ' + (index + 1));
+                        const title = titleNode ? titleNode.innerText.trim() : ('গেম ' + (index + 1));
                         
-                        // ক্যাটাগরি তৈরি (নামের উপর ভিত্তি করে)
                         let cat = 'casino';
                         let titleLower = title.toLowerCase();
                         if(titleLower.includes('sport') || titleLower.includes('race')) cat = 'sports';
                         else if(titleLower.includes('aviator') || titleLower.includes('crash')) cat = 'crash';
                         else if(titleLower.includes('slot') || titleLower.includes('jili') || titleLower.includes('spin')) cat = 'slot';
-                        else if(titleLower.includes('poker') || titleLower.includes('roulette')) cat = 'table';
+                        else if(titleLower.includes('poker') || titleLower.includes('roulette') || titleLower.includes('matka')) cat = 'table';
 
                         if(imgSrc && title) {
                             tempGames.push({
@@ -224,7 +215,7 @@ class BodyRewriter {
                                 name: title,
                                 image: imgSrc,
                                 category: cat,
-                                originalNode: node // গেম লিংকে ক্লিক করানোর জন্য
+                                originalNode: node 
                             });
                         }
                     });
@@ -232,7 +223,7 @@ class BodyRewriter {
                     if (tempGames.length > 0) {
                         scrapedGames = tempGames;
                         isAppReady = true;
-                        obs.disconnect(); // ডাটা পেয়ে গেলে অবসার্ভার বন্ধ করে দেবো
+                        obs.disconnect(); 
                         
                         document.getElementById('loading-screen').style.display = 'none';
                         document.getElementById('app-container').style.display = 'flex';
@@ -243,28 +234,25 @@ class BodyRewriter {
                 }
             });
 
-            // Angular এর মেইন বডি চেক করা শুরু
             observer.observe(document.body, { childList: true, subtree: true });
 
-            // ১৫ সেকেন্ড পরও যদি কিছু না পায় (নেটওয়ার্ক স্লো থাকলে)
+            // যদি ১২ সেকেন্ড পরও ডাটা না পায় তবে মেসেজ চেঞ্জ হবে
             setTimeout(() => {
                 if(!isAppReady) {
-                    document.getElementById('load-text').innerText = "ডেটা লোড হতে সময় লাগছে...";
+                    document.getElementById('load-text').innerText = "অনুগ্রহ করে আরেকটু অপেক্ষা করুন...";
                 }
-            }, 8000);
+            }, 12000);
         }
 
         window.triggerLogin = function() {
-            // অরিজিনাল সাইটের লগিন বাটন ট্রিগার
             const oldLogin = document.querySelector('.login-btn, button[class*="login"], a[href*="login"]');
             if(oldLogin) oldLogin.click();
-            else alert('Login Feature Triggered!');
+            else alert('Login Triggered!');
         };
 
         window.playGame = function(gameId) {
             const game = scrapedGames.find(g => g.id === gameId);
             if(game && game.originalNode) {
-                // হিডেন থাকা অরিজিনাল সাইটের লিংকে ক্লিক করা
                 game.originalNode.click(); 
             }
         };
@@ -298,7 +286,6 @@ class BodyRewriter {
             if(currentState.activeSidebar !== 'all') {
                 displayGames = scrapedGames.filter(g => g.category === currentState.activeSidebar);
             }
-            // যদি ক্যাটাগরিতে গেম না থাকে তবে সব গেম দেখাবে
             if(displayGames.length === 0) displayGames = scrapedGames;
 
             let sectionTitle = appData.sidebar.find(s => s.id === currentState.activeSidebar).text;
