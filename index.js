@@ -3,11 +3,28 @@ addEventListener("fetch", event => {
 });
 
 async function handleRequest(request) {
-  // ডাইনামিক্যালি অরিজিনাল সাইট থেকে রেসপন্স আনবে (কোনো ডোমেইন হার্ডকোড করা নেই)
-  const response = await fetch(request);
+  const url = new URL(request.url);
+  
+  // ডাইনামিক ডোমেইন হ্যান্ডেলিং (হার্ডকোডেড নয়)
+  // তবে শুধুমাত্র Cloudflare Preview (.workers.dev) এর জন্য মেইন সাইট সেট করা হলো, যাতে আপনি প্রিভিউ দেখতে পারেন।
+  // লাইভ ডোমেইনে এটি আপনার এড করা ডোমেইন অনুযায়ীই কাজ করবে।
+  if (url.hostname.includes("workers.dev")) {
+      url.hostname = "1xbd.win";
+  }
+
+  // রিকোয়েস্ট মডিফাই করা হচ্ছে যাতে Angular এর JS/CSS ফাইলগুলো ঠিকঠাক লোড হয়
+  const modifiedRequest = new Request(url.toString(), {
+    headers: request.headers,
+    method: request.method,
+    body: request.body,
+    redirect: 'follow'
+  });
+  modifiedRequest.headers.set('Host', url.hostname);
+
+  const response = await fetch(modifiedRequest);
   const contentType = response.headers.get("Content-Type");
   
-  // যদি রেসপন্সটি HTML পেজ হয়, তবেই আমরা ডিজাইন পরিবর্তন করবো
+  // শুধু HTML পেজের ক্ষেত্রে আমরা ডিজাইন চেঞ্জ করবো, JS/CSS এর ক্ষেত্রে নয়
   if (contentType && contentType.includes("text/html")) {
     return new HTMLRewriter()
       .on("head", new HeadRewriter())
@@ -18,22 +35,23 @@ async function handleRequest(request) {
 }
 
 // ==========================================
-// ১. Head Rewriter: আগের ডিজাইন পুরোপুরি হাইড করবে
+// ১. Head Rewriter: আগের ডিজাইন স্ক্রিনের আড়ালে লুকানো (Angular Friendly)
 // ==========================================
 class HeadRewriter {
   element(element) {
-    // CSS ইনজেক্ট করে অরিজিনাল সাইটের সবকিছু অদৃশ্য করে দিচ্ছি, যাতে এক মুহূর্তের জন্যও দেখা না যায়
     element.append(`
       <style>
-        /* HIDE OLD SITE COMPLETELY WITHOUT FLICKERING */
-        app-root, .mian-wrap, body > *:not(#new-ui-root) {
-            display: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
+        /* HIDE OLD SITE COMPLETELY WITHOUT BREAKING ANGULAR */
+        app-root, .mian-wrap {
+            position: fixed !important;
+            top: -9999px !important;
+            left: -9999px !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            opacity: 0.001 !important;
             pointer-events: none !important;
-            height: 0 !important;
-            width: 0 !important;
-            overflow: hidden !important;
+            z-index: -99999 !important;
+            overflow: auto !important;
         }
 
         /* NEW UI CSS VARIABLES & STYLES */
@@ -74,10 +92,11 @@ class HeadRewriter {
             box-shadow: 0 0 20px rgba(255,255,255,0.1);
         }
         
-        header { background-color: var(--bg-header); height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; flex-shrink: 0; }
+        header { background-color: var(--bg-header); height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; flex-shrink: 0; border-bottom: 1px solid #111;}
         .logo { color: var(--text-white); font-size: 24px; font-weight: 900; font-style: italic; }
         .logo span { color: #5bc0de; }
-        .login-btn { background-color: var(--primary-blue); color: var(--text-white); border: none; padding: 6px 15px; border-radius: 4px; font-weight: bold; display: flex; align-items: center; gap: 5px; font-size: 14px; cursor: pointer; }
+        .login-btn { background-color: var(--primary-blue); color: var(--text-white); border: none; padding: 6px 15px; border-radius: 4px; font-weight: bold; display: flex; align-items: center; gap: 5px; font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .login-btn:hover { background-color: #1565c0; }
         
         .top-banner { width: 100%; height: 120px; background-color: #0f3966; display: flex; justify-content: center; align-items: center; color: #ccc; flex-shrink: 0; border-bottom: 2px solid var(--accent-yellow); background-size: cover; background-position: center; }
         .marquee-container { background-color: #0d1b2a; color: var(--text-white); padding: 5px 10px; display: flex; align-items: center; gap: 10px; font-size: 12px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
@@ -101,15 +120,14 @@ class HeadRewriter {
         
         .section-header { display: flex; justify-content: space-between; align-items: center; padding: 10px; color: var(--text-white); background: #001b3a; }
         .section-title { font-weight: bold; font-size: 14px; border-left: 3px solid var(--text-white); padding-left: 5px; }
-        .filter-select { background: #1a365d; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; outline: none; }
         
         .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
-        .game-card { background-color: var(--card-bg); border-radius: 4px; overflow: hidden; border: 1px solid #2a4365; cursor: pointer; transition: transform 0.3s ease; }
+        .game-card { background-color: var(--card-bg); border-radius: 4px; overflow: hidden; border: 1px solid #2a4365; cursor: pointer; transition: transform 0.3s ease; display: flex; flex-direction: column;}
         .game-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.4); border-color: var(--primary-blue); }
-        .game-img-placeholder { width: 100%; height: 100px; background-color: #2c3e50; background-size: cover; background-position: center; }
-        .game-info { padding: 8px; display: flex; justify-content: space-between; align-items: center; background: #0b5394; }
-        .game-name { color: var(--text-white); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
-        .heart-icon { color: var(--text-white); font-size: 12px; }
+        .game-img-placeholder { width: 100%; height: 100px; background-color: #2c3e50; background-size: cover; background-position: center; background-repeat: no-repeat; }
+        .game-info { padding: 8px; display: flex; justify-content: space-between; align-items: center; background: #0b5394; flex: 1;}
+        .game-name { color: var(--text-white); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; font-weight: bold;}
+        .heart-icon { color: var(--text-white); font-size: 12px; transition: 0.2s; }
 
         /* Loading Screen Style */
         #loading-screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-dark); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; }
@@ -122,7 +140,7 @@ class HeadRewriter {
 }
 
 // ==========================================
-// ২. Body Rewriter: নতুন ডিজাইন এবং ডাইনামিক স্ক্র্যাপার ইনজেক্ট করবে
+// ২. Body Rewriter: কাস্টম UI এবং ব্যাকগ্রাউন্ড স্ক্র্যাপার 
 // ==========================================
 class BodyRewriter {
   element(element) {
@@ -131,19 +149,19 @@ class BodyRewriter {
           <!-- গেম লোড না হওয়া পর্যন্ত এই লোডিং স্ক্রিন দেখাবে -->
           <div id="loading-screen">
               <div class="spinner"></div>
-              <p style="margin-top: 15px; font-size: 14px; color: #ffc107;">অপেক্ষা করুন...</p>
+              <p style="margin-top: 15px; font-size: 14px; color: #ffc107;" id="load-text">ডেটা লোড হচ্ছে...</p>
           </div>
           
-          <!-- মেইন অ্যাপ কন্টেইনার -->
+          <!-- মেইন কাস্টম লেআউট -->
           <div id="app-container" style="display: none; height: 100%; flex-direction: column;">
               <header>
-                  <div class="logo">1X<span>BET</span></div>
+                  <div class="logo">1X<span>BDT</span></div>
                   <button class="login-btn" onclick="triggerLogin()"><i class="fa-solid fa-user"></i> Login</button>
               </header>
               <div class="top-banner" id="main-banner"></div>
               <div class="marquee-container">
                   <i class="fa-solid fa-bullhorn"></i>
-                  <marquee scrollamount="4">নতুন সদস্যদের জন্য ৩ টি বোনাস , প্রথম ডিপোজিটে ১০০% বোনাস</marquee>
+                  <marquee scrollamount="4">সব গেম এখন নতুন ডিজাইনে। খেলুন এবং উপভোগ করুন!</marquee>
               </div>
               <div class="main-body">
                   <div class="sidebar" id="sidebar"></div>
@@ -159,40 +177,46 @@ class BodyRewriter {
         const appData = {
             sidebar:[
                 { id: 'all', icon: 'fa-gamepad', text: 'সব গেম' },
-                { id: 'sports', icon: 'fa-futbol', text: 'স্পোর্ট' },
+                { id: 'sports', icon: 'fa-futbol', text: 'স্পোর্টস' },
                 { id: 'casino', icon: 'fa-box', text: 'ক্যাসিনো' },
-                { id: 'slot', icon: 'fa-slot-machine', fallbackIcon: 'fa-7', text: 'স্লট' },
+                { id: 'slot', fallbackIcon: 'fa-7', icon: 'fa-slot-machine', text: 'স্লট' },
+                { id: 'table', icon: 'fa-layer-group', text: 'টেবিল' },
                 { id: 'crash', icon: 'fa-rocket', text: 'ক্র্যাশ' }
             ]
         };
 
         let currentState = { activeSidebar: 'all' };
 
-        // ডাইনামিক স্ক্র্যাপিং (যেহেতু মূল সাইটটি এঙ্গুলার/JS দিয়ে ডাটা লোড করে, তাই আমরা MutationObserver ব্যবহার করেছি)
+        // ডাইনামিক ডাটা কালেক্টর
         function startScraping() {
             const observer = new MutationObserver((mutations, obs) => {
-                // আপনার স্ক্রিনশট অনুযায়ী গেমগুলো a#casinoLoginBtn এর ভেতরে থাকে
-                const gameNodes = document.querySelectorAll('a#casinoLoginBtn, a[id^="casinoLoginBtn"]');
+                // ইন্সপেক্টরের স্ক্রিনশট থেকে টার্গেট করা ক্লাস ও আইডি (casinoLoginBtn)
+                const gameNodes = document.querySelectorAll('a#casinoLoginBtn, .game-item');
                 
-                if (gameNodes.length > 0 && !isAppReady) {
+                // যদি অন্তত 4-5 টি গেম লোড হয়, তখন আমরা কাস্টম ডিজাইনে মুভ করবো
+                if (gameNodes.length > 4 && !isAppReady) {
                     
-                    // টপ ব্যানার ইমেজ খোঁজার চেষ্টা
+                    // টপ ব্যানার ক্যাপচার
                     const firstImg = document.querySelector('img[src*="banner"]');
-                    if(firstImg) document.getElementById('main-banner').style.backgroundImage = 'url(' + firstImg.src + ')';
+                    if(firstImg && firstImg.src) {
+                        document.getElementById('main-banner').style.backgroundImage = 'url(' + firstImg.src + ')';
+                    }
 
                     let tempGames =[];
                     gameNodes.forEach((node, index) => {
                         const img = node.querySelector('img');
                         const imgSrc = img ? img.src : '';
                         
-                        const dl = node.querySelector('dl, .entrance-title');
-                        const title = dl ? dl.innerText.trim() : ('Game ' + (index + 1));
+                        const titleNode = node.querySelector('.entrance-title, dl');
+                        const title = titleNode ? titleNode.innerText.trim() : ('Game ' + (index + 1));
                         
-                        // নামের উপর ভিত্তি করে ক্যাটাগরি তৈরি করা
+                        // ক্যাটাগরি তৈরি (নামের উপর ভিত্তি করে)
                         let cat = 'casino';
-                        if(title.toLowerCase().includes('sport')) cat = 'sports';
-                        else if(title.toLowerCase().includes('aviator') || title.toLowerCase().includes('crash')) cat = 'crash';
-                        else if(title.toLowerCase().includes('slot') || title.toLowerCase().includes('jili')) cat = 'slot';
+                        let titleLower = title.toLowerCase();
+                        if(titleLower.includes('sport') || titleLower.includes('race')) cat = 'sports';
+                        else if(titleLower.includes('aviator') || titleLower.includes('crash')) cat = 'crash';
+                        else if(titleLower.includes('slot') || titleLower.includes('jili') || titleLower.includes('spin')) cat = 'slot';
+                        else if(titleLower.includes('poker') || titleLower.includes('roulette')) cat = 'table';
 
                         if(imgSrc && title) {
                             tempGames.push({
@@ -200,7 +224,7 @@ class BodyRewriter {
                                 name: title,
                                 image: imgSrc,
                                 category: cat,
-                                originalNode: node  // ক্লিক কাজ করানোর জন্য অরিজিনাল নোড সেভ রাখা হলো
+                                originalNode: node // গেম লিংকে ক্লিক করানোর জন্য
                             });
                         }
                     });
@@ -208,8 +232,8 @@ class BodyRewriter {
                     if (tempGames.length > 0) {
                         scrapedGames = tempGames;
                         isAppReady = true;
+                        obs.disconnect(); // ডাটা পেয়ে গেলে অবসার্ভার বন্ধ করে দেবো
                         
-                        // ডাটা পাওয়া গেলে লোডিং স্ক্রিন বন্ধ করে নতুন অ্যাপ দেখানো
                         document.getElementById('loading-screen').style.display = 'none';
                         document.getElementById('app-container').style.display = 'flex';
                         
@@ -219,21 +243,28 @@ class BodyRewriter {
                 }
             });
 
-            // বডি অবজেক্ট অবজার্ভ করা শুরু
+            // Angular এর মেইন বডি চেক করা শুরু
             observer.observe(document.body, { childList: true, subtree: true });
+
+            // ১৫ সেকেন্ড পরও যদি কিছু না পায় (নেটওয়ার্ক স্লো থাকলে)
+            setTimeout(() => {
+                if(!isAppReady) {
+                    document.getElementById('load-text').innerText = "ডেটা লোড হতে সময় লাগছে...";
+                }
+            }, 8000);
         }
 
-        // অরিজিনাল সাইটের লগিন বাটন ট্রিগার করা
-        function triggerLogin() {
-            const oldLogin = document.querySelector('button, a[href*="login"]');
+        window.triggerLogin = function() {
+            // অরিজিনাল সাইটের লগিন বাটন ট্রিগার
+            const oldLogin = document.querySelector('.login-btn, button[class*="login"], a[href*="login"]');
             if(oldLogin) oldLogin.click();
-            else alert('Login Feature will be triggered here!');
-        }
+            else alert('Login Feature Triggered!');
+        };
 
-        // গেম প্লে বাটন (ম্যাজিক ট্রিক: নতুন ডিজাইনে ক্লিক করলে অরিজিনাল ডিজাইনে হিডেন অবস্থায় ক্লিক পড়বে)
         window.playGame = function(gameId) {
             const game = scrapedGames.find(g => g.id === gameId);
             if(game && game.originalNode) {
+                // হিডেন থাকা অরিজিনাল সাইটের লিংকে ক্লিক করা
                 game.originalNode.click(); 
             }
         };
@@ -263,11 +294,11 @@ class BodyRewriter {
         function updateContent() {
             const contentArea = document.getElementById('content-area');
             
-            // সাইডবারের ক্যাটাগরি অনুযায়ী গেম ফিল্টার
             let displayGames = scrapedGames;
             if(currentState.activeSidebar !== 'all') {
                 displayGames = scrapedGames.filter(g => g.category === currentState.activeSidebar);
             }
+            // যদি ক্যাটাগরিতে গেম না থাকে তবে সব গেম দেখাবে
             if(displayGames.length === 0) displayGames = scrapedGames;
 
             let sectionTitle = appData.sidebar.find(s => s.id === currentState.activeSidebar).text;
@@ -275,7 +306,6 @@ class BodyRewriter {
             let html = '<div class="fade-enter">';
             html += '<div class="section-header">';
             html += '<div class="section-title">| ' + sectionTitle + '</div>';
-            html += '<select class="filter-select"><option>Filter</option></select>';
             html += '</div>';
 
             html += '<div class="games-grid">';
@@ -294,7 +324,6 @@ class BodyRewriter {
             contentArea.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // স্ক্রিপ্ট চালু করা
         document.addEventListener('DOMContentLoaded', startScraping);
       </script>
     `;
