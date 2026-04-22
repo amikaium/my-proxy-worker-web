@@ -1,150 +1,162 @@
 export default {
     async fetch(request) {
-        // সোর্স ওয়েবসাইট: যার ডেটা আপনি প্রক্সি করে আনবেন (এটা আপনার ডোমেইন না)
-        const TARGET_WEBSITE = 'ag.tenx365x.live'; 
-        
-        // আপনার ডোমেইন: আপনি যেই ডোমেইনে বা প্রিভিউ মোডে চালাবেন (সম্পূর্ণ ডায়নামিক)
         const url = new URL(request.url);
         const myDomain = url.hostname;
-        
-        // সোর্স ওয়েবসাইটে রিকোয়েস্ট পাঠানোর জন্য URL আপডেট
-        url.hostname = TARGET_WEBSITE;
+
+        // ইউজারের ব্রাউজারে কোনো সাইট সিলেক্ট করা আছে কিনা তা কুকি থেকে চেক করা
+        const cookieHeader = request.headers.get('Cookie') || '';
+        const match = cookieHeader.match(/active_target=([^;]+)/);
+        let targetSite = match ? match[1] : null;
+
+        // যদি ইউজার পোর্টাল মেনুতে ফিরে আসতে চায় (yourdomain.com/reset)
+        if (url.pathname === '/reset') {
+            return new Response('Resetting and going back to menu...', {
+                status: 302,
+                headers: {
+                    'Location': '/',
+                    // কুকি ক্লিয়ার করে দেওয়া হচ্ছে
+                    'Set-Cookie': 'active_target=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+                }
+            });
+        }
+
+        // যদি কোনো সাইট সিলেক্ট করা না থাকে, তাহলে আমাদের পোর্টাল/মেনু পেজ দেখাবে
+        if (!targetSite) {
+            return this.servePortal(myDomain);
+        }
+
+        // ==========================================
+        // রিভার্স প্রক্সি লজিক (অরিজিনাল সাইট লোড করা)
+        // ==========================================
+        url.hostname = targetSite;
         
         const newRequest = new Request(url.toString(), new Request(request, {
             redirect: 'manual' 
         }));
         
-        // অরিজিনাল ওয়েবসাইটের কাছে রিকোয়েস্ট ভ্যালিড করার জন্য হেডার
-        newRequest.headers.set('Host', TARGET_WEBSITE);
-        newRequest.headers.set('Origin', `https://${TARGET_WEBSITE}`);
-        newRequest.headers.set('Referer', `https://${TARGET_WEBSITE}${url.pathname}`);
-        newRequest.headers.set('Cache-Control', 'no-cache'); 
+        newRequest.headers.set('Host', targetSite);
+        newRequest.headers.set('Origin', `https://${targetSite}`);
+        newRequest.headers.set('Referer', `https://${targetSite}${url.pathname}`);
         
         const response = await fetch(newRequest);
         let newResponse = new Response(response.body, response);
         
-        // রিডাইরেক্ট (Location) ঠিক করা যাতে আপনার ডোমেইনেই থাকে
+        // রিডাইরেক্ট ঠিক করা
         const location = newResponse.headers.get('location');
         if (location) {
-            newResponse.headers.set('location', location.replace(TARGET_WEBSITE, myDomain));
+            newResponse.headers.set('location', location.replace(targetSite, myDomain));
         }
         
-        // কুকিজ (Cookies) ঠিক করা
+        // কুকিজ ঠিক করা
         const setCookies = newResponse.headers.get('set-cookie');
         if (setCookies) {
-            newResponse.headers.set('set-cookie', setCookies.replace(new RegExp(TARGET_WEBSITE, 'g'), myDomain));
+            newResponse.headers.set('set-cookie', setCookies.replace(new RegExp(targetSite, 'g'), myDomain));
         }
 
-        const contentType = newResponse.headers.get("content-type");
-        if (contentType && contentType.includes("text/html")) {
-            return new HTMLRewriter()
-                // লেয়ার ১: সার্ভার লেভেল থেকে লগইন পেজের ইলিমেন্ট রিমুভ
-                .on('header.login-head', { element(el) { el.remove(); } })
-                .on('div#supportWrap', { element(el) { el.remove(); } })
-                .on('button#appDesign', { element(el) { el.remove(); } })
-                .on('button#links', { element(el) { el.remove(); } })
-                .on('head', {
-                    element(el) {
-                        el.append(`
-                            <style>
-                                /* অবাঞ্ছিত লগইন ইলিমেন্ট ফোর্স হাইড করা */
-                                header, .login-head, #supportWrap, .support-wrap, .support-service, .support-info, #appDesign, #links, h4#loginMessage {
-                                    display: none !important;
-                                    opacity: 0 !important;
-                                    visibility: hidden !important;
-                                    position: absolute !important;
-                                    width: 0 !important;
-                                    height: 0 !important;
-                                    z-index: -9999 !important;
-                                    pointer-events: none !important;
-                                }
-
-                                /* ডাউনলোড বাটনের এরিয়াটা হাইড করা */
-                                form[name="loginForm"] dl:nth-of-type(4) {
-                                    display: none !important;
-                                }
-
-                                /* লগইন ফর্মকে স্ক্রিনের একদম মাঝখানে আনা (Perfect Center) */
-                                form[name="loginForm"] {
-                                    position: absolute !important;
-                                    top: 50% !important;
-                                    left: 50% !important;
-                                    transform: translate(-50%, -50%) !important;
-                                    width: 100% !important;
-                                    max-width: 400px !important;
-                                    padding: 0 20px !important;
-                                    margin: 0 !important;
-                                }
-                                
-                                /* নির্দিষ্ট ৩টি জিনিস (Username, Password, Login Btn) মাস্ট ভিজিবল রাখা */
-                                #userid, #password, #loginBtn, form[name="loginForm"] dl:nth-of-type(1), form[name="loginForm"] dl:nth-of-type(2), form[name="loginForm"] dl:nth-of-type(3) {
-                                    display: flex !important;
-                                    visibility: visible !important;
-                                    opacity: 1 !important;
-                                }
-
-                                /* ড্যাশবোর্ডের মেনু হাইড করার সিএসএস (Banking ও Add Member বাদে) */
-                                a[id^="menu_"]:not(#menu_banking) {
-                                    display: none !important;
-                                }
-                            </style>
-                            
-                            <script>
-                                document.addEventListener("DOMContentLoaded", () => {
-                                    const nukeElements = () => {
-                                        // ১. লগইন পেজের অবাঞ্ছিত অংশ রিমুভ
-                                        const unwantedSelectors = [
-                                            'header.login-head', 
-                                            '#poupppLogo',
-                                            '#supportWrap', 
-                                            '.support-wrap',
-                                            '#appDesign', 
-                                            '#links', 
-                                            'h4#loginMessage',
-                                            'form[name="loginForm"] dl:nth-of-type(4)'
-                                        ];
-                                        
-                                        unwantedSelectors.forEach(selector => {
-                                            const elements = document.querySelectorAll(selector);
-                                            elements.forEach(el => el.remove()); 
-                                        });
-
-                                        // ২. ড্যাশবোর্ড মেনু রিমুভ (Banking এবং Add Member বাদে)
-                                        const dashboardMenus = document.querySelectorAll('li, a[id^="menu_"]');
-                                        dashboardMenus.forEach(el => {
-                                            // যদি মেনুর <li> আইটেম হয়
-                                            if (el.tagName.toLowerCase() === 'li') {
-                                                const isMenuLi = el.closest('header, nav, .menu, .menu-wrap, .setting-wrap, .header-bottom');
-                                                if (isMenuLi) {
-                                                    const keepBanking = el.querySelector('#menu_banking');
-                                                    const keepAddMember = el.querySelector('.add_member');
-                                                    // যদি এই লিস্টের ভেতরে কাঙ্ক্ষিত দুইটার একটাও না থাকে, তবে ডিলিট
-                                                    if (!keepBanking && !keepAddMember) {
-                                                        el.remove();
-                                                    }
-                                                }
-                                            }
-                                            // অন্যান্য menu_ আইডি যুক্ত <a> ট্যাগ ডিলিট
-                                            if (el.tagName.toLowerCase() === 'a' && el.id.startsWith('menu_') && el.id !== 'menu_banking') {
-                                                el.remove();
-                                            }
-                                        });
-                                    };
-                                    
-                                    nukeElements();
-                                    
-                                    // ফ্রেমওয়ার্ক নতুন করে রেন্ডার করলেও সাথে সাথে ডিলিট করবে
-                                    const observer = new MutationObserver((mutations) => {
-                                        nukeElements();
-                                    });
-                                    observer.observe(document.body, { childList: true, subtree: true });
-                                });
-                            </script>
-                        `, { html: true });
-                    }
-                }).transform(newResponse);
-        }
-        
         return newResponse;
+    },
+
+    // পোর্টাল বা ড্যাশবোর্ড ডিজাইন
+    servePortal(myDomain) {
+        const sites = [
+            'ag.tenx365x.live',
+            'ag.all9x.com',
+            'ag.baji11.live',
+            'ag.baji365x.live',
+            'ag.velki123.win',
+            'ag.vellki365.app'
+        ];
+
+        let buttonsHtml = '';
+        sites.forEach(site => {
+            buttonsHtml += `<button onclick="setTarget('${site}')">🌐 ${site} <span style="float:right;">➜ GO</span></button>`;
+        });
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Secure Gateway</title>
+            <style>
+                body {
+                    background-color: #0f172a;
+                    color: #f8fafc;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    margin: 0;
+                }
+                .container {
+                    background: #1e293b;
+                    padding: 30px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                    width: 90%;
+                    max-width: 400px;
+                }
+                h2 { margin-top: 0; color: #38bdf8; text-align: center; margin-bottom: 25px; }
+                button {
+                    width: 100%;
+                    padding: 15px 20px;
+                    margin: 8px 0;
+                    background-color: #334155;
+                    color: white;
+                    border: 1px solid #475569;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    text-align: left;
+                    display: block;
+                }
+                button:hover { 
+                    background-color: #0ea5e9; 
+                    border-color: #0ea5e9;
+                    transform: translateY(-2px);
+                }
+                .note { 
+                    font-size: 13px; 
+                    color: #94a3b8; 
+                    margin-top: 25px; 
+                    text-align: center;
+                    line-height: 1.5;
+                    background: #0f172a;
+                    padding: 10px;
+                    border-radius: 6px;
+                }
+                .highlight { color: #facc15; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>Select Platform</h2>
+                ${buttonsHtml}
+                
+                <div class="note">
+                    যেকোনো সময় এই মেনুতে ফিরে আসতে ব্রাউজারের লিংকের শেষে <br> <span class="highlight">/reset</span> লিখে এন্টার দিন। <br>
+                    (যেমন: ${myDomain}/reset)
+                </div>
+            </div>
+
+            <script>
+                // জাভাস্ক্রিপ্ট দিয়ে কুকি সেট করা হচ্ছে যাতে ব্রাউজারের URL History তে সাইটের নাম না যায়
+                function setTarget(site) {
+                    document.cookie = "active_target=" + site + "; path=/; max-age=86400;";
+                    window.location.href = "/";
+                }
+            </script>
+        </body>
+        </html>
+        `;
+
+        return new Response(html, {
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
     }
 }
