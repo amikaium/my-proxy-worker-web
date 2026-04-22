@@ -53,7 +53,7 @@ export default {
     },
 
     // ==========================================
-    // ফ্রন্ট-এন্ড পোর্টাল ডিজাইন (স্ট্যাটিক লিস্ট)
+    // ফ্রন্ট-এন্ড পোর্টাল ডিজাইন (টেক্সট কপি এনাবল করা হয়েছে)
     // ==========================================
     servePortal() {
         const sites = [
@@ -65,7 +65,6 @@ export default {
             'ag.vellki365.app'
         ];
 
-        // 'ag.' হাইড করে শুধু মেইন নাম দেখানো
         let listHtml = '';
         sites.forEach(site => {
             const displayName = site.replace(/^ag\./i, '');
@@ -92,16 +91,19 @@ export default {
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
             <title>Gateway Portal</title>
             <style>
                 body {
                     background-color: #000000; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                    margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none;
+                    margin: 0; padding: 0; -webkit-tap-highlight-color: transparent;
+                    /* টেক্সট কপি এনাবল করা হলো */
+                    user-select: text !important;
+                    -webkit-user-select: text !important;
                 }
                 .app-container { max-width: 500px; margin: 0 auto; padding: 20px; }
                 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; margin-top: 10px; }
-                h1 { font-size: 28px; font-weight: 700; margin: 0; }
+                h1 { font-size: 28px; font-weight: 700; margin: 0; user-select: none; }
                 
                 .site-list { display: flex; flex-direction: column; gap: 12px; }
                 .site-card {
@@ -113,12 +115,19 @@ export default {
                     display: flex; align-items: center; gap: 12px; overflow: hidden; flex-grow: 1; 
                 }
                 
-                .icon-globe { width: 20px; height: 20px; color: #0A84FF; flex-shrink: 0; }
-                .site-name { font-size: 16px; font-weight: 500; color: #F2F2F7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .icon-globe { width: 20px; height: 20px; color: #0A84FF; flex-shrink: 0; user-select: none; }
+                .site-name { 
+                    font-size: 16px; font-weight: 500; color: #F2F2F7; white-space: nowrap; 
+                    overflow: hidden; text-overflow: ellipsis;
+                    /* নিশ্চিত করা হচ্ছে যেন টেক্সট কপি করা যায় */
+                    user-select: text !important;
+                    -webkit-user-select: text !important;
+                }
                 
                 .visit-btn {
                     background-color: #0A84FF; color: #FFFFFF; border: none; padding: 8px 16px; margin-left: 10px;
-                    border-radius: 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer;
+                    border-radius: 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; 
+                    cursor: pointer; user-select: none;
                 }
                 .visit-btn:active { transform: scale(0.96); background-color: #007AFF; }
                 .icon-arrow { width: 16px; height: 16px; }
