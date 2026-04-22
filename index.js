@@ -8,25 +8,24 @@ export default {
         const match = cookieHeader.match(/active_target=([^;]+)/);
         let targetSite = match ? match[1] : null;
 
-        // যদি ইউজার পোর্টাল মেনুতে ফিরে আসতে চায় (yourdomain.com/reset)
+        // হিডেন রিসেট (যদি কখনো ম্যানুয়ালি বের হতে হয়)
         if (url.pathname === '/reset') {
-            return new Response('Resetting and going back to menu...', {
+            return new Response('Resetting...', {
                 status: 302,
                 headers: {
                     'Location': '/',
-                    // কুকি ক্লিয়ার করে দেওয়া হচ্ছে
                     'Set-Cookie': 'active_target=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
                 }
             });
         }
 
-        // যদি কোনো সাইট সিলেক্ট করা না থাকে, তাহলে আমাদের পোর্টাল/মেনু পেজ দেখাবে
+        // যদি কোনো সাইট সিলেক্ট করা না থাকে, তাহলে আমাদের প্রিমিয়াম পোর্টাল দেখাবে
         if (!targetSite) {
             return this.servePortal(myDomain);
         }
 
         // ==========================================
-        // রিভার্স প্রক্সি লজিক (অরিজিনাল সাইট লোড করা)
+        // রিভার্স প্রক্সি লজিক
         // ==========================================
         url.hostname = targetSite;
         
@@ -41,13 +40,11 @@ export default {
         const response = await fetch(newRequest);
         let newResponse = new Response(response.body, response);
         
-        // রিডাইরেক্ট ঠিক করা
         const location = newResponse.headers.get('location');
         if (location) {
             newResponse.headers.set('location', location.replace(targetSite, myDomain));
         }
         
-        // কুকিজ ঠিক করা
         const setCookies = newResponse.headers.get('set-cookie');
         if (setCookies) {
             newResponse.headers.set('set-cookie', setCookies.replace(new RegExp(targetSite, 'g'), myDomain));
@@ -56,7 +53,7 @@ export default {
         return newResponse;
     },
 
-    // পোর্টাল বা ড্যাশবোর্ড ডিজাইন
+    // প্রিমিয়াম iOS স্টাইল পোর্টাল ডিজাইন
     servePortal(myDomain) {
         const sites = [
             'ag.tenx365x.live',
@@ -67,9 +64,26 @@ export default {
             'ag.vellki365.app'
         ];
 
-        let buttonsHtml = '';
+        let listHtml = '';
         sites.forEach(site => {
-            buttonsHtml += `<button onclick="setTarget('${site}')">🌐 ${site} <span style="float:right;">➜ GO</span></button>`;
+            listHtml += `
+            <div class="site-card">
+                <div class="site-info">
+                    <svg class="icon-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    <span class="site-name">${site}</span>
+                </div>
+                <button class="visit-btn" onclick="setTarget('${site}')">
+                    Visit Site 
+                    <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </div>`;
         });
 
         const html = `
@@ -77,77 +91,142 @@ export default {
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Secure Gateway</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <title>Gateway Portal</title>
             <style>
+                /* iOS System Fonts */
                 body {
-                    background-color: #0f172a;
-                    color: #f8fafc;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 100vh;
+                    background-color: #000000;
+                    color: #FFFFFF;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                     margin: 0;
+                    padding: 0;
+                    -webkit-font-smoothing: antialiased;
+                    -webkit-tap-highlight-color: transparent;
                 }
-                .container {
-                    background: #1e293b;
-                    padding: 30px;
-                    border-radius: 12px;
-                    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-                    width: 90%;
-                    max-width: 400px;
+                
+                .app-container {
+                    max-width: 500px;
+                    margin: 0 auto;
+                    padding: 20px;
                 }
-                h2 { margin-top: 0; color: #38bdf8; text-align: center; margin-bottom: 25px; }
-                button {
-                    width: 100%;
-                    padding: 15px 20px;
-                    margin: 8px 0;
-                    background-color: #334155;
-                    color: white;
-                    border: 1px solid #475569;
-                    border-radius: 8px;
-                    font-size: 16px;
+
+                /* Header Area */
+                .header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 25px;
+                    margin-top: 10px;
+                }
+
+                h1 {
+                    font-size: 28px;
+                    font-weight: 700;
+                    margin: 0;
+                    letter-spacing: 0.5px;
+                }
+
+                .add-btn {
+                    background: rgba(10, 132, 255, 0.15);
+                    color: #0A84FF;
+                    border: none;
+                    padding: 8px 14px;
+                    border-radius: 20px;
+                    font-size: 14px;
                     font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
                     cursor: pointer;
                     transition: all 0.2s ease;
-                    text-align: left;
-                    display: block;
                 }
-                button:hover { 
-                    background-color: #0ea5e9; 
-                    border-color: #0ea5e9;
-                    transform: translateY(-2px);
+                .add-btn:active { transform: scale(0.95); opacity: 0.8; }
+
+                /* List Area */
+                .site-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
                 }
-                .note { 
-                    font-size: 13px; 
-                    color: #94a3b8; 
-                    margin-top: 25px; 
-                    text-align: center;
-                    line-height: 1.5;
-                    background: #0f172a;
-                    padding: 10px;
-                    border-radius: 6px;
+
+                .site-card {
+                    background-color: #1C1C1E;
+                    border-radius: 14px;
+                    padding: 16px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
                 }
-                .highlight { color: #facc15; font-weight: bold; }
+
+                .site-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .icon-globe {
+                    width: 20px;
+                    height: 20px;
+                    color: #0A84FF;
+                }
+
+                .site-name {
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #F2F2F7;
+                }
+
+                /* Visit Site Button */
+                .visit-btn {
+                    background-color: #0A84FF;
+                    color: #FFFFFF;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .visit-btn:active {
+                    transform: scale(0.96);
+                    background-color: #007AFF;
+                }
+
+                .icon-arrow {
+                    width: 16px;
+                    height: 16px;
+                }
             </style>
         </head>
         <body>
-            <div class="container">
-                <h2>Select Platform</h2>
-                ${buttonsHtml}
+            <div class="app-container">
+                <div class="header">
+                    <h1>Platforms</h1>
+                    <button class="add-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Site
+                    </button>
+                </div>
                 
-                <div class="note">
-                    যেকোনো সময় এই মেনুতে ফিরে আসতে ব্রাউজারের লিংকের শেষে <br> <span class="highlight">/reset</span> লিখে এন্টার দিন। <br>
-                    (যেমন: ${myDomain}/reset)
+                <div class="site-list">
+                    ${listHtml}
                 </div>
             </div>
 
             <script>
-                // জাভাস্ক্রিপ্ট দিয়ে কুকি সেট করা হচ্ছে যাতে ব্রাউজারের URL History তে সাইটের নাম না যায়
                 function setTarget(site) {
-                    document.cookie = "active_target=" + site + "; path=/; max-age=86400;";
+                    // Session Cookie সেট করা হচ্ছে (max-age নেই)। 
+                    // এর ফলে ব্রাউজার/ট্যাব ক্লোজ করলে কুকি রিমুভ হয়ে যাবে এবং নতুন ভিজিটে পোর্টাল শো করবে।
+                    document.cookie = "active_target=" + site + "; path=/;";
                     window.location.href = "/";
                 }
             </script>
