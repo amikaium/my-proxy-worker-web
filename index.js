@@ -118,7 +118,6 @@ export default {
             if (contentType.includes("text/html")) {
                 const customStylesAndScripts = `
                 <link rel="preload" href="https://github.com/user-attachments/assets/2e0caaaf-d0b6-4631-827f-4b428c62bc97" as="video" type="video/mp4" fetchpriority="high">
-                <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
                 <style>
                   /* 📱 অ্যাপ ইন্সটল ব্যানার ডিজাইন */
@@ -137,115 +136,207 @@ export default {
                       font-weight: 800; font-size: 14px; cursor: pointer; margin-left: 10px;
                   }
 
+                  /* 🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড */
                   img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] { content: url("${banner1_New}") !important; object-fit: cover !important; }
                   img[src*="banner10.jpg"], img[alt*="banner10.jpg"] { content: url("${banner2_New}") !important; object-fit: cover !important; }
                   .css-blq8bd { display: none !important; }
 
+                  /* 🎨 সাইনআপ এবং লগইন পেজ */
                   .page-signup body, .page-login body { background-color: #121212 !important; }
                   .page-signup .chakra-form-control .chakra-input-group, .page-login .chakra-form-control .chakra-input-group { background-color: transparent !important; border: none !important; }
                   .page-signup .chakra-input, .page-login .chakra-input { height: 45px !important; background-color: #2c2c2c !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #ffffff !important; }
                   .page-signup .chakra-input::placeholder, .page-login .chakra-input::placeholder { color: #808080 !important; }
                   .page-login button.css-1u9t1b5, .page-login .css-1u9t1b5 { display: none !important; }
-                  
+                  .page-signup .chakra-input__right-element, .page-login .chakra-input__right-element { height: 45px !important; display: flex !important; align-items: center !important; justify-content: center !important; top: 0 !important; }
+                  .page-signup .chakra-input__right-element button, .page-login .chakra-input__right-element button { height: 100% !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; border-radius: 0 !important; padding: 0 !important; margin: 0 !important; }
+                  .page-signup .chakra-input__right-element svg, .page-login .chakra-input__right-element svg { display: block !important; margin: auto !important; position: relative !important; top: 2.5px !important; }
+                  .page-signup .chakra-input__left-addon { background-color: #2c2c2c !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #ffffff !important; font-weight: 500 !important; height: 45px !important; margin-right: 10px !important; }
+                  .page-signup .chakra-input__left-addon img.chakra-image { margin-right: 5px !important; }
+                  .page-signup .chakra-input__right-addon { background-color: #EEEEEE !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #121212 !important; font-weight: 700 !important; height: 45px !important; margin-left: 10px !important; padding: 5px 8px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+                  .page-signup .chakra-input__right-addon button { margin: auto 0 auto 5px !important; display: flex !important; align-items: center !important; justify-content: center !important; height: 26px !important; width: 26px !important; min-width: 26px !important; border-radius: 4px !important; padding: 0 !important; background-color: transparent !important; }
+                  .page-signup .chakra-input__right-addon button svg, .page-signup .chakra-input__right-addon svg { height: 16px !important; width: 16px !important; margin: auto !important; color: #121212 !important; }
+                  .css-fpyqtb { margin-bottom: 10px !important; }
+                  button.chakra-button.css-lutoi4 { height: 45px !important; border-radius: 4px !important; }
+                  .page-login img.css-if5ddh { display: none !important; }
+                  .page-signup p.css-19szwf6 { display: none !important; }
+                  .page-login body, .page-signup body, .page-login html, .page-signup html { overscroll-behavior-y: none !important; }
+                  .page-login .css-b13tmd { height: 100vh !important; max-height: 100vh !important; overflow: hidden !important; }
+                  .page-signup .css-16ff8oy, .page-signup .css-b13tmd { padding-bottom: 10px !important; margin-bottom: 0 !important; }
+                  .page-login div[style*="height: 60px"], .page-signup div[style*="height: 60px"], .page-login div[style*="height: 70px"], .page-signup div[style*="height: 70px"], .page-login div[style*="height: 80px"], .page-signup div[style*="height: 80px"], .page-login div[style*="height: 90px"], .page-signup div[style*="height: 90px"], .page-signup .css-16ff8oy > div[style*="height"], .page-signup .css-b13tmd > div[style*="height"] { display: none !important; height: 0 !important; min-height: 0 !important; }
+                  .custom-video-wrapper { position: relative !important; width: 100% !important; padding: 0 !important; margin: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; background-color: transparent !important; min-height: 150px; }
+                  .custom-video-wrapper video { width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; pointer-events: none !important; opacity: 1 !important; }
+
                   /* ========================================================
-                     🎯 BAJI999 QUICK DEPOSIT THEME (PRO UI) 
+                     🎯 BAJI999 PRO UI THEME (CSS OVERRIDE FOR CHAKRA UI)
+                     অরিজিনাল পেজ ঠিক রেখে শুধুমাত্র ডিজাইন মডিফাই করা হলো
                      ======================================================== */
-                  body.page-dw #root { display: none !important; }
-                  body.page-dw { background-color: #111111 !important; }
                   
-                  #b999-app {
-                      display: none; 
-                      --bg-main: #17181b; 
-                      --bg-card: #222328; 
-                      --primary: #12b984; 
-                      --text-main: #ffffff;
-                      --text-sub: #8c8c8c;
-                      --border: #33353b;
-                      
-                      position: absolute; top: 0; left: 0; width: 100%; min-height: 100vh;
-                      background-color: var(--bg-main); color: var(--text-main);
-                      z-index: 9999999; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                      padding-bottom: 90px;
+                  /* পুরো ব্যাকগ্রাউন্ড ডার্ক করা */
+                  .page-dw body, .page-dw #root, .page-dw .chakra-ui-light { background-color: #17181b !important; color: #ffffff !important; }
+                  .page-dw .css-1jagptf, .page-dw .css-qx6nre, .page-dw .css-cipbx3, .page-dw .css-15dddk { background-color: #17181b !important; }
+                  
+                  /* সব টেক্সট এবং লেবেল সুন্দর করা */
+                  .page-dw p, .page-dw span { color: #e0e0e0 !important; }
+                  .page-dw label.chakra-form__label { color: #8c8c8c !important; font-weight: 600 !important; font-size: 13px !important; margin-bottom: 8px !important; }
+                  
+                  /* ইনপুট ফিল্ড (Amount, TrxID, Account Number) */
+                  .page-dw input.chakra-input {
+                      background-color: #222328 !important;
+                      border: 1px solid #33353b !important;
+                      color: #ffffff !important;
+                      height: 48px !important;
+                      border-radius: 8px !important;
+                      font-size: 16px !important;
+                      font-weight: 500 !important;
                   }
+                  .page-dw input.chakra-input:focus { border-color: #12b984 !important; box-shadow: 0 0 0 1px #12b984 !important; }
+                  .page-dw .chakra-input__left-addon { background-color: #222328 !important; border: 1px solid #33353b !important; border-right: none !important; color: #8c8c8c !important; height: 48px !important; border-radius: 8px 0 0 8px !important;}
                   
-                  body.page-dw #b999-app { display: block !important; }
-                  #b999-app * { box-sizing: border-box; }
-
-                  .b9-header {
-                      display: flex; align-items: center; padding: 15px; 
-                      background-color: var(--bg-main); position: sticky; top: 0; z-index: 10;
-                      border-bottom: 1px solid var(--border);
+                  /* পেমেন্ট মেথড এবং অ্যামাউন্ট কার্ড (Chakra Grid Classes) */
+                  /* css-q9ajxl = Inactive Card, css-hv1tgg = Active Card */
+                  .page-dw .css-q9ajxl {
+                      background-color: #222328 !important;
+                      border: 1px solid #33353b !important;
+                      border-radius: 8px !important;
+                      transition: all 0.2s ease !important;
                   }
-                  .b9-header button { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding-right: 15px; }
-                  .b9-header h2 { font-size: 18px; font-weight: 600; margin: 0; }
-
-                  .b9-container { padding: 15px; }
-                  .b9-label { font-size: 13px; color: var(--text-sub); margin-bottom: 10px; display: block; }
-                  
-                  /* Payment Grid */
-                  .b9-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
-                  .b9-card { 
-                      background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; 
-                      padding: 12px 5px; text-align: center; cursor: pointer; transition: 0.2s;
-                      display: flex; flex-direction: column; align-items: center; justify-content: center;
+                  .page-dw .css-hv1tgg {
+                      background-color: rgba(18, 185, 132, 0.08) !important;
+                      border: 1px solid #12b984 !important;
+                      border-radius: 8px !important;
                   }
-                  .b9-card img { width: 28px; height: 28px; object-fit: contain; margin-bottom: 8px; border-radius: 4px;}
-                  .b9-card span { font-size: 13px; color: var(--text-main); }
-                  .b9-card.active { border-color: var(--primary); background: rgba(18, 185, 132, 0.05); }
-                  
-                  /* Channel List */
-                  .b9-channel-list { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 25px; overflow: hidden; }
-                  .b9-channel-item { 
-                      display: flex; justify-content: space-between; align-items: center; 
-                      padding: 16px 15px; cursor: pointer; border-bottom: 1px solid var(--border);
+                  /* কার্ডের ভেতরের টেক্সট */
+                  .page-dw .css-q9ajxl p, .page-dw .css-hv1tgg p, .page-dw .css-q9ajxl span, .page-dw .css-hv1tgg span {
+                      color: #ffffff !important; font-size: 13px !important; font-weight: 600 !important;
                   }
-                  .b9-channel-item:last-child { border-bottom: none; }
-                  .b9-channel-item.active { border: 1px solid var(--primary); border-radius: 8px; margin: -1px; position: relative; z-index: 2;}
-                  .b9-ch-name { font-size: 14px; color: var(--text-main); }
-                  .b9-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #555; display: flex; align-items: center; justify-content: center; }
-                  .b9-channel-item.active .b9-radio { border-color: var(--primary); }
-                  .b9-channel-item.active .b9-radio::after { content: ''; width: 10px; height: 10px; background: var(--primary); border-radius: 50%; }
-                  .b9-recommend { background: rgba(18, 185, 132, 0.1); color: var(--primary); font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 10px; }
 
-                  /* Amount Input */
-                  .b9-amount-wrap { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); padding: 15px; display: flex; align-items: center; margin-bottom: 25px; }
-                  .b9-bdt-icon { background: var(--primary); color: #000; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; margin-right: 8px; }
-                  .b9-amount-wrap span.bdt-text { color: var(--text-main); font-size: 15px; margin-right: 15px; }
-                  .b9-amount-wrap input { flex: 1; background: transparent; border: none; color: var(--text-main); font-size: 20px; font-weight: 500; outline: none; text-align: right; }
-                  .b9-clear { background: #444; color: #fff; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 10px; cursor: pointer; }
-
-                  /* Reminder */
-                  .b9-reminder { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); padding: 15px; margin-bottom: 25px; }
-                  .b9-rem-head { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; }
-                  .b9-rem-text { font-size: 12px; color: var(--text-sub); line-height: 1.6; }
-
-                  /* Footer Button */
-                  .b9-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px; background: var(--bg-main); border-top: 1px solid var(--border); z-index: 100;}
-                  .b9-btn { width: 100%; background: var(--primary); color: #fff; border: none; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 4px; cursor: pointer; }
-                  .b9-btn:active { opacity: 0.8; }
-
-                  /* Step 2 specific */
-                  #b999-step2 { display: none; }
-                  .b9-info-box { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--primary); padding: 15px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
-                  .b9-copy-wrap { display: flex; align-items: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; margin-bottom: 25px; }
-                  .b9-copy-wrap .num { flex: 1; font-size: 18px; font-weight: bold; color: var(--primary); letter-spacing: 1px; }
-                  .b9-copy-wrap button { background: rgba(18, 185, 132, 0.1); color: var(--primary); border: 1px solid var(--primary); padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; }
+                  /* সাবমিট বাটন (Submit/Confirm) */
+                  .page-dw button.chakra-button {
+                      background-color: #12b984 !important;
+                      color: #ffffff !important;
+                      height: 50px !important;
+                      border-radius: 8px !important;
+                      font-weight: 700 !important;
+                      font-size: 16px !important;
+                      border: none !important;
+                      margin-top: 15px !important;
+                      box-shadow: 0 4px 12px rgba(18, 185, 132, 0.2) !important;
+                      transition: 0.2s !important;
+                  }
+                  .page-dw button.chakra-button:active { background-color: #0fa374 !important; transform: scale(0.98) !important; }
                   
-                  .b9-input-box { width: 100%; background: var(--bg-card); border: 1px solid var(--border); color: white; padding: 15px; border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 20px; transition: 0.3s;}
-                  .b9-input-box:focus { border-color: var(--primary); }
-                  
-                  /* Toast */
-                  #b9-toast { visibility: hidden; min-width: 200px; background-color: var(--primary); color: #fff; text-align: center; border-radius: 4px; padding: 12px; position: fixed; z-index: 1000; left: 50%; bottom: 80px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: 0.3s; }
-                  #b9-toast.show { visibility: visible; opacity: 1; bottom: 100px; }
+                  /* ডিফল্ট লাল রঙের সতর্কবাণীগুলোকে সুন্দর Baji999 Reminder বক্সে রূপান্তর */
+                  .page-dw [style*="color: red"], .page-dw [style*="color: rgb(255, 0, 0)"] {
+                      color: #12b984 !important;
+                      background: #222328 !important;
+                      border: 1px solid #33353b !important;
+                      padding: 12px !important;
+                      border-radius: 8px !important;
+                      font-size: 12px !important;
+                      display: block !important;
+                      margin-top: 15px !important;
+                      line-height: 1.5 !important;
+                  }
+
+                  /* ডিভাইডার লাইন */
+                  .page-dw .chakra-divider { border-color: #33353b !important; opacity: 0.5 !important; }
                 </style>
 
                 <script>
                   (function(){
-                    // =====================================
-                    // ⚙️ PWA & General Logic
-                    // =====================================
+                    // ⚙️ PWA ব্রাউজার কানেকশন 
                     let deferredPrompt;
-                    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault(); 
+                        deferredPrompt = e; 
+                        showAppBanner(); 
+                    });
+
+                    window.addEventListener('appinstalled', () => {
+                        hideAppBanner(); 
+                    });
+
+                    function showAppBanner() {
+                        const banner = document.getElementById('custom-install-banner');
+                        if(banner && banner.style.display !== 'flex') {
+                            banner.style.display = 'flex';
+                            
+                            setTimeout(() => {
+                                const offset = banner.offsetHeight;
+                                document.querySelectorAll('*').forEach(el => {
+                                    if(el.id === 'custom-install-banner') return;
+                                    const style = window.getComputedStyle(el);
+                                    if(style.position === 'fixed') {
+                                        const topVal = parseInt(style.top);
+                                        if(topVal === 0 || style.top === '0px') {
+                                            el.style.transition = 'top 0.3s ease';
+                                            el.style.top = offset + 'px';
+                                            el.setAttribute('data-pushed', 'true');
+                                        }
+                                    }
+                                });
+                            }, 50);
+                        }
+                    }
+
+                    function hideAppBanner() {
+                        const banner = document.getElementById('custom-install-banner');
+                        if(banner) {
+                            banner.style.display = 'none';
+                            document.querySelectorAll('[data-pushed="true"]').forEach(el => {
+                                el.style.top = '0px';
+                            });
+                        }
+                    }
+
+                    function initAppInstallBanner() {
+                        if (document.getElementById('custom-install-banner')) return;
+                        
+                        const bannerHTML = \`
+                        <div id="custom-install-banner">
+                            <div class="cib-close" id="cib-close-btn">
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M13 1L1 13M1 1L13 13" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <img class="cib-logo" id="cib-logo-img" src="/favicon.ico" alt="Baji11">
+                            <div class="cib-text">
+                                <p class="cib-title">Baji11 App</p>
+                                <p class="cib-desc">Install our app for faster access!</p>
+                            </div>
+                            <button class="cib-install-btn" id="cib-install-btn">Install</button>
+                        </div>\`;
+
+                        document.body.insertAdjacentHTML('afterbegin', bannerHTML);
+
+                        const closeBtn = document.getElementById('cib-close-btn');
+                        const installBtn = document.getElementById('cib-install-btn');
+
+                        setTimeout(() => {
+                            const siteLogo = document.querySelector('img[alt*="logo" i], header img');
+                            if (siteLogo && siteLogo.src) document.getElementById('cib-logo-img').src = siteLogo.src;
+                        }, 1000);
+
+                        closeBtn.addEventListener('click', hideAppBanner);
+
+                        installBtn.addEventListener('click', async () => {
+                            if (deferredPrompt) {
+                                deferredPrompt.prompt();
+                                const { outcome } = await deferredPrompt.userChoice;
+                                if (outcome === 'accepted') hideAppBanner();
+                                deferredPrompt = null;
+                            } else {
+                                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                                if (isIOS) alert('To install: Tap the "Share" icon at the bottom and select "Add to Home Screen".');
+                                else alert('Please tap the 3-dot menu in your browser and select "Add to Home screen" or "Install app".');
+                            }
+                        });
+
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                        if (isIOS && !window.navigator.standalone) {
+                            showAppBanner();
+                        }
+                    }
 
                     function updateBodyClass() {
                         document.body.className = document.body.className.replace(/\\bpage-[^ ]*[ ]?\\b/g, '');
@@ -257,16 +348,41 @@ export default {
 
                     let lastUrl = location.href; 
                     const urlObserver = new MutationObserver(() => {
-                      if (location.href !== lastUrl) { lastUrl = location.href; updateBodyClass(); }
+                      const url = location.href;
+                      if (url !== lastUrl) {
+                        lastUrl = url;
+                        updateBodyClass(); 
+                      }
                     });
+
+                    const REF_CODE = 'iZfmaT3h';
+                    const VIDEO_URL = 'https://github.com/user-attachments/assets/2e0caaaf-d0b6-4631-827f-4b428c62bc97';
+
+                    function setNativeValue(element, value) {
+                        const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
+                        const prototype = Object.getPrototypeOf(element);
+                        const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+                        if (valueSetter && valueSetter !== prototypeValueSetter) prototypeValueSetter.call(element, value);
+                        else valueSetter.call(element, value);
+                        element.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
 
                     const b1 = '${banner1_New}';
                     const b2 = '${banner2_New}';
                     setInterval(() => {
                         document.querySelectorAll('img').forEach(img => {
-                            let src = img.getAttribute('src') || ''; let alt = img.getAttribute('alt') || '';
+                            let src = img.getAttribute('src') || '';
+                            let alt = img.getAttribute('alt') || '';
+                            
                             if (src.includes('banner-first-d.jpg') || alt.includes('banner-first-d.jpg')) {
-                                if (img.getAttribute('src') !== b1) { img.src = b1; img.setAttribute('src', b1); }
+                                if (img.getAttribute('src') !== b1) { 
+                                    img.src = b1; img.srcset = ''; img.setAttribute('src', b1); 
+                                }
+                            }
+                            if (src.includes('banner10.jpg') || alt.includes('banner10.jpg')) {
+                                if (img.getAttribute('src') !== b2) { 
+                                    img.src = b2; img.srcset = ''; img.setAttribute('src', b2); 
+                                }
                             }
                         });
                     }, 100);
@@ -274,235 +390,77 @@ export default {
                     const domObserver = new MutationObserver(() => {
                         let fullPath = window.location.pathname.replace(/\\//g, '');
                         let currentPath = fullPath.split('?')[0]; 
+                        
+                        const refInput = document.querySelector('input[placeholder="Enter if you have one"]');
+                        if (refInput) {
+                            if (refInput.value !== REF_CODE) setNativeValue(refInput, REF_CODE);
+                            const parentGroup = refInput.closest('.chakra-form-control');
+                            if (parentGroup && parentGroup.style.display !== 'none') parentGroup.style.display = 'none';
+                        }
+
+                        const phoneInput = document.querySelector('input[placeholder="Phone Number"]');
+                        if (phoneInput && phoneInput.type !== 'tel') phoneInput.type = 'tel';
+
+                        const codeInput = document.querySelector('input[placeholder="Enter 4 digit code"]');
+                        if (codeInput && codeInput.type !== 'number') codeInput.type = 'number';
+
+                        const agreeCheckbox = document.querySelector('input[type="checkbox"]');
+                        if (agreeCheckbox && !agreeCheckbox.hasAttribute('data-auto-checked')) {
+                            if (!agreeCheckbox.checked) agreeCheckbox.click();
+                            agreeCheckbox.setAttribute('data-auto-checked', 'true');
+                        }
+
+                        document.querySelectorAll('button').forEach(btn => {
+                            const txt = btn.textContent.toLowerCase();
+                            if (txt.includes('forgot') || txt.includes('password?')) {
+                                if (btn.style.display !== 'none') btn.style.setProperty('display', 'none', 'important');
+                            }
+                        });
+
+                        if (currentPath === 'login' || currentPath === 'signup') {
+                            const targetDivForVideo = document.querySelector('div.css-lpwed4');
+                            if (targetDivForVideo && !document.getElementById('arfan-custom-video')) {
+                                const videoHTML = \`
+                                <div id="arfan-custom-video" class="custom-video-wrapper">
+                                    <video id="arfan-vid" autoplay loop muted playsinline preload="auto">
+                                        <source src="\${VIDEO_URL}" type="video/mp4">
+                                    </video>
+                                </div>\`;
+                                targetDivForVideo.insertAdjacentHTML('afterend', videoHTML);
+                                
+                                setTimeout(() => {
+                                    const vidElement = document.getElementById('arfan-vid');
+                                    if(vidElement) vidElement.play().catch(e => console.log("Auto-play ready."));
+                                }, 10);
+                            }
+                        } else {
+                            const existingVideo = document.getElementById('arfan-custom-video');
+                            if (existingVideo) existingVideo.remove(); 
+                        }
+
+                        /* ডিপোজিট পেজের জন্য বিশেষ লজিক: 
+                           এখানে HTML হাইড বা পরিবর্তন করা হচ্ছে না। 
+                           বরং আপনার অরিজিনাল ডাটা এবং লজিকগুলোই কাজ করবে, 
+                           CSS শুধু এর উপরে "Baji999" এর মতো মেকআপ বসিয়ে দেবে।
+                        */
+                        if (currentPath === 'dw') {
+                            document.querySelectorAll('.page-dw .chakra-input__left-addon').forEach(addon => {
+                                if (addon.textContent.includes('BDT')) {
+                                    let amountInput = addon.nextElementSibling;
+                                    if (amountInput && amountInput.tagName === 'INPUT') {
+                                        if(amountInput.getAttribute('inputmode') !== 'decimal') {
+                                            amountInput.setAttribute('inputmode', 'decimal');
+                                            amountInput.setAttribute('pattern', '[0-9]*');
+                                        }
+                                    }
+                                }
+                            });
+                        }
                     });
 
-                    // =====================================
-                    // 🚀 Baji999 Quick Deposit UI & Logic
-                    // =====================================
-                    function initBaji999DW() {
-                        if(document.getElementById('b999-app')) return;
-
-                        // Icons for methods (using generic font-awesome colored appropriately)
-                        const bKashIcon = '<i class="fa-solid fa-b" style="color:#e2136e; font-size:24px; margin-bottom:8px;"></i>';
-                        const nagadIcon = '<i class="fa-solid fa-n" style="color:#f7931e; font-size:24px; margin-bottom:8px;"></i>';
-                        const rocketIcon = '<i class="fa-solid fa-rocket" style="color:#8c1596; font-size:24px; margin-bottom:8px;"></i>';
-                        const upayIcon = '<i class="fa-solid fa-u" style="color:#007bff; font-size:24px; margin-bottom:8px;"></i>';
-
-                        const dwHTML = \`
-                        <div id="b9-toast">Copied successfully!</div>
-                        <div id="b999-app">
-                            
-                            <div id="b999-step1">
-                                <div class="b9-header">
-                                    <button onclick="window.location.href='/'"><i class="fa-solid fa-angle-left"></i></button>
-                                    <h2>Quick deposit</h2>
-                                </div>
-                                
-                                <div class="b9-container">
-                                    <span class="b9-label">Select payment</span>
-                                    <div class="b9-grid">
-                                        <div class="b9-card active" data-method="bkash">
-                                            \${bKashIcon} <span>bkash</span>
-                                        </div>
-                                        <div class="b9-card" data-method="Nagad">
-                                            \${nagadIcon} <span>Nagad</span>
-                                        </div>
-                                        <div class="b9-card" data-method="Rocket">
-                                            \${rocketIcon} <span>Rocket</span>
-                                        </div>
-                                        <div class="b9-card" data-method="UPay">
-                                            \${upayIcon} <span>UPay</span>
-                                        </div>
-                                    </div>
-
-                                    <span class="b9-label">Deposit channel</span>
-                                    <div class="b9-channel-list">
-                                        <div class="b9-channel-item active" data-channel="SG-Cashout">
-                                            <span class="b9-ch-name">SG-Cashout</span>
-                                            <div style="display:flex; align-items:center;">
-                                                <span class="b9-recommend">Recommend</span>
-                                                <div class="b9-radio"></div>
-                                            </div>
-                                        </div>
-                                        <div class="b9-channel-item" data-channel="TM-CashOut">
-                                            <span class="b9-ch-name">TM-CashOut</span>
-                                            <div class="b9-radio"></div>
-                                        </div>
-                                        <div class="b9-channel-item" data-channel="Send Money">
-                                            <span class="b9-ch-name">Send Money</span>
-                                            <div class="b9-radio"></div>
-                                        </div>
-                                    </div>
-
-                                    <span class="b9-label">Available balance ৳ 100.00-৳ 30,000.00</span>
-                                    <div class="b9-amount-wrap">
-                                        <div class="b9-bdt-icon">৳</div>
-                                        <span class="bdt-text">BDT</span>
-                                        <input type="number" id="b9-amount" placeholder="0" value="500">
-                                        <div class="b9-clear" onclick="document.getElementById('b9-amount').value=''"><i class="fa-solid fa-times"></i></div>
-                                    </div>
-
-                                    <div class="b9-reminder">
-                                        <div class="b9-rem-head">
-                                            <i class="fa-solid fa-circle-info"></i> <strong>Reminder</strong>
-                                        </div>
-                                        <div class="b9-rem-text">
-                                            Dear all member, to speed up your deposit process, kindly follow these steps:<br>
-                                            1. Kindly make a Cash Out / Send Money to the number provided in the next step.<br>
-                                            2. Input the Transaction ID.<br>
-                                            3. Minimum DP is 100tk.<br><br>
-                                            Reminder: Please only make deposits to the account instantly displayed while submitting the deposit.
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="b9-footer">
-                                    <button class="b9-btn" onclick="window.b9NextStep()">Submit</button>
-                                </div>
-                            </div>
-
-                            <div id="b999-step2">
-                                <div class="b9-header">
-                                    <button onclick="window.b9PrevStep()"><i class="fa-solid fa-angle-left"></i></button>
-                                    <h2>Payment Details</h2>
-                                </div>
-                                
-                                <div class="b9-container">
-                                    <div class="b9-info-box">
-                                        <div style="font-size:13px; color:var(--text-sub); margin-bottom:5px;">Deposit Amount</div>
-                                        <div style="font-size:24px; font-weight:bold; color:var(--text-main);">
-                                            BDT <span id="b9-disp-amount">0</span>
-                                        </div>
-                                        <div style="font-size:13px; color:var(--primary); margin-top:8px;" id="b9-disp-method">
-                                            bkash (SG-Cashout)
-                                        </div>
-                                    </div>
-
-                                    <span class="b9-label">Send money to this Wallet Number</span>
-                                    <div class="b9-copy-wrap">
-                                        <span class="num" id="b9-wallet-number">01773570463</span>
-                                        <button onclick="window.b9Copy()"><i class="fa-regular fa-copy"></i> Copy</button>
-                                    </div>
-
-                                    <span class="b9-label">Transaction ID (Required)</span>
-                                    <input type="text" id="b9-trxid" class="b9-input-box" placeholder="Enter 10-digit TrxID here">
-                                    
-                                    <span class="b9-label">Upload Receipt (Optional)</span>
-                                    <input type="file" id="b9-receipt" class="b9-input-box" style="padding:10px; background:var(--bg-card);" accept="image/*">
-                                </div>
-
-                                <div class="b9-footer">
-                                    <button class="b9-btn" id="b9-final-submit" onclick="window.b9SubmitApi()">Confirm Deposit</button>
-                                </div>
-                            </div>
-
-                        </div>\`;
-                        
-                        document.body.insertAdjacentHTML('beforeend', dwHTML);
-                        attachB9Listeners();
-                    }
-
-                    window.b9SelectedMethod = 'bkash';
-                    window.b9SelectedChannel = 'SG-Cashout';
-
-                    function attachB9Listeners() {
-                        const methods = document.querySelectorAll('.b9-card');
-                        methods.forEach(card => {
-                            card.addEventListener('click', () => {
-                                methods.forEach(c => c.classList.remove('active'));
-                                card.classList.add('active');
-                                window.b9SelectedMethod = card.getAttribute('data-method');
-                            });
-                        });
-
-                        const channels = document.querySelectorAll('.b9-channel-item');
-                        channels.forEach(ch => {
-                            ch.addEventListener('click', () => {
-                                channels.forEach(c => c.classList.remove('active'));
-                                ch.classList.add('active');
-                                window.b9SelectedChannel = ch.getAttribute('data-channel');
-                            });
-                        });
-                    }
-
-                    window.b9NextStep = function() {
-                        const amount = document.getElementById('b9-amount').value;
-                        if(!amount || amount < 100) { alert("Please enter a valid amount (Min 100)."); return; }
-                        
-                        document.getElementById('b9-disp-amount').innerText = amount;
-                        document.getElementById('b9-disp-method').innerText = window.b9SelectedMethod + ' (' + window.b9SelectedChannel + ')';
-                        
-                        // এডমিন প্যানেল থেকে পাওয়া নাম্বার এখানে বসবে
-                        // document.getElementById('b9-wallet-number').innerText = '01773570463';
-
-                        document.getElementById('b999-step1').style.display = 'none';
-                        window.scrollTo(0, 0);
-                        document.getElementById('b999-step2').style.display = 'block';
-                    };
-
-                    window.b9PrevStep = function() {
-                        document.getElementById('b999-step2').style.display = 'none';
-                        document.getElementById('b999-step1').style.display = 'block';
-                    };
-
-                    window.b9Copy = function() {
-                        const num = document.getElementById('b9-wallet-number').innerText;
-                        navigator.clipboard.writeText(num).then(() => {
-                            const toast = document.getElementById("b9-toast");
-                            toast.className = "show";
-                            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
-                        });
-                    };
-
-                    // =====================================
-                    // 📡 Final API Submission
-                    // =====================================
-                    window.b9SubmitApi = async function() {
-                        const trxId = document.getElementById('b9-trxid').value;
-                        const amount = document.getElementById('b9-amount').value;
-                        const receiptFile = document.getElementById('b9-receipt').files[0];
-                        
-                        if(!trxId) { alert("Transaction ID is required!"); return; }
-
-                        const submitBtn = document.getElementById('b9-final-submit');
-                        const originalText = submitBtn.innerText;
-                        submitBtn.innerText = "Processing...";
-                        submitBtn.disabled = true;
-
-                        try {
-                            const formData = new FormData();
-                            formData.append('amount', amount);
-                            // Method এর সাথে Channel যুক্ত করে দিচ্ছি যাতে এডমিন প্যানেলে ক্লিয়ার বোঝা যায়
-                            formData.append('method', window.b9SelectedMethod + ' ' + window.b9SelectedChannel);
-                            formData.append('transaction_id', trxId);
-                            if(receiptFile) formData.append('receipt', receiptFile);
-
-                            const response = await fetch('/__api_proxy/https://liveapi247.live/apiv9/deposit', {
-                                method: 'POST',
-                                headers: { 'Accept': 'application/json' },
-                                body: formData
-                            });
-
-                            const result = await response.json();
-                            if(result.status === true) {
-                                alert("Success: " + result.msg);
-                                document.getElementById('b9-trxid').value = '';
-                                document.getElementById('b9-receipt').value = '';
-                                window.b9PrevStep(); 
-                            } else {
-                                alert("Failed: " + (result.msg || "Transaction could not be completed."));
-                            }
-                        } catch (error) {
-                            alert("Connection error! Please try again.");
-                        } finally {
-                            submitBtn.innerText = originalText;
-                            submitBtn.disabled = false;
-                        }
-                    };
-
                     window.addEventListener('load', () => {
+                        initAppInstallBanner(); 
                         updateBodyClass(); 
-                        initBaji999DW(); // Inject Baji999 Quick Deposit UI
                         urlObserver.observe(document, {subtree: true, childList: true});
                         domObserver.observe(document.body, { childList: true, subtree: true });
                     });
