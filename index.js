@@ -137,197 +137,115 @@ export default {
                       font-weight: 800; font-size: 14px; cursor: pointer; margin-left: 10px;
                   }
 
-                  /* 🚀 CSS লেয়ার: ইনস্ট্যান্ট ইমেজ ওভাররাইড */
                   img[src*="banner-first-d.jpg"], img[alt*="banner-first-d.jpg"] { content: url("${banner1_New}") !important; object-fit: cover !important; }
                   img[src*="banner10.jpg"], img[alt*="banner10.jpg"] { content: url("${banner2_New}") !important; object-fit: cover !important; }
                   .css-blq8bd { display: none !important; }
 
-                  /* 🎨 সাইনআপ এবং লগইন পেজ */
                   .page-signup body, .page-login body { background-color: #121212 !important; }
                   .page-signup .chakra-form-control .chakra-input-group, .page-login .chakra-form-control .chakra-input-group { background-color: transparent !important; border: none !important; }
                   .page-signup .chakra-input, .page-login .chakra-input { height: 45px !important; background-color: #2c2c2c !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #ffffff !important; }
                   .page-signup .chakra-input::placeholder, .page-login .chakra-input::placeholder { color: #808080 !important; }
                   .page-login button.css-1u9t1b5, .page-login .css-1u9t1b5 { display: none !important; }
-                  .page-signup .chakra-input__right-element, .page-login .chakra-input__right-element { height: 45px !important; display: flex !important; align-items: center !important; justify-content: center !important; top: 0 !important; }
-                  .page-signup .chakra-input__right-element button, .page-login .chakra-input__right-element button { height: 100% !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; border-radius: 0 !important; padding: 0 !important; margin: 0 !important; }
-                  .page-signup .chakra-input__right-element svg, .page-login .chakra-input__right-element svg { display: block !important; margin: auto !important; position: relative !important; top: 2.5px !important; }
-                  .page-signup .chakra-input__left-addon { background-color: #2c2c2c !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #ffffff !important; font-weight: 500 !important; height: 45px !important; margin-right: 10px !important; }
-                  .page-signup .chakra-input__left-addon img.chakra-image { margin-right: 5px !important; }
-                  .page-signup .chakra-input__right-addon { background-color: #EEEEEE !important; border-radius: 4px !important; border: 1px solid #4e4e4e !important; color: #121212 !important; font-weight: 700 !important; height: 45px !important; margin-left: 10px !important; padding: 5px 8px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-                  .page-signup .chakra-input__right-addon button { margin: auto 0 auto 5px !important; display: flex !important; align-items: center !important; justify-content: center !important; height: 26px !important; width: 26px !important; min-width: 26px !important; border-radius: 4px !important; padding: 0 !important; background-color: transparent !important; }
-                  .page-signup .chakra-input__right-addon button svg, .page-signup .chakra-input__right-addon svg { height: 16px !important; width: 16px !important; margin: auto !important; color: #121212 !important; }
-                  .css-fpyqtb { margin-bottom: 10px !important; }
-                  button.chakra-button.css-lutoi4 { height: 45px !important; border-radius: 4px !important; }
-                  .page-login img.css-if5ddh { display: none !important; }
-                  .page-signup p.css-19szwf6 { display: none !important; }
-                  .page-login body, .page-signup body, .page-login html, .page-signup html { overscroll-behavior-y: none !important; }
-                  .page-login .css-b13tmd { height: 100vh !important; max-height: 100vh !important; overflow: hidden !important; }
-                  .page-signup .css-16ff8oy, .page-signup .css-b13tmd { padding-bottom: 10px !important; margin-bottom: 0 !important; }
-                  .page-login div[style*="height: 60px"], .page-signup div[style*="height: 60px"], .page-login div[style*="height: 70px"], .page-signup div[style*="height: 70px"], .page-login div[style*="height: 80px"], .page-signup div[style*="height: 80px"], .page-login div[style*="height: 90px"], .page-signup div[style*="height: 90px"], .page-signup .css-16ff8oy > div[style*="height"], .page-signup .css-b13tmd > div[style*="height"] { display: none !important; height: 0 !important; min-height: 0 !important; }
-                  .custom-video-wrapper { position: relative !important; width: 100% !important; padding: 0 !important; margin: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; background-color: transparent !important; min-height: 150px; }
-                  .custom-video-wrapper video { width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; pointer-events: none !important; opacity: 1 !important; }
-
-                  /* ========================================================
-                     🎯 কাস্টম ডিপোজিট/উইথড্রয়াল পেজ ইন্টিগ্রেশন (PRO UI) 
-                     ======================================================== */
-                  /* অরিজিনাল ডিপোজিট পেজ সম্পূর্ণ হাইড করে দেওয়া */
-                  body.page-dw #root { display: none !important; }
-                  body.page-dw { background-color: #050a14 !important; }
                   
-                  #custom-dw-app {
-                      display: none; /* ডিফল্টভাবে হাইড থাকবে */
-                      --bg-color: #0b1324; --surface-color: #14203a; --surface-active: #1d2d50;
-                      --primary-color: #FFC107; --primary-text: #000000; --text-main: #ffffff;
-                      --text-muted: #94a3b8; --border-color: #253659; --warning-color: #FFC107;
-                      --bkash-color: #e2136e; --nagad-color: #f7931e; --rocket-color: #8c1596; --bank-color: #009688;
-                      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-                      background-color: #050a14; color: var(--text-main);
-                      z-index: 9999999; overflow-y: auto; overflow-x: hidden;
+                  /* ========================================================
+                     🎯 BAJI999 QUICK DEPOSIT THEME (PRO UI) 
+                     ======================================================== */
+                  body.page-dw #root { display: none !important; }
+                  body.page-dw { background-color: #111111 !important; }
+                  
+                  #b999-app {
+                      display: none; 
+                      --bg-main: #17181b; 
+                      --bg-card: #222328; 
+                      --primary: #12b984; 
+                      --text-main: #ffffff;
+                      --text-sub: #8c8c8c;
+                      --border: #33353b;
+                      
+                      position: absolute; top: 0; left: 0; width: 100%; min-height: 100vh;
+                      background-color: var(--bg-main); color: var(--text-main);
+                      z-index: 9999999; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                      padding-bottom: 90px;
                   }
                   
-                  /* শুধুমাত্র /dw পেজে গেলেই আমাদের কাস্টম UI শো করবে */
-                  body.page-dw #custom-dw-app { display: flex !important; justify-content: center; }
+                  body.page-dw #b999-app { display: block !important; }
+                  #b999-app * { box-sizing: border-box; }
 
-                  /* Custom UI Styles */
-                  #custom-dw-app * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-                  #custom-dw-app .app-container { width: 100%; max-width: 480px; min-height: 100vh; background-color: var(--bg-color); position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-                  #custom-dw-app .sticky-top { position: sticky; top: 0; z-index: 100; background-color: var(--bg-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-                  #custom-dw-app .header { display: flex; align-items: center; padding: 15px 20px; background-color: var(--surface-color); }
-                  #custom-dw-app .header h3 { flex-grow: 1; text-align: center; font-size: 18px; font-weight: 600; margin: 0; color: #fff;}
-                  #custom-dw-app .back-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; }
-                  #custom-dw-app .tab-switch { display: flex; background-color: var(--surface-color); border-radius: 30px; margin: 15px 20px 5px 20px; position: relative; overflow: hidden; border: 1px solid var(--border-color); }
-                  #custom-dw-app .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: var(--text-muted); font-size: 15px; font-weight: bold; cursor: pointer; z-index: 2; transition: color 0.3s;}
-                  #custom-dw-app .tab-btn.active { color: var(--primary-text); }
-                  #custom-dw-app .tab-indicator { position: absolute; top: 0; left: 0; width: 50%; height: 100%; background-color: var(--primary-color); border-radius: 30px; transition: transform 0.3s ease; z-index: 1; }
+                  .b9-header {
+                      display: flex; align-items: center; padding: 15px; 
+                      background-color: var(--bg-main); position: sticky; top: 0; z-index: 10;
+                      border-bottom: 1px solid var(--border);
+                  }
+                  .b9-header button { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding-right: 15px; }
+                  .b9-header h2 { font-size: 18px; font-weight: 600; margin: 0; }
+
+                  .b9-container { padding: 15px; }
+                  .b9-label { font-size: 13px; color: var(--text-sub); margin-bottom: 10px; display: block; }
                   
-                  #custom-dw-app .section { padding: 20px; border-bottom: 5px solid var(--surface-color); }
-                  #custom-dw-app .section-title { font-size: 15px; font-weight: 600; color: var(--text-muted); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-                  #custom-dw-app .section-title::before { content: ''; width: 6px; height: 6px; background-color: var(--primary-color); border-radius: 50%; }
-                  #custom-dw-app .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-                  #custom-dw-app .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
+                  /* Payment Grid */
+                  .b9-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
+                  .b9-card { 
+                      background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; 
+                      padding: 12px 5px; text-align: center; cursor: pointer; transition: 0.2s;
+                      display: flex; flex-direction: column; align-items: center; justify-content: center;
+                  }
+                  .b9-card img { width: 28px; height: 28px; object-fit: contain; margin-bottom: 8px; border-radius: 4px;}
+                  .b9-card span { font-size: 13px; color: var(--text-main); }
+                  .b9-card.active { border-color: var(--primary); background: rgba(18, 185, 132, 0.05); }
                   
-                  #custom-dw-app .select-card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px 5px; text-align: center; cursor: pointer; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-                  #custom-dw-app .select-card span { font-size: 12px; font-weight: bold; margin-top: 8px; }
-                  #custom-dw-app .select-card.active { border-color: var(--primary-color); background-color: rgba(255, 193, 7, 0.1); }
-                  #custom-dw-app .select-card.active::after { content: '\\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: var(--primary-text); font-size: 10px; padding: 4px 6px; border-radius: 8px 0 0 0; }
-                  #custom-dw-app .amount-card span { font-size: 14px; margin-top: 0;}
+                  /* Channel List */
+                  .b9-channel-list { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 25px; overflow: hidden; }
+                  .b9-channel-item { 
+                      display: flex; justify-content: space-between; align-items: center; 
+                      padding: 16px 15px; cursor: pointer; border-bottom: 1px solid var(--border);
+                  }
+                  .b9-channel-item:last-child { border-bottom: none; }
+                  .b9-channel-item.active { border: 1px solid var(--primary); border-radius: 8px; margin: -1px; position: relative; z-index: 2;}
+                  .b9-ch-name { font-size: 14px; color: var(--text-main); }
+                  .b9-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #555; display: flex; align-items: center; justify-content: center; }
+                  .b9-channel-item.active .b9-radio { border-color: var(--primary); }
+                  .b9-channel-item.active .b9-radio::after { content: ''; width: 10px; height: 10px; background: var(--primary); border-radius: 50%; }
+                  .b9-recommend { background: rgba(18, 185, 132, 0.1); color: var(--primary); font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 10px; }
+
+                  /* Amount Input */
+                  .b9-amount-wrap { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); padding: 15px; display: flex; align-items: center; margin-bottom: 25px; }
+                  .b9-bdt-icon { background: var(--primary); color: #000; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; margin-right: 8px; }
+                  .b9-amount-wrap span.bdt-text { color: var(--text-main); font-size: 15px; margin-right: 15px; }
+                  .b9-amount-wrap input { flex: 1; background: transparent; border: none; color: var(--text-main); font-size: 20px; font-weight: 500; outline: none; text-align: right; }
+                  .b9-clear { background: #444; color: #fff; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 10px; cursor: pointer; }
+
+                  /* Reminder */
+                  .b9-reminder { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); padding: 15px; margin-bottom: 25px; }
+                  .b9-rem-head { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; }
+                  .b9-rem-text { font-size: 12px; color: var(--text-sub); line-height: 1.6; }
+
+                  /* Footer Button */
+                  .b9-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px; background: var(--bg-main); border-top: 1px solid var(--border); z-index: 100;}
+                  .b9-btn { width: 100%; background: var(--primary); color: #fff; border: none; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 4px; cursor: pointer; }
+                  .b9-btn:active { opacity: 0.8; }
+
+                  /* Step 2 specific */
+                  #b999-step2 { display: none; }
+                  .b9-info-box { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--primary); padding: 15px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
+                  .b9-copy-wrap { display: flex; align-items: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; margin-bottom: 25px; }
+                  .b9-copy-wrap .num { flex: 1; font-size: 18px; font-weight: bold; color: var(--primary); letter-spacing: 1px; }
+                  .b9-copy-wrap button { background: rgba(18, 185, 132, 0.1); color: var(--primary); border: 1px solid var(--primary); padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; }
                   
-                  #custom-dw-app .tx-type-card { background-color: rgba(255, 193, 7, 0.1); border: 1px dashed var(--primary-color); color: var(--primary-color); padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block; width: calc(33.33% - 7px); }
-                  #custom-dw-app .amount-input-container { margin-top: 15px; display: flex; align-items: center; background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 15px; }
-                  #custom-dw-app .amount-input-container span { color: var(--primary-color); font-size: 18px; font-weight: bold; }
-                  #custom-dw-app .amount-input-container input { flex-grow: 1; background: transparent; border: none; color: var(--text-main); padding: 15px; font-size: 18px; font-weight: bold; outline: none; }
+                  .b9-input-box { width: 100%; background: var(--bg-card); border: 1px solid var(--border); color: white; padding: 15px; border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 20px; transition: 0.3s;}
+                  .b9-input-box:focus { border-color: var(--primary); }
                   
-                  #custom-dw-app .bottom-action { position: fixed; bottom: 0; width: 100%; max-width: 480px; padding: 15px 20px; background-color: var(--bg-color); border-top: 1px solid var(--border-color); z-index: 10; }
-                  #custom-dw-app .btn-primary { width: 100%; background-color: var(--primary-color); color: var(--primary-text); border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-                  #custom-dw-app .btn-primary:hover { background-color: #e6ae06; }
-                  
-                  #custom-dw-app #step2 { display: none; padding-bottom: 90px; }
-                  #custom-dw-app .payment-header { background-color: var(--surface-active); padding: 25px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
-                  #custom-dw-app .payment-header .amount-display { font-size: 38px; font-weight: bold; color: var(--primary-color); }
-                  #custom-dw-app .copy-box { background-color: var(--surface-color); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-                  #custom-dw-app .copy-box .number { font-size: 20px; font-weight: bold; letter-spacing: 1.5px; color: var(--primary-color); }
-                  #custom-dw-app .copy-btn { background: var(--surface-active); border: 1px solid var(--border-color); color: var(--primary-color); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-                  #custom-dw-app .input-group { margin: 20px; }
-                  #custom-dw-app .input-group label { display: block; margin-bottom: 10px; font-size: 15px; font-weight: bold; }
-                  #custom-dw-app .input-group input[type="text"] { width: 100%; background-color: var(--surface-color); border: 1px solid var(--border-color); color: white; padding: 15px; border-radius: 8px; font-size: 15px; outline: none; }
-                  
-                  #custom-dw-app .file-upload-wrapper { position: relative; width: 100%; background-color: var(--surface-color); border: 1px dashed var(--border-color); border-radius: 8px; padding: 15px; text-align: center; color: var(--text-muted); cursor: pointer; transition: 0.3s; }
-                  #custom-dw-app .file-upload-wrapper input[type="file"] { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-                  #custom-dw-app .file-name { display: block; margin-top: 8px; font-size: 13px; color: var(--primary-color); font-weight: bold; }
-                  
-                  #custom-dw-toast { visibility: hidden; min-width: 200px; background-color: var(--primary-color); color: var(--primary-text); text-align: center; border-radius: 6px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; font-weight: bold; opacity: 0; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-                  #custom-dw-toast.show { visibility: visible; opacity: 1; bottom: 80px; }
-                  #custom-dw-app .pad-bottom { padding-bottom: 90px; }
+                  /* Toast */
+                  #b9-toast { visibility: hidden; min-width: 200px; background-color: var(--primary); color: #fff; text-align: center; border-radius: 4px; padding: 12px; position: fixed; z-index: 1000; left: 50%; bottom: 80px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: 0.3s; }
+                  #b9-toast.show { visibility: visible; opacity: 1; bottom: 100px; }
                 </style>
 
                 <script>
                   (function(){
                     // =====================================
-                    // ⚙️ PWA & Other Site Logic
+                    // ⚙️ PWA & General Logic
                     // =====================================
                     let deferredPrompt;
-                    window.addEventListener('beforeinstallprompt', (e) => {
-                        e.preventDefault(); 
-                        deferredPrompt = e; 
-                        showAppBanner(); 
-                    });
-
-                    window.addEventListener('appinstalled', () => { hideAppBanner(); });
-
-                    function showAppBanner() {
-                        const banner = document.getElementById('custom-install-banner');
-                        if(banner && banner.style.display !== 'flex') {
-                            banner.style.display = 'flex';
-                            setTimeout(() => {
-                                const offset = banner.offsetHeight;
-                                document.querySelectorAll('*').forEach(el => {
-                                    if(el.id === 'custom-install-banner') return;
-                                    const style = window.getComputedStyle(el);
-                                    if(style.position === 'fixed') {
-                                        const topVal = parseInt(style.top);
-                                        if(topVal === 0 || style.top === '0px') {
-                                            el.style.transition = 'top 0.3s ease';
-                                            el.style.top = offset + 'px';
-                                            el.setAttribute('data-pushed', 'true');
-                                        }
-                                    }
-                                });
-                            }, 50);
-                        }
-                    }
-
-                    function hideAppBanner() {
-                        const banner = document.getElementById('custom-install-banner');
-                        if(banner) {
-                            banner.style.display = 'none';
-                            document.querySelectorAll('[data-pushed="true"]').forEach(el => { el.style.top = '0px'; });
-                        }
-                    }
-
-                    function initAppInstallBanner() {
-                        if (document.getElementById('custom-install-banner')) return;
-                        const bannerHTML = \`
-                        <div id="custom-install-banner">
-                            <div class="cib-close" id="cib-close-btn">
-                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M13 1L1 13M1 1L13 13" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <img class="cib-logo" id="cib-logo-img" src="/favicon.ico" alt="Baji11">
-                            <div class="cib-text">
-                                <p class="cib-title">Baji11 App</p>
-                                <p class="cib-desc">Install our app for faster access!</p>
-                            </div>
-                            <button class="cib-install-btn" id="cib-install-btn">Install</button>
-                        </div>\`;
-                        document.body.insertAdjacentHTML('afterbegin', bannerHTML);
-
-                        const closeBtn = document.getElementById('cib-close-btn');
-                        const installBtn = document.getElementById('cib-install-btn');
-
-                        setTimeout(() => {
-                            const siteLogo = document.querySelector('img[alt*="logo" i], header img');
-                            if (siteLogo && siteLogo.src) document.getElementById('cib-logo-img').src = siteLogo.src;
-                        }, 1000);
-
-                        closeBtn.addEventListener('click', hideAppBanner);
-
-                        installBtn.addEventListener('click', async () => {
-                            if (deferredPrompt) {
-                                deferredPrompt.prompt();
-                                const { outcome } = await deferredPrompt.userChoice;
-                                if (outcome === 'accepted') hideAppBanner();
-                                deferredPrompt = null;
-                            } else {
-                                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                                if (isIOS) alert('To install: Tap the "Share" icon at the bottom and select "Add to Home Screen".');
-                                else alert('Please tap the 3-dot menu in your browser and select "Add to Home screen" or "Install app".');
-                            }
-                        });
-
-                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                        if (isIOS && !window.navigator.standalone) showAppBanner();
-                    }
+                    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
 
                     function updateBodyClass() {
                         document.body.className = document.body.className.replace(/\\bpage-[^ ]*[ ]?\\b/g, '');
@@ -339,36 +257,16 @@ export default {
 
                     let lastUrl = location.href; 
                     const urlObserver = new MutationObserver(() => {
-                      const url = location.href;
-                      if (url !== lastUrl) {
-                        lastUrl = url;
-                        updateBodyClass(); 
-                      }
+                      if (location.href !== lastUrl) { lastUrl = location.href; updateBodyClass(); }
                     });
-
-                    const REF_CODE = 'iZfmaT3h';
-                    const VIDEO_URL = 'https://github.com/user-attachments/assets/2e0caaaf-d0b6-4631-827f-4b428c62bc97';
-
-                    function setNativeValue(element, value) {
-                        const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
-                        const prototype = Object.getPrototypeOf(element);
-                        const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
-                        if (valueSetter && valueSetter !== prototypeValueSetter) prototypeValueSetter.call(element, value);
-                        else valueSetter.call(element, value);
-                        element.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
 
                     const b1 = '${banner1_New}';
                     const b2 = '${banner2_New}';
                     setInterval(() => {
                         document.querySelectorAll('img').forEach(img => {
-                            let src = img.getAttribute('src') || '';
-                            let alt = img.getAttribute('alt') || '';
+                            let src = img.getAttribute('src') || ''; let alt = img.getAttribute('alt') || '';
                             if (src.includes('banner-first-d.jpg') || alt.includes('banner-first-d.jpg')) {
-                                if (img.getAttribute('src') !== b1) { img.src = b1; img.srcset = ''; img.setAttribute('src', b1); }
-                            }
-                            if (src.includes('banner10.jpg') || alt.includes('banner10.jpg')) {
-                                if (img.getAttribute('src') !== b2) { img.src = b2; img.srcset = ''; img.setAttribute('src', b2); }
+                                if (img.getAttribute('src') !== b1) { img.src = b1; img.setAttribute('src', b1); }
                             }
                         });
                     }, 100);
@@ -376,271 +274,197 @@ export default {
                     const domObserver = new MutationObserver(() => {
                         let fullPath = window.location.pathname.replace(/\\//g, '');
                         let currentPath = fullPath.split('?')[0]; 
-                        
-                        const refInput = document.querySelector('input[placeholder="Enter if you have one"]');
-                        if (refInput) {
-                            if (refInput.value !== REF_CODE) setNativeValue(refInput, REF_CODE);
-                            const parentGroup = refInput.closest('.chakra-form-control');
-                            if (parentGroup && parentGroup.style.display !== 'none') parentGroup.style.display = 'none';
-                        }
-                        const phoneInput = document.querySelector('input[placeholder="Phone Number"]');
-                        if (phoneInput && phoneInput.type !== 'tel') phoneInput.type = 'tel';
-                        const codeInput = document.querySelector('input[placeholder="Enter 4 digit code"]');
-                        if (codeInput && codeInput.type !== 'number') codeInput.type = 'number';
-
-                        const agreeCheckbox = document.querySelector('input[type="checkbox"]');
-                        if (agreeCheckbox && !agreeCheckbox.hasAttribute('data-auto-checked')) {
-                            if (!agreeCheckbox.checked) agreeCheckbox.click();
-                            agreeCheckbox.setAttribute('data-auto-checked', 'true');
-                        }
-
-                        document.querySelectorAll('button').forEach(btn => {
-                            const txt = btn.textContent.toLowerCase();
-                            if (txt.includes('forgot') || txt.includes('password?')) {
-                                if (btn.style.display !== 'none') btn.style.setProperty('display', 'none', 'important');
-                            }
-                        });
-
-                        document.querySelectorAll('button.chakra-button').forEach(btn => {
-                            const btnText = btn.textContent.trim();
-                            if (btnText === 'Confirm' || btnText === 'Login') {
-                                btn.style.setProperty('height', '45px', 'important');
-                                btn.style.setProperty('border-radius', '4px', 'important');
-                                if (btnText === 'Login') btn.style.setProperty('margin-top', '10px', 'important');
-                            }
-                        });
-
-                        if (currentPath === 'login' || currentPath === 'signup') {
-                            const targetDivForVideo = document.querySelector('div.css-lpwed4');
-                            if (targetDivForVideo && !document.getElementById('arfan-custom-video')) {
-                                const videoHTML = \`
-                                <div id="arfan-custom-video" class="custom-video-wrapper">
-                                    <video id="arfan-vid" autoplay loop muted playsinline preload="auto">
-                                        <source src="\${VIDEO_URL}" type="video/mp4">
-                                    </video>
-                                </div>\`;
-                                targetDivForVideo.insertAdjacentHTML('afterend', videoHTML);
-                                setTimeout(() => {
-                                    const vidElement = document.getElementById('arfan-vid');
-                                    if(vidElement) vidElement.play().catch(e => console.log("Auto-play ready."));
-                                }, 10);
-                            }
-                        } else {
-                            const existingVideo = document.getElementById('arfan-custom-video');
-                            if (existingVideo) existingVideo.remove(); 
-                        }
                     });
 
                     // =====================================
-                    // 🚀 ইনজেক্টেড কাস্টম UI HTML & Logic
+                    // 🚀 Baji999 Quick Deposit UI & Logic
                     // =====================================
-                    function initCustomDW() {
-                        if(document.getElementById('custom-dw-app')) return;
+                    function initBaji999DW() {
+                        if(document.getElementById('b999-app')) return;
+
+                        // Icons for methods (using generic font-awesome colored appropriately)
+                        const bKashIcon = '<i class="fa-solid fa-b" style="color:#e2136e; font-size:24px; margin-bottom:8px;"></i>';
+                        const nagadIcon = '<i class="fa-solid fa-n" style="color:#f7931e; font-size:24px; margin-bottom:8px;"></i>';
+                        const rocketIcon = '<i class="fa-solid fa-rocket" style="color:#8c1596; font-size:24px; margin-bottom:8px;"></i>';
+                        const upayIcon = '<i class="fa-solid fa-u" style="color:#007bff; font-size:24px; margin-bottom:8px;"></i>';
 
                         const dwHTML = \`
-                        <div id="custom-dw-toast"><i class="fa-solid fa-check-circle"></i> কপি করা হয়েছে!</div>
-                        <div id="custom-dw-app">
-                            <div class="app-container">
-                                <div id="dw-step1">
-                                    <div class="sticky-top">
-                                        <div class="header">
-                                            <button class="back-btn" onclick="window.dwBackToHome()"><i class="fa-solid fa-angle-left"></i></button>
-                                            <h3>ডিপোজিট</h3>
-                                            <div style="width: 20px;"></div>
+                        <div id="b9-toast">Copied successfully!</div>
+                        <div id="b999-app">
+                            
+                            <div id="b999-step1">
+                                <div class="b9-header">
+                                    <button onclick="window.location.href='/'"><i class="fa-solid fa-angle-left"></i></button>
+                                    <h2>Quick deposit</h2>
+                                </div>
+                                
+                                <div class="b9-container">
+                                    <span class="b9-label">Select payment</span>
+                                    <div class="b9-grid">
+                                        <div class="b9-card active" data-method="bkash">
+                                            \${bKashIcon} <span>bkash</span>
                                         </div>
-                                        <div class="tab-switch">
-                                            <div class="tab-indicator" id="dw-tab-bg"></div>
-                                            <button class="tab-btn active">ডিপোজিট</button>
-                                            <button class="tab-btn" onclick="alert('উইথড্র ফাংশন যোগ করা হবে')">উইথড্র</button>
+                                        <div class="b9-card" data-method="Nagad">
+                                            \${nagadIcon} <span>Nagad</span>
                                         </div>
-                                    </div>
-                                    <div class="pad-bottom">
-                                        <div class="section">
-                                            <div class="section-title">পেমেন্ট মেথড</div>
-                                            <div class="grid-3">
-                                                <div class="select-card dw-mode-card active" data-mode="Nagad Agent">
-                                                    <i class="fa-solid fa-n" style="color: var(--nagad-color); font-size: 24px;"></i>
-                                                    <span>Nagad Agent</span>
-                                                </div>
-                                                <div class="select-card dw-mode-card" data-mode="Bkash Agent">
-                                                    <i class="fa-solid fa-b" style="color: var(--bkash-color); font-size: 24px;"></i>
-                                                    <span>Bkash Agent</span>
-                                                </div>
-                                                <div class="select-card dw-mode-card" data-mode="Rocket Personal">
-                                                    <i class="fa-solid fa-rocket" style="color: var(--rocket-color); font-size: 24px;"></i>
-                                                    <span>Rocket Personal</span>
-                                                </div>
-                                                <div class="select-card dw-mode-card" data-mode="Bkash Personal">
-                                                    <i class="fa-solid fa-b" style="color: var(--bkash-color); font-size: 24px;"></i>
-                                                    <span>Bkash Personal</span>
-                                                </div>
-                                                <div class="select-card dw-mode-card" data-mode="Nagad Personal">
-                                                    <i class="fa-solid fa-n" style="color: var(--nagad-color); font-size: 24px;"></i>
-                                                    <span>Nagad Personal</span>
-                                                </div>
-                                                <div class="select-card dw-mode-card" data-mode="Local Bank">
-                                                    <i class="fa-solid fa-building-columns" style="color: var(--bank-color); font-size: 24px;"></i>
-                                                    <span>Local Bank</span>
-                                                </div>
-                                            </div>
+                                        <div class="b9-card" data-method="Rocket">
+                                            \${rocketIcon} <span>Rocket</span>
                                         </div>
-                                        <div class="section">
-                                            <div class="section-title">লেনদেনের ধরন</div>
-                                            <div class="tx-type-card" id="dw-tx-type">ক্যাশআউট</div>
-                                        </div>
-                                        <div class="section" style="border-bottom: none;">
-                                            <div class="section-title">ডিপোজিট পরিমাণ</div>
-                                            <div class="grid-auto">
-                                                <div class="select-card dw-amount-card"><span>100</span></div>
-                                                <div class="select-card dw-amount-card"><span>500</span></div>
-                                                <div class="select-card dw-amount-card active"><span>1,000</span></div>
-                                                <div class="select-card dw-amount-card"><span>5,000</span></div>
-                                                <div class="select-card dw-amount-card"><span>10,000</span></div>
-                                            </div>
-                                            <div class="amount-input-container">
-                                                <span>BDT</span>
-                                                <input type="number" id="dw-custom-amount" value="1000" placeholder="0">
-                                            </div>
+                                        <div class="b9-card" data-method="UPay">
+                                            \${upayIcon} <span>UPay</span>
                                         </div>
                                     </div>
-                                    <div class="bottom-action">
-                                        <button class="btn-primary" onclick="window.dwGoToStep2()">পরবর্তী ধাপে যান</button>
+
+                                    <span class="b9-label">Deposit channel</span>
+                                    <div class="b9-channel-list">
+                                        <div class="b9-channel-item active" data-channel="SG-Cashout">
+                                            <span class="b9-ch-name">SG-Cashout</span>
+                                            <div style="display:flex; align-items:center;">
+                                                <span class="b9-recommend">Recommend</span>
+                                                <div class="b9-radio"></div>
+                                            </div>
+                                        </div>
+                                        <div class="b9-channel-item" data-channel="TM-CashOut">
+                                            <span class="b9-ch-name">TM-CashOut</span>
+                                            <div class="b9-radio"></div>
+                                        </div>
+                                        <div class="b9-channel-item" data-channel="Send Money">
+                                            <span class="b9-ch-name">Send Money</span>
+                                            <div class="b9-radio"></div>
+                                        </div>
+                                    </div>
+
+                                    <span class="b9-label">Available balance ৳ 100.00-৳ 30,000.00</span>
+                                    <div class="b9-amount-wrap">
+                                        <div class="b9-bdt-icon">৳</div>
+                                        <span class="bdt-text">BDT</span>
+                                        <input type="number" id="b9-amount" placeholder="0" value="500">
+                                        <div class="b9-clear" onclick="document.getElementById('b9-amount').value=''"><i class="fa-solid fa-times"></i></div>
+                                    </div>
+
+                                    <div class="b9-reminder">
+                                        <div class="b9-rem-head">
+                                            <i class="fa-solid fa-circle-info"></i> <strong>Reminder</strong>
+                                        </div>
+                                        <div class="b9-rem-text">
+                                            Dear all member, to speed up your deposit process, kindly follow these steps:<br>
+                                            1. Kindly make a Cash Out / Send Money to the number provided in the next step.<br>
+                                            2. Input the Transaction ID.<br>
+                                            3. Minimum DP is 100tk.<br><br>
+                                            Reminder: Please only make deposits to the account instantly displayed while submitting the deposit.
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div id="dw-step2">
-                                    <div class="sticky-top">
-                                        <div class="header">
-                                            <button class="back-btn" onclick="window.dwGoToStep1()"><i class="fa-solid fa-angle-left"></i></button>
-                                            <h3>পেমেন্ট নিশ্চিত করুন</h3>
-                                            <div style="width: 20px;"></div>
-                                        </div>
-                                    </div>
-                                    <div class="payment-header">
-                                        <div>
-                                            <span style="font-size: 16px; color: var(--text-main);">BDT</span><br>
-                                            <div class="amount-display" id="dw-display-amount">1000</div>
-                                        </div>
-                                        <div style="text-align: right; font-size: 12px; color: var(--text-muted);">
-                                            সঠিক অ্যামাউন্ট পাঠান!
-                                        </div>
-                                    </div>
-                                    <div style="padding: 20px;">
-                                        <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary-color);">
-                                            <span style="font-size: 14px; color: var(--text-muted);">Account Name</span><br>
-                                            <strong id="dw-display-method-name" style="font-size: 18px; color: var(--text-main);">Nagad Agent</strong>
-                                        </div>
-                                    </div>
-                                    <div style="padding: 0 20px;">
-                                        <label style="font-size: 15px; font-weight: bold; margin-bottom: 5px; display: block;">Account Number <span style="color: var(--primary-color);">*</span></label>
-                                        <div class="copy-box">
-                                            <span class="number" id="dw-wallet-number">01327986929</span>
-                                            <button class="copy-btn" onclick="window.dwCopyNumber()"><i class="fa-regular fa-copy"></i> কপি</button>
-                                        </div>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Transaction ID <span style="color: var(--primary-color);">*</span></label>
-                                        <input type="text" id="dw-trxId" placeholder="TrxID দিন">
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Upload Receipt</label>
-                                        <div class="file-upload-wrapper">
-                                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; margin-bottom: 10px;"></i><br>
-                                            <span>Select an Image</span>
-                                            <input type="file" id="dw-receiptImg" accept="image/*" onchange="window.dwUpdateFileName(this)">
-                                            <span class="file-name" id="dw-file-name-display"></span>
-                                        </div>
-                                    </div>
-                                    <div style="padding: 0 20px;">
-                                        <button class="btn-primary" id="dw-submit-btn" onclick="window.dwSubmitDeposit()">Submit</button>
-                                    </div>
+                                <div class="b9-footer">
+                                    <button class="b9-btn" onclick="window.b9NextStep()">Submit</button>
                                 </div>
                             </div>
+
+                            <div id="b999-step2">
+                                <div class="b9-header">
+                                    <button onclick="window.b9PrevStep()"><i class="fa-solid fa-angle-left"></i></button>
+                                    <h2>Payment Details</h2>
+                                </div>
+                                
+                                <div class="b9-container">
+                                    <div class="b9-info-box">
+                                        <div style="font-size:13px; color:var(--text-sub); margin-bottom:5px;">Deposit Amount</div>
+                                        <div style="font-size:24px; font-weight:bold; color:var(--text-main);">
+                                            BDT <span id="b9-disp-amount">0</span>
+                                        </div>
+                                        <div style="font-size:13px; color:var(--primary); margin-top:8px;" id="b9-disp-method">
+                                            bkash (SG-Cashout)
+                                        </div>
+                                    </div>
+
+                                    <span class="b9-label">Send money to this Wallet Number</span>
+                                    <div class="b9-copy-wrap">
+                                        <span class="num" id="b9-wallet-number">01773570463</span>
+                                        <button onclick="window.b9Copy()"><i class="fa-regular fa-copy"></i> Copy</button>
+                                    </div>
+
+                                    <span class="b9-label">Transaction ID (Required)</span>
+                                    <input type="text" id="b9-trxid" class="b9-input-box" placeholder="Enter 10-digit TrxID here">
+                                    
+                                    <span class="b9-label">Upload Receipt (Optional)</span>
+                                    <input type="file" id="b9-receipt" class="b9-input-box" style="padding:10px; background:var(--bg-card);" accept="image/*">
+                                </div>
+
+                                <div class="b9-footer">
+                                    <button class="b9-btn" id="b9-final-submit" onclick="window.b9SubmitApi()">Confirm Deposit</button>
+                                </div>
+                            </div>
+
                         </div>\`;
                         
                         document.body.insertAdjacentHTML('beforeend', dwHTML);
-                        attachDWListeners();
+                        attachB9Listeners();
                     }
 
-                    // গ্লোবাল ভেরিয়েবল এবং ফাংশন
-                    window.dwSelectedModeName = 'Nagad Agent';
+                    window.b9SelectedMethod = 'bkash';
+                    window.b9SelectedChannel = 'SG-Cashout';
 
-                    function attachDWListeners() {
-                        const modeCards = document.querySelectorAll('.dw-mode-card');
-                        modeCards.forEach(card => {
+                    function attachB9Listeners() {
+                        const methods = document.querySelectorAll('.b9-card');
+                        methods.forEach(card => {
                             card.addEventListener('click', () => {
-                                modeCards.forEach(c => c.classList.remove('active'));
+                                methods.forEach(c => c.classList.remove('active'));
                                 card.classList.add('active');
-                                window.dwSelectedModeName = card.getAttribute('data-mode');
-                                
-                                if(window.dwSelectedModeName.includes('Agent')) {
-                                    document.getElementById('dw-tx-type').innerText = 'ক্যাশআউট';
-                                } else if (window.dwSelectedModeName.includes('Personal')) {
-                                    document.getElementById('dw-tx-type').innerText = 'সেন্ড মানি';
-                                } else {
-                                    document.getElementById('dw-tx-type').innerText = 'ব্যাংক ট্রান্সফার';
-                                }
+                                window.b9SelectedMethod = card.getAttribute('data-method');
                             });
                         });
 
-                        const amountCards = document.querySelectorAll('.dw-amount-card');
-                        const customAmountInput = document.getElementById('dw-custom-amount');
-                        amountCards.forEach(card => {
-                            card.addEventListener('click', () => {
-                                amountCards.forEach(c => c.classList.remove('active'));
-                                card.classList.add('active');
-                                customAmountInput.value = card.innerText.replace(/,/g, '');
+                        const channels = document.querySelectorAll('.b9-channel-item');
+                        channels.forEach(ch => {
+                            ch.addEventListener('click', () => {
+                                channels.forEach(c => c.classList.remove('active'));
+                                ch.classList.add('active');
+                                window.b9SelectedChannel = ch.getAttribute('data-channel');
                             });
                         });
                     }
 
-                    window.dwBackToHome = function() {
-                        window.location.href = '/';
-                    };
-
-                    window.dwGoToStep2 = function() {
-                        const amount = document.getElementById('dw-custom-amount').value;
-                        if(!amount || amount <= 0) { alert("সঠিক পরিমাণ দিন।"); return; }
-                        document.getElementById('dw-display-amount').innerText = amount;
-                        document.getElementById('dw-display-method-name').innerText = window.dwSelectedModeName;
+                    window.b9NextStep = function() {
+                        const amount = document.getElementById('b9-amount').value;
+                        if(!amount || amount < 100) { alert("Please enter a valid amount (Min 100)."); return; }
                         
-                        // NOTE: ডায়নামিক নাম্বার হলে এখানে চেঞ্জ করতে হবে।
-                        // document.getElementById('dw-wallet-number').innerText = '01327986929';
+                        document.getElementById('b9-disp-amount').innerText = amount;
+                        document.getElementById('b9-disp-method').innerText = window.b9SelectedMethod + ' (' + window.b9SelectedChannel + ')';
+                        
+                        // এডমিন প্যানেল থেকে পাওয়া নাম্বার এখানে বসবে
+                        // document.getElementById('b9-wallet-number').innerText = '01773570463';
 
-                        document.getElementById('dw-step1').style.display = 'none';
-                        const app = document.getElementById('custom-dw-app');
-                        if(app) app.scrollTo(0, 0);
-                        document.getElementById('dw-step2').style.display = 'block';
+                        document.getElementById('b999-step1').style.display = 'none';
+                        window.scrollTo(0, 0);
+                        document.getElementById('b999-step2').style.display = 'block';
                     };
 
-                    window.dwGoToStep1 = function() {
-                        document.getElementById('dw-step2').style.display = 'none';
-                        document.getElementById('dw-step1').style.display = 'block';
+                    window.b9PrevStep = function() {
+                        document.getElementById('b999-step2').style.display = 'none';
+                        document.getElementById('b999-step1').style.display = 'block';
                     };
 
-                    window.dwCopyNumber = function() {
-                        const number = document.getElementById('dw-wallet-number').innerText;
-                        navigator.clipboard.writeText(number).then(() => {
-                            const toast = document.getElementById("custom-dw-toast");
+                    window.b9Copy = function() {
+                        const num = document.getElementById('b9-wallet-number').innerText;
+                        navigator.clipboard.writeText(num).then(() => {
+                            const toast = document.getElementById("b9-toast");
                             toast.className = "show";
                             setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
                         });
                     };
 
-                    window.dwUpdateFileName = function(input) {
-                        const fileNameDisplay = document.getElementById('dw-file-name-display');
-                        if (input.files && input.files[0]) fileNameDisplay.innerText = input.files[0].name;
-                        else fileNameDisplay.innerText = "";
-                    };
-
-                    window.dwSubmitDeposit = async function() {
-                        const trxId = document.getElementById('dw-trxId').value;
-                        const amount = document.getElementById('dw-custom-amount').value;
-                        const receiptFile = document.getElementById('dw-receiptImg').files[0];
+                    // =====================================
+                    // 📡 Final API Submission
+                    // =====================================
+                    window.b9SubmitApi = async function() {
+                        const trxId = document.getElementById('b9-trxid').value;
+                        const amount = document.getElementById('b9-amount').value;
+                        const receiptFile = document.getElementById('b9-receipt').files[0];
                         
-                        if(!trxId) { alert("দয়া করে Transaction ID দিন!"); return; }
+                        if(!trxId) { alert("Transaction ID is required!"); return; }
 
-                        const submitBtn = document.getElementById('dw-submit-btn');
+                        const submitBtn = document.getElementById('b9-final-submit');
                         const originalText = submitBtn.innerText;
                         submitBtn.innerText = "Processing...";
                         submitBtn.disabled = true;
@@ -648,11 +472,11 @@ export default {
                         try {
                             const formData = new FormData();
                             formData.append('amount', amount);
-                            formData.append('method', window.dwSelectedModeName);
+                            // Method এর সাথে Channel যুক্ত করে দিচ্ছি যাতে এডমিন প্যানেলে ক্লিয়ার বোঝা যায়
+                            formData.append('method', window.b9SelectedMethod + ' ' + window.b9SelectedChannel);
                             formData.append('transaction_id', trxId);
                             if(receiptFile) formData.append('receipt', receiptFile);
 
-                            // API Call: Using the secure proxy path set in your worker
                             const response = await fetch('/__api_proxy/https://liveapi247.live/apiv9/deposit', {
                                 method: 'POST',
                                 headers: { 'Accept': 'application/json' },
@@ -662,15 +486,14 @@ export default {
                             const result = await response.json();
                             if(result.status === true) {
                                 alert("Success: " + result.msg);
-                                document.getElementById('dw-trxId').value = '';
-                                document.getElementById('dw-receiptImg').value = '';
-                                document.getElementById('dw-file-name-display').innerText = '';
-                                window.dwGoToStep1(); 
+                                document.getElementById('b9-trxid').value = '';
+                                document.getElementById('b9-receipt').value = '';
+                                window.b9PrevStep(); 
                             } else {
-                                alert("Failed: " + (result.msg || "Something went wrong."));
+                                alert("Failed: " + (result.msg || "Transaction could not be completed."));
                             }
                         } catch (error) {
-                            alert("Connection error! Please check your internet.");
+                            alert("Connection error! Please try again.");
                         } finally {
                             submitBtn.innerText = originalText;
                             submitBtn.disabled = false;
@@ -678,9 +501,8 @@ export default {
                     };
 
                     window.addEventListener('load', () => {
-                        initAppInstallBanner(); 
                         updateBodyClass(); 
-                        initCustomDW(); // কাস্টম UI ইনজেক্ট করা
+                        initBaji999DW(); // Inject Baji999 Quick Deposit UI
                         urlObserver.observe(document, {subtree: true, childList: true});
                         domObserver.observe(document.body, { childList: true, subtree: true });
                     });
