@@ -10,7 +10,7 @@ export default {
       });
     }
 
-    // ২. অন্যান্য সব রিকোয়েস্ট (লগইন, গেম প্লে) মেইন সাইটে প্রক্সি হবে
+    // ২. অন্যান্য সব রিকোয়েস্ট মেইন সাইটে প্রক্সি হবে
     url.hostname = targetHostname;
     const proxyRequest = new Request(url.toString(), request);
     
@@ -89,10 +89,12 @@ function getNativeUI() {
         
         /* Game Grid */
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 15px 20px 15px; }
-        .game-card { background-color: var(--card-bg); border-radius: 6px; overflow: hidden; text-decoration: none; display: block; }
-        .game-thumb { height: 110px; display: flex; justify-content: center; align-items: center; color: #475569; font-size: 14px; }
-        .game-info { background-color: #0f172a; padding: 10px; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 12px; }
-        .heart-icon { color: white; font-size: 14px; }
+        .game-card { background-color: var(--card-bg); border-radius: 6px; overflow: hidden; text-decoration: none; display: block; border: 1px solid #2a4365; transition: transform 0.2s;}
+        .game-card:active { transform: scale(0.98); }
+        .game-thumb { height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #94a3b8; font-size: 14px; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); }
+        .game-thumb i { font-size: 32px; margin-bottom: 8px; color: #38bdf8; }
+        .game-info { background-color: #0f172a; padding: 10px; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 12px; border-top: 1px solid #1e293b; }
+        .heart-icon { color: #64748b; font-size: 14px; }
         
     </style>
 </head>
@@ -100,7 +102,7 @@ function getNativeUI() {
 
     <div class="header">
         <div class="logo">1XBET</div>
-        <button class="login-btn"><i class="fas fa-user"></i> Login</button>
+        <button class="login-btn" onclick="window.location.href='/login'"><i class="fas fa-user"></i> Login</button>
     </div>
 
     <div class="main-layout">
@@ -115,7 +117,9 @@ function getNativeUI() {
         </div>
 
         <div class="content-area">
-            <div class="banner">[ Main Banner / No Image ]</div>
+            <div class="banner">
+                <i class="fas fa-image" style="margin-right: 10px;"></i> [ Main Banner ]
+            </div>
             
             <div class="notice-bar">
                 <div class="notice-icon"><i class="fas fa-bullhorn"></i></div>
@@ -130,35 +134,51 @@ function getNativeUI() {
             </div>
 
             <div class="game-grid">
+                
                 <a href="/TABLE/SPRIBE/EGAME/SPRIBE-EGAME-001" class="game-card">
-                    <div class="game-thumb">[ Aviator Logo ]</div>
+                    <div class="game-thumb">
+                        <i class="fas fa-plane-departure" style="color: #ef4444;"></i>
+                        [ Aviator ]
+                    </div>
                     <div class="game-info">
                         <span>Aviator (Spribe)</span>
                         <i class="far fa-heart heart-icon"></i>
                     </div>
                 </a>
 
-                <a href="#" class="game-card">
-                    <div class="game-thumb">[ No Image ]</div>
+                <a href="আপনার_কপি_করা_সম্পূর্ণ_লিংকটি_এখানে_দিন" class="game-card">
+                    <div class="game-thumb">
+                        <i class="fas fa-playing-cards" style="color: #10b981;"></i>
+                        [ Teen Patti ]
+                    </div>
                     <div class="game-info">
-                        <span>EVO Game Lobb...</span>
+                        <span>Teen Patti (KM)</span>
                         <i class="far fa-heart heart-icon"></i>
                     </div>
                 </a>
+
                 <a href="#" class="game-card">
-                    <div class="game-thumb">[ No Image ]</div>
+                    <div class="game-thumb">
+                        <i class="fas fa-dice" style="color: #f59e0b;"></i>
+                        [ EVO Lobby ]
+                    </div>
                     <div class="game-info">
-                        <span>EVO Game Lobb...</span>
+                        <span>EVO Casino</span>
                         <i class="far fa-heart heart-icon"></i>
                     </div>
                 </a>
+
                 <a href="#" class="game-card">
-                    <div class="game-thumb">[ No Image ]</div>
+                    <div class="game-thumb">
+                        <i class="fas fa-gem" style="color: #d946ef;"></i>
+                        [ Sexy Lobby ]
+                    </div>
                     <div class="game-info">
-                        <span>EVO Game Lobb...</span>
+                        <span>AE Sexy</span>
                         <i class="far fa-heart heart-icon"></i>
                     </div>
                 </a>
+
             </div>
         </div>
     </div>
