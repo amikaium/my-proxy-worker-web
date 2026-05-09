@@ -1,9 +1,9 @@
 // ==========================================
-// ⚙️ CONFIGURATION (এখানে আপনার ডাটা দিন)
+// ⚙️ CONFIGURATION (আপনার ডাটা দিন)
 // ==========================================
 const CONFIG = {
     SECRET_CODE: "381168", // ড্যাশবোর্ডে ঢোকার সিক্রেট কোড
-    SESSION_SECRET: "secure_random_key_998877", // কুকি সিক্রেট (যে কোনো লেখা দিতে পারেন)
+    SESSION_SECRET: "secure_random_key_998877", // পোর্টাল কুকি সিক্রেট
     TARGET_DOMAIN: "https://ag.tenx365x.live" // যে সাইটটি হাইড করে প্রক্সি করবেন
 };
 
@@ -26,10 +26,9 @@ const landingPageHTML = `
     </style>
 </head>
 <body class="antialiased selection:bg-indigo-500 selection:text-white">
-
     <nav class="fixed w-full z-50 glass border-b-0">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <!-- Hidden Trigger: এই লোগোতে ৩ বার ক্লিক করলে লগইন বক্স আসবে -->
+            <!-- Hidden Trigger: Click 3 times -->
             <div id="logo-trigger" class="text-xl font-bold tracking-tighter cursor-pointer select-none">NEXUS<span class="text-indigo-500">.</span></div>
             <div class="hidden md:flex space-x-8 text-sm text-gray-400">
                 <a href="#" class="hover:text-white transition">Services</a>
@@ -64,8 +63,7 @@ const landingPageHTML = `
     </div>
 
     <script>
-        let clickCount = 0;
-        let clickTimer;
+        let clickCount = 0, clickTimer;
         const logo = document.getElementById('logo-trigger');
         const modal = document.getElementById('access-modal');
         const codeInput = document.getElementById('secret-code');
@@ -73,53 +71,27 @@ const landingPageHTML = `
         const errorMsg = document.getElementById('error-msg');
 
         logo.addEventListener('click', () => {
-            clickCount++;
-            clearTimeout(clickTimer);
-            if (clickCount === 3) {
-                modal.classList.add('active');
-                codeInput.focus();
-                clickCount = 0;
-            } else {
-                clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
-            }
+            clickCount++; clearTimeout(clickTimer);
+            if (clickCount === 3) { modal.classList.add('active'); codeInput.focus(); clickCount = 0; }
+            else { clickTimer = setTimeout(() => { clickCount = 0; }, 1000); }
         });
 
-        modal.addEventListener('click', (e) => {
-            if(e.target === modal) modal.classList.remove('active');
-        });
+        modal.addEventListener('click', (e) => { if(e.target === modal) modal.classList.remove('active'); });
 
         verifyBtn.addEventListener('click', async () => {
             const code = codeInput.value;
             verifyBtn.innerHTML = 'Verifying...';
-            
             try {
-                const res = await fetch('/api/access', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code })
-                });
-
-                if (res.ok) {
-                    window.location.href = '/dashboard';
-                } else {
-                    errorMsg.classList.remove('hidden');
-                    codeInput.classList.add('border-red-500');
-                    setTimeout(() => {
-                        errorMsg.classList.add('hidden');
-                        codeInput.classList.remove('border-red-500');
-                    }, 2000);
+                const res = await fetch('/api/access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+                if (res.ok) { window.location.href = '/dashboard'; } 
+                else {
+                    errorMsg.classList.remove('hidden'); codeInput.classList.add('border-red-500');
+                    setTimeout(() => { errorMsg.classList.add('hidden'); codeInput.classList.remove('border-red-500'); }, 2000);
                 }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                verifyBtn.innerHTML = 'Authenticate';
-                codeInput.value = '';
-            }
+            } catch (err) {} finally { verifyBtn.innerHTML = 'Authenticate'; codeInput.value = ''; }
         });
 
-        codeInput.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') verifyBtn.click();
-        });
+        codeInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') verifyBtn.click(); });
     </script>
 </body>
 </html>
@@ -143,14 +115,13 @@ const dashboardHTML = `
     </style>
 </head>
 <body class="antialiased min-h-screen p-6 md:p-12">
-    
     <div class="max-w-4xl mx-auto">
         <header class="flex justify-between items-center mb-12 border-b border-white/10 pb-6">
             <div>
                 <h1 class="text-2xl font-light tracking-wide text-gray-200">System <span class="font-bold text-white">Access</span></h1>
                 <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">End-to-End Encrypted Session</p>
             </div>
-            <a href="/logout" class="px-4 py-2 text-xs font-medium border border-gray-800 rounded-md hover:bg-white hover:text-black transition">Terminate Session</a>
+            <a href="/logout" class="px-4 py-2 text-xs font-medium border border-red-900/50 text-red-400 rounded-md hover:bg-red-900/20 transition">Terminate Portal Session</a>
         </header>
 
         <div class="space-y-4">
@@ -163,14 +134,13 @@ const dashboardHTML = `
                     </div>
                     <div>
                         <h2 class="text-lg font-medium text-gray-200">Tenx365x Core</h2>
-                        <p class="text-xs text-gray-500 mt-0.5">Secure Proxy Route Active</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Secure Global Proxy Routing</p>
                     </div>
                 </div>
-                
-                <a href="/proxy/" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500 transition duration-300">
-                    <svg class="w-4 h-4 text-gray-400 group-hover:text-white transition duration-300 transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
+                <!-- Start Proxy Route -->
+                <a href="/api/start-proxy" class="px-6 py-2 rounded-full bg-white text-black text-sm font-medium hover:bg-gray-200 transition duration-300 flex items-center space-x-2">
+                    <span>Open Link</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                 </a>
             </div>
         </div>
@@ -180,20 +150,28 @@ const dashboardHTML = `
 `;
 
 // ==========================================
-// 🚀 BACKEND & REVERSE PROXY LOGIC
+// 🚀 BACKEND & ADVANCED REVERSE PROXY
 // ==========================================
 export default {
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
         const path = url.pathname;
 
-        // Session Check Function
-        const isAuthorized = (req) => {
-            const cookieHeader = req.headers.get("Cookie") || "";
-            return cookieHeader.includes(`session_token=${CONFIG.SESSION_SECRET}`);
+        // Cookie Helper Functions
+        const getCookies = (req) => {
+            const header = req.headers.get("Cookie");
+            if (!header) return {};
+            return Object.fromEntries(header.split(';').map(c => {
+                const parts = c.split('=');
+                return [parts[0].trim(), parts.slice(1).join('=')];
+            }));
         };
 
-        // 1. Auth API Route
+        const cookies = getCookies(request);
+        const isAuthorized = cookies['portal_session'] === CONFIG.SESSION_SECRET;
+        const isProxyActive = cookies['proxy_active'] === 'true';
+
+        // 1. Auth Login Route
         if (path === "/api/access" && request.method === "POST") {
             try {
                 const { code } = await request.json();
@@ -202,7 +180,7 @@ export default {
                         status: 200,
                         headers: {
                             "Content-Type": "application/json",
-                            "Set-Cookie": `session_token=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/; Max-Age=86400; SameSite=Strict`
+                            "Set-Cookie": `portal_session=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/; Max-Age=86400; SameSite=Lax`
                         }
                     });
                 }
@@ -212,57 +190,130 @@ export default {
             }
         }
 
-        // 2. Dashboard Route
+        // 2. Private Dashboard
         if (path === "/dashboard") {
-            if (!isAuthorized(request)) {
-                return Response.redirect(url.origin, 302);
-            }
-            return new Response(dashboardHTML, {
-                headers: { "Content-Type": "text/html;charset=UTF-8" },
+            if (!isAuthorized) return Response.redirect(url.origin, 302);
+            return new Response(dashboardHTML, { headers: { "Content-Type": "text/html;charset=UTF-8" } });
+        }
+
+        // 3. Start Proxy Mode (Sets cookie and redirects to root)
+        if (path === "/api/start-proxy") {
+            if (!isAuthorized) return new Response("Access Denied", { status: 403 });
+            return new Response("Starting Proxy...", {
+                status: 302,
+                headers: {
+                    "Location": "/",
+                    "Set-Cookie": "proxy_active=true; HttpOnly; Secure; Path=/; Max-Age=86400; SameSite=Lax"
+                }
             });
         }
 
-        // 3. Reverse Proxy Route
-        if (path.startsWith("/proxy/")) {
-            if (!isAuthorized(request)) {
-                return new Response("Access Denied", { status: 403 });
-            }
-
-            // Create target URL (e.g., https://ag.tenx365x.live/something)
-            const targetPath = path.replace("/proxy", "");
-            const targetUrl = new URL(targetPath + url.search, CONFIG.TARGET_DOMAIN);
-
-            // Fetch from Target Domain
-            const proxyRequest = new Request(targetUrl, {
-                method: request.method,
-                headers: request.headers,
-                body: request.body,
-                redirect: "manual"
+        // 4. Stop Proxy Mode (Clears proxy cookie and goes to dashboard)
+        if (path === "/api/stop-proxy") {
+            return new Response("Stopping Proxy...", {
+                status: 302,
+                headers: {
+                    "Location": "/dashboard",
+                    "Set-Cookie": "proxy_active=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
+                }
             });
-
-            // Hide original host and set target host
-            proxyRequest.headers.set("Host", new URL(CONFIG.TARGET_DOMAIN).hostname);
-            proxyRequest.headers.set("Origin", CONFIG.TARGET_DOMAIN);
-            proxyRequest.headers.delete("Cookie"); // Ensure proxy doesn't receive your auth cookie
-
-            const response = await fetch(proxyRequest);
-            
-            // Return response directly to user
-            return new Response(response.body, response);
         }
 
-        // 4. Logout Route
+        // 5. Logout Portal
         if (path === "/logout") {
             return new Response("Logged out", {
                 status: 302,
                 headers: {
                     "Location": "/",
-                    "Set-Cookie": "session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
+                    "Set-Cookie": "portal_session=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
                 }
             });
         }
 
-        // 5. Default Route (Public Landing Page)
+        // ==========================================
+        // 🌐 GLOBAL PROXY ENGINE (Only active if logged in & clicked "Open Link")
+        // ==========================================
+        if (isAuthorized && isProxyActive) {
+            
+            // Build absolute target URL
+            const targetUrl = new URL(request.url);
+            targetUrl.hostname = new URL(CONFIG.TARGET_DOMAIN).hostname;
+            targetUrl.protocol = new URL(CONFIG.TARGET_DOMAIN).protocol;
+            targetUrl.port = new URL(CONFIG.TARGET_DOMAIN).port;
+
+            // Prepare headers for target site (Strip our secret portal cookies, but pass target's login cookies)
+            const proxyHeaders = new Headers(request.headers);
+            proxyHeaders.set("Host", targetUrl.hostname);
+            proxyHeaders.set("Origin", CONFIG.TARGET_DOMAIN);
+            proxyHeaders.set("Referer", CONFIG.TARGET_DOMAIN + targetUrl.pathname);
+
+            // Filter out portal specific cookies before sending to Target
+            delete cookies['portal_session'];
+            delete cookies['proxy_active'];
+            const cleanCookieStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
+            if (cleanCookieStr) {
+                proxyHeaders.set("Cookie", cleanCookieStr);
+            } else {
+                proxyHeaders.delete("Cookie");
+            }
+
+            // Fetch Configuration
+            const fetchConfig = {
+                method: request.method,
+                headers: proxyHeaders,
+                redirect: "manual" // Handle redirects manually so we can rewrite them!
+            };
+            // Only add body if not a GET/HEAD request
+            if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+                fetchConfig.body = request.body;
+            }
+
+            // Fetch from target site
+            const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
+            
+            // Prepare response to send back to user
+            const responseHeaders = new Headers(proxyRes.headers);
+
+            // SECURITY: Rewrite Redirects (Location headers) back to your Worker domain
+            const locationHeader = responseHeaders.get("Location");
+            if (locationHeader) {
+                const newLocation = locationHeader.replace(CONFIG.TARGET_DOMAIN, url.origin);
+                responseHeaders.set("Location", newLocation);
+            }
+
+            // INJECT: Floating Exit Button in HTML pages
+            let body = proxyRes.body;
+            const contentType = responseHeaders.get("Content-Type") || "";
+            
+            if (contentType.includes("text/html")) {
+                let htmlText = await proxyRes.text();
+                // A very stealthy, tiny 'Close Proxy' button fixed at bottom-right
+                const exitButton = `
+                    <div style="position:fixed; bottom:20px; right:20px; z-index:2147483647;">
+                        <a href="/api/stop-proxy" style="background:rgba(220, 38, 38, 0.8); color:white; padding:8px 16px; border-radius:99px; font-family:sans-serif; font-size:12px; font-weight:bold; text-decoration:none; backdrop-filter:blur(5px); transition:all 0.3s;" onmouseover="this.style.background='rgba(220,38,38,1)'" onmouseout="this.style.background='rgba(220,38,38,0.8)'">
+                            Exit Proxy &rarr;
+                        </a>
+                    </div>
+                `;
+                if (htmlText.includes("</body>")) {
+                    htmlText = htmlText.replace("</body>", exitButton + "</body>");
+                } else {
+                    htmlText += exitButton; // Fallback
+                }
+                body = htmlText;
+                responseHeaders.delete("Content-Length"); // Because we modified the body size
+            }
+
+            return new Response(body, {
+                status: proxyRes.status,
+                statusText: proxyRes.statusText,
+                headers: responseHeaders
+            });
+        }
+
+        // ==========================================
+        // 🔒 DEFAULT: PUBLIC DECOY ROUTE
+        // ==========================================
         return new Response(landingPageHTML, {
             headers: { "Content-Type": "text/html;charset=UTF-8" },
         });
