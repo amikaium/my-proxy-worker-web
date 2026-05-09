@@ -9,19 +9,20 @@ const CONFIG = {
 };
 
 // ==========================================
-// 🔐 CRYPTO ENGINE
+// 🔐 ADVANCED CRYPTO ENGINE (Unicode Safe)
 // ==========================================
 const encrypt = (text) => {
     let res = '';
-    for(let i=0; i<text.length; i++) res += String.fromCharCode(text.charCodeAt(i) ^ CONFIG.SESSION_SECRET.charCodeAt(i % CONFIG.SESSION_SECRET.length));
+    const utf8 = unescape(encodeURIComponent(text));
+    for(let i=0; i<utf8.length; i++) res += String.fromCharCode(utf8.charCodeAt(i) ^ CONFIG.SESSION_SECRET.charCodeAt(i % CONFIG.SESSION_SECRET.length));
     return btoa(res);
 };
 const decrypt = (b64) => {
     try {
-        let text = atob(b64);
+        let utf8 = atob(b64);
         let res = '';
-        for(let i=0; i<text.length; i++) res += String.fromCharCode(text.charCodeAt(i) ^ CONFIG.SESSION_SECRET.charCodeAt(i % CONFIG.SESSION_SECRET.length));
-        return res;
+        for(let i=0; i<utf8.length; i++) res += String.fromCharCode(utf8.charCodeAt(i) ^ CONFIG.SESSION_SECRET.charCodeAt(i % CONFIG.SESSION_SECRET.length));
+        return decodeURIComponent(escape(res));
     } catch(e) { return null; }
 };
 
@@ -69,6 +70,7 @@ const landingPageHTML = `
                 <div class="pl-4 flex items-center justify-center pointer-events-none">
                     <svg id="search-icon" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
+                <!-- Plain text input to avoid suspicion -->
                 <input type="text" id="main-search" placeholder="Search by project, service or keyword..." autocomplete="off" spellcheck="false"
                     class="w-full bg-transparent text-white text-sm px-4 py-3 placeholder-gray-600 tracking-wide font-medium">
                 <button type="submit" id="search-btn" class="px-6 py-3 bg-white hover:bg-gray-200 text-black text-[10px] font-bold uppercase tracking-widest transition flex items-center justify-center min-w-[100px]">
@@ -107,16 +109,6 @@ const landingPageHTML = `
                 <h3 class="text-lg font-bold mb-3 text-white">High Performance</h3>
                 <p class="text-xs text-gray-400 leading-relaxed">Lightning-fast content delivery deployed worldwide. Latency reduced to mere milliseconds for an uninterrupted user experience.</p>
             </div>
-        </div>
-    </section>
-
-    <section class="py-16 border-y border-white/5 bg-[#080808] text-center">
-        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-8">Trusted by Modern Technology Teams</p>
-        <div class="flex flex-wrap justify-center gap-10 opacity-30 grayscale">
-            <span class="text-xl font-bold font-serif">ACME Corp</span>
-            <span class="text-xl font-bold font-mono">Globex</span>
-            <span class="text-xl font-bold">Soylent</span>
-            <span class="text-xl font-bold font-sans">Initech</span>
         </div>
     </section>
 
@@ -202,15 +194,15 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
-        // --- 🕵️ FIXED DIRECT NAVIGATION TRAP ---
-        // This ensures assets (CSS, JS, Images) are NEVER blocked. Only the main document is blocked if directly navigated.
+        // --- 🕵️ FIXED DIRECT NAVIGATION TRAP (Does not break site CSS/JS) ---
+        const destHeader = request.headers.get("Sec-Fetch-Dest") || "";
         const acceptHeader = request.headers.get("Accept") || "";
-        const destHeader = request.headers.get("Sec-Fetch-Dest");
-        const siteHeader = request.headers.get("Sec-Fetch-Site");
         const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
 
         if (isProxyActive && request.method === "GET" && !path.startsWith("/api/") && isMainDocument) {
-            if (siteHeader === "none") { // User typed URL or used bookmark
+            const secFetchSite = request.headers.get("Sec-Fetch-Site");
+            const referer = request.headers.get("Referer");
+            if (secFetchSite === "none" || (!secFetchSite && !referer)) {
                 return new Response("Killed", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
             }
         }
@@ -237,7 +229,7 @@ export default {
         }
 
         if (path === "/logout") {
-            return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/" } });
+            return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/; proxy_active=; Max-Age=0; Path=/" } });
         }
 
         // --- 🛠️ COMMON MODAL TEMPLATE (SQUARE) ---
@@ -586,14 +578,14 @@ export default {
                                     <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none w-full min-w-0 truncate select-all">
                                 </div>
                                 
-                                <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
+                                <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
+                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Password</span>
                                     <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                         </button>
-                                        <button onclick="toggleEditPwd('${siteId}')" class="h-7 px-2 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 transition border border-indigo-500/30 text-[8px] font-bold uppercase tracking-widest whitespace-nowrap">Update</button>
+                                        <button onclick="toggleEditPwd('${siteId}')" class="h-7 px-3 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 transition border border-indigo-500/30 text-[8px] font-bold uppercase tracking-widest whitespace-nowrap">Update</button>
                                     </div>
                                 </div>
                                 <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
@@ -703,14 +695,18 @@ export default {
             return new Response(html, { headers: { "Content-Type": "text/html" } });
         }
 
-        // --- 🚀 PROXY START ---
+        // --- 🚀 PROXY START WITH AUTO-FILL INJECTION DATA ---
         if (path === "/api/start-proxy") {
             if (!isUser) return new Response("Denied", { status: 403 });
             const siteId = url.searchParams.get("id");
             const userData = db.pins[userPin];
             if (userData.status === 'suspended' || !userData.sites.includes(siteId) || !db.sites[siteId]) return new Response("Access Denied", { status: 403 });
             
-            const encryptedTarget = encrypt(db.sites[siteId].agentLink);
+            // 🔥 WE STORE THE TARGET AND CREDENTIALS IN THE COOKIE SO THE PROXY ENGINE CAN AUTO-FILL 🔥
+            const conf = userData.siteConf?.[siteId] || {};
+            const proxyData = JSON.stringify({ t: db.sites[siteId].agentLink, u: conf.u || '', p: conf.p || '' });
+            const encryptedData = encrypt(proxyData);
+
             return new Response("Starting...", {
                 status: 302,
                 headers: { "Location": "/", "Set-Cookie": `proxy_active=${encryptedTarget}; HttpOnly; Secure; Path=/; Max-Age=3600; SameSite=Lax` }
@@ -718,10 +714,20 @@ export default {
         }
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
 
-        // --- 🌐 GLOBAL PROXY ENGINE ---
+        // --- 🌐 GLOBAL PROXY ENGINE (WITH AUTO-FILL & ISOLATION) ---
         if (isUser && isProxyActive) {
-            const targetDomain = decrypt(isProxyActive);
-            if(!targetDomain) return new Response("Invalid Proxy", { status: 400 });
+            const proxyDataString = decrypt(isProxyActive);
+            if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
+            
+            let proxyData;
+            try { proxyData = JSON.parse(proxyDataString); } catch(e) { 
+                // Fallback for old cookie format
+                proxyData = { t: proxyDataString, u: '', p: '' }; 
+            }
+
+            const targetDomain = proxyData.t;
+            const autoUser = proxyData.u;
+            const autoPwd = proxyData.p;
 
             const targetUrl = new URL(request.url);
             const tDomainObj = new URL(targetDomain);
@@ -734,7 +740,7 @@ export default {
             proxyHeaders.set("Origin", targetDomain);
             proxyHeaders.set("Referer", targetDomain + targetUrl.pathname);
             
-            // SECURITY: Removing Accept-Encoding ensures the origin sends plain HTML so we don't corrupt it
+            // Remove encoding to ensure we can modify the HTML body safely
             proxyHeaders.delete("Accept-Encoding"); 
 
             delete cookies['portal_session'];
@@ -758,10 +764,10 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
-                // Replace any hardcoded absolute target URLs with our worker domain
                 htmlText = htmlText.split(targetDomain).join(url.origin);
                 
-                const encTargetTrim = isProxyActive.substring(0,8);
+                // --- 🛡️ PASSWORD ISOLATION & AUTO-FILL SCRIPT ---
+                const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 const stealthScript = `<script>
                 (function(){
                     try{
@@ -771,7 +777,14 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
+                        // Password Manager Isolation
                         var ctx = '${encTargetTrim}';
+                        if(!window.location.search.includes('_ctx=')){
+                            var sep = window.location.search ? '&' : '?';
+                            window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
+                        }
+                        
+                        // Intelligent Auto-Fill System
                         window.addEventListener('DOMContentLoaded', () => {
                             document.querySelectorAll('form').forEach(f => {
                                 var a = f.getAttribute('action') || '';
@@ -780,6 +793,27 @@ export default {
                                     f.setAttribute('action', a + s + '_ctx=' + ctx);
                                 }
                             });
+
+                            const au = "${autoUser}"; const ap = "${autoPwd}";
+                            if(au && ap) {
+                                setTimeout(() => {
+                                    const pwds = document.querySelectorAll('input[type="password"]');
+                                    if(pwds.length > 0) {
+                                        pwds.forEach(pf => { 
+                                            pf.value = ap; pf.dispatchEvent(new Event('input', {bubbles:true})); 
+                                            pf.setAttribute('autocomplete', 'new-password'); // Disable chrome popup
+                                        });
+                                        const usrs = document.querySelectorAll('input[type="text"], input[type="email"]');
+                                        for(let uf of usrs) {
+                                            if(uf.name.toLowerCase().includes('user') || uf.id.toLowerCase().includes('user') || uf.placeholder.toLowerCase().includes('user')) {
+                                                uf.value = au; uf.dispatchEvent(new Event('input', {bubbles:true}));
+                                                uf.setAttribute('autocomplete', 'new-password');
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }, 500);
+                            }
                         });
                     }catch(e){}
                 })();
