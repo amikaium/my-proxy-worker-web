@@ -23,7 +23,7 @@ const landingPageHTML = `
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .hidden-modal { opacity: 0; pointer-events: none; transition: all 0.4s ease; transform: scale(0.95); }
         .hidden-modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
-        /* Browser Password Manager Bypass CSS */
+        /* Browser Password Manager Bypass */
         .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }
     </style>
 </head>
@@ -54,7 +54,6 @@ const landingPageHTML = `
         <div class="glass p-8 rounded-2xl w-full max-w-sm shadow-2xl relative">
             <h2 class="text-xs tracking-[0.2em] text-gray-500 mb-6 text-center uppercase">Secure Authentication</h2>
             <div class="space-y-4">
-                <!-- Changed to type="text" with secure-input class to bypass browser password saving -->
                 <input type="text" id="secret-code" inputmode="numeric" placeholder="Enter Access Code" 
                     autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                     class="secure-input w-full bg-black/50 border border-gray-800 rounded-lg px-4 py-3 text-center tracking-[0.5em] text-white focus:outline-none focus:border-indigo-500 transition shadow-inner">
@@ -126,7 +125,7 @@ const dashboardHTML = `
                 <h1 class="text-2xl font-light tracking-wide text-gray-200">System <span class="font-bold text-white">Access</span></h1>
                 <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">End-to-End Encrypted Session</p>
             </div>
-            <a href="/logout" class="px-4 py-2 text-xs font-medium border border-red-900/50 text-red-400 rounded-md hover:bg-red-900/20 transition">Terminate Portal Session</a>
+            <a href="/logout" class="px-4 py-2 text-xs font-medium border border-red-900/50 text-red-400 rounded-md hover:bg-red-900/20 transition">Lock Portal</a>
         </header>
 
         <div class="space-y-4">
@@ -155,7 +154,7 @@ const dashboardHTML = `
 `;
 
 // ==========================================
-// 🚀 BACKEND & ADVANCED REVERSE PROXY
+// 🚀 BACKEND & AUTO-KILL REVERSE PROXY
 // ==========================================
 export default {
     async fetch(request, env, ctx) {
@@ -173,7 +172,29 @@ export default {
 
         const cookies = getCookies(request);
         const isAuthorized = cookies['portal_session'] === CONFIG.SESSION_SECRET;
-        const isProxyActive = cookies['proxy_active'] === 'true';
+        let isProxyActive = cookies['proxy_active'] === 'true';
+
+        // ==========================================
+        // 🕵️ DIRECT NAVIGATION TRAP (NEW FEATURE)
+        // ==========================================
+        if (isProxyActive && request.method === "GET") {
+            const secFetchSite = request.headers.get("Sec-Fetch-Site");
+            const referer = request.headers.get("Referer");
+            
+            // যদি ইউজার সরাসরি লিংক টাইপ করে বা ট্যাব কেটে দিয়ে নতুন ট্যাবে সার্চ করে
+            const isDirectSearch = (secFetchSite === "none") || (!secFetchSite && !referer);
+
+            if (isDirectSearch) {
+                // সাথে সাথে প্রক্সি સেশন ডিলিট করে মূল কাস্টম ডিজাইনে পাঠিয়ে দিবে
+                return new Response("Killed Proxy", {
+                    status: 302,
+                    headers: {
+                        "Location": "/",
+                        "Set-Cookie": "proxy_active=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
+                    }
+                });
+            }
+        }
 
         // 1. Auth Login Route
         if (path === "/api/access" && request.method === "POST") {
@@ -212,18 +233,7 @@ export default {
             });
         }
 
-        // 4. Stop Proxy Mode
-        if (path === "/api/stop-proxy") {
-            return new Response("Stopping Proxy...", {
-                status: 302,
-                headers: {
-                    "Location": "/dashboard",
-                    "Set-Cookie": "proxy_active=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
-                }
-            });
-        }
-
-        // 5. Logout Portal
+        // 4. Logout Portal
         if (path === "/logout") {
             return new Response("Logged out", {
                 status: 302,
@@ -235,7 +245,7 @@ export default {
         }
 
         // ==========================================
-        // 🌐 GLOBAL PROXY ENGINE
+        // 🌐 GLOBAL PROXY ENGINE (SUPER FAST - NO EXIT BUTTON)
         // ==========================================
         if (isAuthorized && isProxyActive) {
             const targetUrl = new URL(request.url);
@@ -276,28 +286,8 @@ export default {
                 responseHeaders.set("Location", newLocation);
             }
 
-            let body = proxyRes.body;
-            const contentType = responseHeaders.get("Content-Type") || "";
-            
-            if (contentType.includes("text/html")) {
-                let htmlText = await proxyRes.text();
-                const exitButton = `
-                    <div style="position:fixed; bottom:20px; right:20px; z-index:2147483647;">
-                        <a href="/api/stop-proxy" style="background:rgba(220, 38, 38, 0.8); color:white; padding:8px 16px; border-radius:99px; font-family:sans-serif; font-size:12px; font-weight:bold; text-decoration:none; backdrop-filter:blur(5px); transition:all 0.3s;" onmouseover="this.style.background='rgba(220,38,38,1)'" onmouseout="this.style.background='rgba(220,38,38,0.8)'">
-                            Exit Proxy &rarr;
-                        </a>
-                    </div>
-                `;
-                if (htmlText.includes("</body>")) {
-                    htmlText = htmlText.replace("</body>", exitButton + "</body>");
-                } else {
-                    htmlText += exitButton; 
-                }
-                body = htmlText;
-                responseHeaders.delete("Content-Length");
-            }
-
-            return new Response(body, {
+            // Return response directly (No HTML rewriting, making it lightning fast)
+            return new Response(proxyRes.body, {
                 status: proxyRes.status,
                 statusText: proxyRes.statusText,
                 headers: responseHeaders
