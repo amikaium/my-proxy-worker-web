@@ -879,12 +879,17 @@ export default {
             targetUrl.protocol = tDomainObj.protocol;
             targetUrl.port = tDomainObj.port;
 
-            // 🚀 WEBSOCKET UPGRADE HANDLER
+            // 🚀 WEBSOCKET UPGRADE HANDLER (Fixed with proper Headers)
             if (request.headers.get("Upgrade") === "websocket") {
                 const wsUrl = new URL(request.url);
                 wsUrl.hostname = tDomainObj.hostname;
                 wsUrl.protocol = tDomainObj.protocol === 'https:' ? 'wss:' : 'ws:';
-                return fetch(new Request(wsUrl.toString(), request));
+                
+                const wsHeaders = new Headers(request.headers);
+                wsHeaders.set("Host", tDomainObj.hostname);
+                wsHeaders.set("Origin", targetDomain);
+                
+                return fetch(new Request(wsUrl.toString(), request), { headers: wsHeaders });
             }
 
             const proxyHeaders = new Headers(request.headers);
@@ -940,16 +945,15 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
-        // 🔥 BROAD API INTERCEPTOR
+        // 🔥 BROAD API INTERCEPTOR (For Live Balance & WebSocket Routing)
         var targetHost = new URL("` + targetDomain + `").hostname;
-        var apiTarget = "${autoApi}";
-        var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
-
+        var rootDomain = targetHost.split('.').slice(-2).join('.'); // Captures subdomains like m.velkix.live or api.velkix.live
+        
         function shouldIntercept(urlStr) {
             if(typeof urlStr !== 'string') return false;
             try {
                 var u = urlStr.startsWith('http') ? new URL(urlStr) : new URL(urlStr, window.location.origin);
-                return u.hostname.includes(targetHost) || (apiHost && u.hostname.includes(apiHost));
+                return u.hostname.includes(rootDomain);
             } catch(e) { return false; }
         }
 
@@ -985,63 +989,58 @@ export default {
             } catch(e){}
         }
 
-        // 🔥 SMART LOGIN PAGE ISOLATION
+        // 🔥 SMART MANUAL FILL BUTTON
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(au && ap) {
-                const style = document.createElement('style');
-                style.innerHTML = '.frozen-input { pointer-events: none !important; user-select: none !important; touch-action: none !important; } .masked-pwd { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
-                document.head.appendChild(style);
-
-                let hasLoggedIn = false;
-
-                const fill = () => {
-                    if (hasLoggedIn) return;
+                const path = window.location.pathname.toLowerCase();
+                
+                // শুধুমাত্র লগইন পেজেই বাটনটি দেখাবে
+                if(path === '/' || path.includes('login') || path.includes('auth')) {
+                    const btn = document.createElement('button');
+                    btn.innerHTML = '<svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Fill Login';
+                    btn.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:999999;background:#4f46e5;color:white;border:none;padding:12px 18px;border-radius:8px;font-weight:bold;font-family:sans-serif;font-size:12px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.5);display:flex;align-items:center;gap:6px;transition:0.3s;';
                     
-                    const pwds = Array.from(document.querySelectorAll('input[type="password"], input.masked-pwd')).filter(el => {
-                        const rect = el.getBoundingClientRect();
-                        return rect.width > 0 && rect.height > 0;
-                    });
+                    btn.onmouseover = () => btn.style.background = '#4338ca';
+                    btn.onmouseout = () => btn.style.background = '#4f46e5';
 
-                    if(pwds.length === 0) return;
+                    document.body.appendChild(btn);
 
-                    let pField = pwds[0];
-                    pField.setAttribute('type', 'text');
-                    pField.classList.add('frozen-input', 'masked-pwd');
-                    pField.setAttribute('readonly', 'true');
-                    pField.setAttribute('autocomplete', 'off');
-
-                    let uField = null;
-                    const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
-                    for(let i=0; i<txts.length; i++) {
-                        let el = txts[i];
-                        if(el === pField || el.classList.contains('masked-pwd') || el.getBoundingClientRect().width === 0) continue;
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         
-                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
-                            uField = el; break;
-                        }
-                    }
+                        const pwds = Array.from(document.querySelectorAll('input[type="password"]')).filter(el => {
+                            const rect = el.getBoundingClientRect();
+                            return rect.width > 0 && rect.height > 0;
+                        });
 
-                    if(uField) {
-                        setNativeValue(uField, au);
-                        uField.classList.add('frozen-input');
-                        uField.style.webkitTextSecurity = 'none';
-                        uField.setAttribute('readonly', 'true');
-                        uField.setAttribute('autocomplete', 'off');
-                    }
-                    if(pField) setNativeValue(pField, ap);
-                };
-                
-                fill();
-                let attempts = 0;
-                let intv = setInterval(()=>{ fill(); attempts++; if(attempts > 20) clearInterval(intv); }, 500);
-                
-                document.addEventListener('click', (e) => { 
-                    if(e.target.tagName.toLowerCase() === 'button' || e.target.type === 'submit') hasLoggedIn = true;
-                    setTimeout(fill, 100); 
-                });
-                document.addEventListener('keyup', () => setTimeout(fill, 100));
+                        if(pwds.length === 0) {
+                            btn.innerHTML = 'Box Not Found';
+                            btn.style.background = '#ef4444';
+                            setTimeout(() => { btn.innerHTML = '⚡ Fill Login'; btn.style.background = '#4f46e5'; }, 2000);
+                            return;
+                        }
+
+                        let pField = pwds[0];
+                        let uField = null;
+                        
+                        const txts = document.querySelectorAll('input[type="text"], input[type="email"], input:not([type])');
+                        for(let i=0; i<txts.length; i++) {
+                            let el = txts[i];
+                            if(el === pField || el.getBoundingClientRect().width === 0) continue;
+                            
+                            let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                            if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
+                                uField = el; break;
+                            }
+                        }
+
+                        if(uField) setNativeValue(uField, au);
+                        if(pField) setNativeValue(pField, ap);
+                        
+                        btn.style.display = 'none'; // কাজ হয়ে গেলে বাটন গায়েব হয়ে যাবে
+                    });
+                }
             }
         });
     }catch(e){}
