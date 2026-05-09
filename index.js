@@ -203,6 +203,7 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
+        // --- 🕵️ FIXED DIRECT NAVIGATION TRAP ---
         const destHeader = request.headers.get("Sec-Fetch-Dest") || "";
         const acceptHeader = request.headers.get("Accept") || "";
         const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
@@ -240,7 +241,7 @@ export default {
             return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/; proxy_active=; Max-Age=0; Path=/" } });
         }
 
-        // --- 🛠️ COMMON MODAL TEMPLATE (SQUARE) ---
+        // --- 🛠️ COMMON MODAL TEMPLATE ---
         const customModalScript = `
         <div id="c-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
             <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-sm w-full mx-4 shadow-2xl flex flex-col">
@@ -296,20 +297,16 @@ export default {
             </head>
             <body class="pb-28">
                 ${customModalScript}
-
                 <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
                     <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Master <span class="text-white">Admin</span></h1></div>
                     <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition">Logout</a>
                 </header>
-
                 <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
                     <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
                 </div>
-                
                 <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
                     <button id="save-btn" onclick="save()" class="w-full max-w-sm bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">SAVE ALL CHANGES</button>
                 </div>
-
                 <script>
                     let db = {}; let tab = 'pins'; let openPins = new Set(); let searchQuery = '';
 
@@ -379,14 +376,11 @@ export default {
 
                     function render() {
                         if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.settings) db.settings = {whatsapp:'', notification:{enabled:false, target:'all', specificUsers:[]}};
-                        
-                        let html = \`
-                        <div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
+                        let html = \`<div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
                             <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">User Pins</button>
                             <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">Global Sites</button>
                             <button onclick="tab='settings'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='settings'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">System Settings</button>
-                        </div>
-                        \`;
+                        </div>\`;
 
                         if(tab === 'pins') {
                             html += \`<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -394,13 +388,11 @@ export default {
                                 <button onclick="addPin()" class="w-full md:w-auto bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-5 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition">+ Add New User</button>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">\`;
-                            
                             Object.keys(db.pins).filter(p => p.toLowerCase().includes(searchQuery) || (db.pins[p].name||'').toLowerCase().includes(searchQuery)).forEach(pin => {
                                 let pData = db.pins[pin];
                                 let st = pData.status;
                                 let bg = st==='active' ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
                                 let isOpen = openPins.has(pin);
-                                
                                 html += \`<div class="square-card flex flex-col \${st==='suspended'?'opacity-70 grayscale':''}">
                                     <div class="flex justify-between items-center p-5 cursor-pointer hover:bg-white/5 transition" onclick="toggleAdminPin('\${pin}')">
                                         <div class="flex flex-col truncate pr-4">
@@ -415,7 +407,6 @@ export default {
                                             <svg class="w-4 h-4 text-gray-500 transition-transform duration-300 \${isOpen?'rotate-180':''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                         </div>
                                     </div>
-                                    
                                     <div class="\${isOpen?'block':'hidden'} p-5 border-t border-white/5 bg-black/40">
                                         <div class="mb-4">
                                             <label class="text-[8px] uppercase tracking-widest text-gray-500 mb-1 block">Edit User Name</label>
@@ -444,10 +435,7 @@ export default {
                                             }
                                             html += \`</div>\`;
                                         });
-                                    html += \`</div>
-                                    <button onclick="delPin('\${pin}')" class="mt-5 w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete User</button>
-                                    </div>
-                                </div>\`;
+                                    html += \`</div><button onclick="delPin('\${pin}')" class="mt-5 w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete User</button></div></div>\`;
                             });
                             html += \`</div>\`;
                         }
@@ -558,7 +546,7 @@ export default {
                                     siteConf.r === 'Super Agent' ? 'text-blue-400 border-blue-400/20 bg-blue-400/10' : 
                                     'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
 
-                    // MANDATORY PASSWORD LOGIC
+                    // MANDATORY PASSWORD CHECK
                     const hasPwd = siteConf.p && siteConf.p.trim() !== '';
                     const safeSiteName = (site.name || 'this site').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     
@@ -591,13 +579,12 @@ export default {
                             <div id="details-${siteId}" class="hidden mt-3 space-y-2 p-3 bg-black/40 border border-white/5">
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Username</span>
-                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate select-all">
+                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate">
                                 </div>
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
-                                    <!-- Changed to hide suggestions using autocomplete new-password -->
-                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" data-lpignore="true" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
+                                    <input type="password" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -661,7 +648,7 @@ export default {
             }
 
             const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
-            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }</style></head>
+            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
                 
@@ -712,7 +699,7 @@ export default {
             return new Response(html, { headers: { "Content-Type": "text/html" } });
         }
 
-        // --- 🚀 PROXY START WITH AUTO-FILL INJECTION DATA ---
+        // --- 🚀 PROXY START ---
         if (path === "/api/start-proxy") {
             if (!isUser) return new Response("Denied", { status: 403 });
             const siteId = url.searchParams.get("id");
@@ -752,7 +739,6 @@ export default {
             proxyHeaders.set("Host", targetUrl.hostname);
             proxyHeaders.set("Origin", targetDomain);
             proxyHeaders.set("Referer", targetDomain + targetUrl.pathname);
-            proxyHeaders.delete("Accept-Encoding"); 
 
             delete cookies['portal_session'];
             delete cookies['proxy_active'];
@@ -775,10 +761,7 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
-                htmlText = htmlText.split(targetDomain).join(url.origin);
-                
-                // --- 🛡️ THE ULTIMATE REACT-SAFE AUTO FILL SCRIPT ---
-                const encTargetTrim = encrypt(targetDomain).substring(0,8);
+                // --- 🛡️ SMART REACT-SAFE AUTO FILL SCRIPT ---
                 const stealthScript = `<script>
                 (function(){
                     try{
@@ -788,15 +771,8 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
-                        // Password Manager Isolation
-                        var ctx = '${encTargetTrim}';
-                        if(!window.location.search.includes('_ctx=')){
-                            var sep = window.location.search ? '&' : '?';
-                            window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
-                        }
-                        
-                        // React Native Value Setter (Bypasses React State Clear on Captcha Typing)
                         function setReactValue(el, val) {
+                            if (el.value === val) return;
                             try {
                                 let lastVal = el.value;
                                 el.value = val;
@@ -808,46 +784,29 @@ export default {
                             } catch(e){}
                         }
 
-                        // Intelligent Auto-Fill System
                         window.addEventListener('DOMContentLoaded', () => {
-                            document.querySelectorAll('form').forEach(f => {
-                                var a = f.getAttribute('action') || '';
-                                if(!a.includes('_ctx=')) {
-                                    var s = a.includes('?') ? '&' : '?';
-                                    f.setAttribute('action', a + s + '_ctx=' + ctx);
-                                }
-                            });
-
                             const au = "${autoUser}"; const ap = "${autoPwd}";
                             if(au && ap) {
                                 const fill = () => {
                                     const pwds = document.querySelectorAll('input[type="password"]');
                                     pwds.forEach(pf => { 
-                                        if(pf.value !== ap) setReactValue(pf, ap);
+                                        setReactValue(pf, ap);
                                         pf.setAttribute('autocomplete', 'new-password');
                                         pf.setAttribute('data-lpignore', 'true');
                                     });
                                     const usrs = document.querySelectorAll('input[type="text"], input[type="email"]');
                                     usrs.forEach(uf => {
-                                        let n = (uf.name||'').toLowerCase(); let id = (uf.id||'').toLowerCase(); let p = (uf.placeholder||'').toLowerCase();
-                                        if(n.includes('user') || id.includes('user') || p.includes('user') || n.includes('email') || p.includes('email')) {
-                                            if(uf.value !== au) setReactValue(uf, au);
+                                        let n = (uf.name||'').toLowerCase(); let id = (uf.id||'').toLowerCase(); let pl = (uf.placeholder||'').toLowerCase();
+                                        if(n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('email') || pl.includes('email')) {
+                                            setReactValue(uf, au);
                                             uf.setAttribute('autocomplete', 'new-password');
                                             uf.setAttribute('data-lpignore', 'true');
                                         }
                                     });
                                 };
                                 
-                                fill();
-                                let attempts = 0;
-                                let intv = setInterval(()=>{
-                                    fill(); attempts++;
-                                    if(attempts > 10) clearInterval(intv);
-                                }, 500);
-
-                                // Continually enforce if user interacts with page (like typing Captcha)
-                                document.addEventListener('keyup', () => { setTimeout(fill, 50); });
-                                document.addEventListener('click', () => { setTimeout(fill, 50); });
+                                let intv = setInterval(fill, 500);
+                                setTimeout(() => clearInterval(intv), 10000); // Stop enforcing after 10s to let user login
                             }
                         });
                     }catch(e){}
