@@ -23,14 +23,12 @@ const landingPageHTML = `
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .hidden-modal { opacity: 0; pointer-events: none; transition: all 0.4s ease; transform: scale(0.95); }
         .hidden-modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
-        /* Browser Password Manager Bypass */
         .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }
     </style>
 </head>
 <body class="antialiased selection:bg-indigo-500 selection:text-white">
     <nav class="fixed w-full z-50 glass border-b-0">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <!-- Hidden Trigger: Click 3 times -->
             <div id="logo-trigger" class="text-xl font-bold tracking-tighter cursor-pointer select-none">NEXUS<span class="text-indigo-500">.</span></div>
             <div class="hidden md:flex space-x-8 text-sm text-gray-400">
                 <a href="#" class="hover:text-white transition">Services</a>
@@ -49,7 +47,6 @@ const landingPageHTML = `
         </div>
     </main>
 
-    <!-- Secret Access Modal -->
     <div id="access-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden-modal">
         <div class="glass p-8 rounded-2xl w-full max-w-sm shadow-2xl relative">
             <h2 class="text-xs tracking-[0.2em] text-gray-500 mb-6 text-center uppercase">Secure Authentication</h2>
@@ -141,7 +138,6 @@ const dashboardHTML = `
                         <p class="text-xs text-gray-500 mt-0.5">Secure Global Proxy Routing</p>
                     </div>
                 </div>
-                <!-- Start Proxy Route -->
                 <a href="/api/start-proxy" class="px-6 py-2 rounded-full bg-white text-black text-sm font-medium hover:bg-gray-200 transition duration-300 flex items-center space-x-2">
                     <span>Open Link</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -154,7 +150,46 @@ const dashboardHTML = `
 `;
 
 // ==========================================
-// 🚀 BACKEND & AUTO-KILL REVERSE PROXY
+// 🛡️ STEALTH JAVASCRIPT INJECTION (NEW)
+// ==========================================
+const stealthScript = `
+<script>
+(function(){
+    try {
+        // 1. Detect if User clicked "Refresh/Reload" or browser is resubmitting forms
+        var perf = performance.getEntriesByType("navigation")[0];
+        if (perf && (perf.type === "reload" || perf.type === "back_forward")) {
+            window.location.replace("/api/stop-proxy"); // Instantly kill on reload!
+            return;
+        }
+
+        // 2. Detect Background App Suspend (If app is killed/backgrounded for > 60 secs)
+        var lastTick = Date.now();
+        setInterval(function(){
+            if (Date.now() - lastTick > 60000) { 
+                window.location.replace("/api/stop-proxy"); // Self Destruct
+            }
+            lastTick = Date.now();
+        }, 2000);
+
+        // 3. Hide screen instantly in "Recent Apps" menu to protect privacy
+        document.addEventListener("visibilitychange", function() {
+            if (document.visibilityState === "hidden") {
+                document.body.style.opacity = "0"; // Turn screen blank
+            } else {
+                document.body.style.opacity = "1"; // Restore screen
+                // Double check if it was asleep for too long
+                if (Date.now() - lastTick > 60000) { window.location.replace("/api/stop-proxy"); }
+                lastTick = Date.now();
+            }
+        });
+    } catch(e){}
+})();
+</script>
+`;
+
+// ==========================================
+// 🚀 BACKEND & ADVANCED REVERSE PROXY
 // ==========================================
 export default {
     async fetch(request, env, ctx) {
@@ -174,27 +209,6 @@ export default {
         const isAuthorized = cookies['portal_session'] === CONFIG.SESSION_SECRET;
         let isProxyActive = cookies['proxy_active'] === 'true';
 
-        // ==========================================
-        // 🕵️ DIRECT NAVIGATION TRAP
-        // ==========================================
-        if (isProxyActive && request.method === "GET") {
-            const secFetchSite = request.headers.get("Sec-Fetch-Site");
-            const referer = request.headers.get("Referer");
-            
-            // Catch URL Typing or Bookmark clicking
-            const isDirectSearch = (secFetchSite === "none") || (!secFetchSite && !referer);
-
-            if (isDirectSearch) {
-                return new Response("Killed Proxy", {
-                    status: 302,
-                    headers: {
-                        "Location": "/",
-                        "Set-Cookie": "proxy_active=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
-                    }
-                });
-            }
-        }
-
         // 1. Auth Login Route
         if (path === "/api/access" && request.method === "POST") {
             try {
@@ -204,7 +218,6 @@ export default {
                         status: 200,
                         headers: {
                             "Content-Type": "application/json",
-                            // STRICT SESSION COOKIE (No Max-Age) -> self destructs on app kill
                             "Set-Cookie": `portal_session=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/; SameSite=Lax`
                         }
                     });
@@ -228,13 +241,24 @@ export default {
                 status: 302,
                 headers: {
                     "Location": "/",
-                    // STRICT SESSION COOKIE (No Max-Age) -> self destructs on app kill
-                    "Set-Cookie": "proxy_active=true; HttpOnly; Secure; Path=/; SameSite=Lax"
+                    // 10 মিনিট পর অটোমেটিক প্রক্সি কুকি ডিলিট হয়ে যাবে সার্ভার থেকে
+                    "Set-Cookie": "proxy_active=true; HttpOnly; Secure; Path=/; Max-Age=600; SameSite=Lax"
                 }
             });
         }
 
-        // 4. Logout Portal
+        // 4. Stop Proxy Mode (Self-Destructs to Custom Design)
+        if (path === "/api/stop-proxy") {
+            return new Response("Self Destructing...", {
+                status: 302,
+                headers: {
+                    "Location": "/", // মেইন ল্যান্ডিং পেজে পাঠিয়ে দিবে
+                    "Set-Cookie": "proxy_active=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
+                }
+            });
+        }
+
+        // 5. Logout Portal
         if (path === "/logout") {
             return new Response("Logged out", {
                 status: 302,
@@ -246,7 +270,7 @@ export default {
         }
 
         // ==========================================
-        // 🌐 GLOBAL PROXY ENGINE (CACHE DESTROYER ADDED)
+        // 🌐 GLOBAL PROXY ENGINE
         // ==========================================
         if (isAuthorized && isProxyActive) {
             const targetUrl = new URL(request.url);
@@ -281,24 +305,38 @@ export default {
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
             const responseHeaders = new Headers(proxyRes.headers);
 
-            // Fix Redirects
+            // Redirect Rewrite
             const locationHeader = responseHeaders.get("Location");
             if (locationHeader) {
                 const newLocation = locationHeader.replace(CONFIG.TARGET_DOMAIN, url.origin);
                 responseHeaders.set("Location", newLocation);
             }
 
-            // 🔥 AGGRESSIVE ANTI-CACHE SYSTEM 🔥
-            // ব্রাউজারকে নির্দেশ দেওয়া হচ্ছে যেন কোনোভাবেই এই পেজ সেভ করে না রাখে।
+            // Rolling Session: রিফ্রেশ বা ক্লিক করলেই আরও ১০ মিনিট সময় বাড়বে
+            responseHeaders.append("Set-Cookie", "proxy_active=true; HttpOnly; Secure; Path=/; Max-Age=600; SameSite=Lax");
+
+            // 🔥 HTML Rewriting & Script Injection 🔥
+            let body = proxyRes.body;
             const contentType = responseHeaders.get("Content-Type") || "";
+            
             if (contentType.includes("text/html")) {
+                let htmlText = await proxyRes.text();
+                // Inject our Stealth Script into the target site's HTML
+                if (htmlText.includes("<head>")) {
+                    htmlText = htmlText.replace("<head>", "<head>" + stealthScript);
+                } else {
+                    htmlText = stealthScript + htmlText;
+                }
+                body = htmlText;
+                responseHeaders.delete("Content-Length");
+                
+                // Aggressive Anti-Cache
                 responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
                 responseHeaders.set("Pragma", "no-cache");
                 responseHeaders.set("Expires", "0");
             }
 
-            // Return fast response
-            return new Response(proxyRes.body, {
+            return new Response(body, {
                 status: proxyRes.status,
                 statusText: proxyRes.statusText,
                 headers: responseHeaders
@@ -311,7 +349,7 @@ export default {
         return new Response(landingPageHTML, {
             headers: { 
                 "Content-Type": "text/html;charset=UTF-8",
-                "Cache-Control": "no-store, no-cache" // মেইন ল্যান্ডিং পেজেও যেন ক্যাশ না থাকে
+                "Cache-Control": "no-store, no-cache" 
             },
         });
     }
