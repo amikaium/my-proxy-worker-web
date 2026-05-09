@@ -153,6 +153,7 @@ export default {
             }
         }
 
+        // --- 🔑 Authentication API ---
         if (path === "/api/access" && request.method === "POST") {
             const { code } = await request.json();
             if (db.adminPin && db.adminPin !== "SET_YOUR_PIN_HERE" && code === String(db.adminPin)) {
@@ -164,11 +165,57 @@ export default {
             return new Response("Invalid", { status: 401 });
         }
 
+        // --- 🔑 Password Update API (User Side) ---
+        if (path === "/api/update-password" && request.method === "POST") {
+            if (!isUser) return new Response("Denied", { status: 403 });
+            const { siteId, newPassword } = await request.json();
+            if (!db.pins[userPin].siteConf) db.pins[userPin].siteConf = {};
+            if (!db.pins[userPin].siteConf[siteId]) db.pins[userPin].siteConf[siteId] = {u:'', r:'Admin', p:''};
+            
+            db.pins[userPin].siteConf[siteId].p = newPassword;
+            await updateDB(db);
+            return new Response(JSON.stringify({ success: true }));
+        }
+
+        // --- 🚪 Logout ---
         if (path === "/logout") {
             return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/" } });
         }
 
-        // --- 🛠️ ADMIN PANEL (V14) ---
+        // --- 🛠️ COMMON MODAL TEMPLATE ---
+        const customModalScript = `
+        <div id="c-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-xs w-full mx-4 shadow-2xl flex flex-col">
+                <h3 id="cm-title" class="text-indigo-400 font-bold tracking-widest mb-2 uppercase text-sm"></h3>
+                <p id="cm-text" class="text-gray-400 text-xs mb-5 leading-relaxed"></p>
+                <input type="text" id="cm-input" class="hidden w-full bg-black border border-white/10 p-3 text-xs mb-5 outline-none focus:border-indigo-500 text-white" autocomplete="off">
+                <div class="flex gap-3 justify-end">
+                    <button id="cm-cancel" class="hidden px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest transition border border-white/5">Cancel</button>
+                    <button id="cm-confirm" class="px-5 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white text-[10px] font-bold uppercase tracking-widest transition">OK</button>
+                </div>
+            </div>
+        </div>
+        <script>
+            const CustomModal = {
+                show: function({ type, title, text, placeholder, onConfirm }) {
+                    const m = document.getElementById('c-modal'), tTitle = document.getElementById('cm-title'), tText = document.getElementById('cm-text');
+                    const inp = document.getElementById('cm-input'), bCan = document.getElementById('cm-cancel'), bCon = document.getElementById('cm-confirm');
+                    tTitle.innerText = title; tText.innerText = text;
+                    inp.value = ''; inp.placeholder = placeholder || '';
+                    inp.classList.add('hidden'); bCan.classList.add('hidden');
+                    
+                    if(type === 'prompt') { inp.classList.remove('hidden'); bCan.classList.remove('hidden'); setTimeout(()=>inp.focus(),100); }
+                    else if(type === 'confirm') { bCan.classList.remove('hidden'); }
+                    
+                    m.classList.remove('hidden');
+                    bCan.onclick = () => { m.classList.add('hidden'); if(type==='prompt') onConfirm(null); else onConfirm(false); };
+                    bCon.onclick = () => { m.classList.add('hidden'); if(type==='prompt') onConfirm(inp.value.trim()); else onConfirm(true); };
+                    inp.onkeypress = (e) => { if(e.key === 'Enter') bCon.click(); };
+                }
+            };
+        </script>`;
+
+        // --- 🛠️ ADMIN PANEL (V15) ---
         if (path.startsWith("/admin")) {
             if (!isAdmin) return Response.redirect(url.origin, 302);
             
@@ -184,7 +231,7 @@ export default {
             <style>
                 body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } 
                 .square-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); } 
-                .active-tab { border-bottom: 2px solid white; color: white; }
+                .active-tab { border-b-2 border-indigo-400; color: white; }
                 .square-checkbox { appearance: none; width: 14px; height: 14px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.2s; }
                 .square-checkbox:checked { background: #6366f1; border-color: #6366f1; }
                 .square-checkbox:checked::after { content: '✓'; position: absolute; color: white; font-size: 10px; font-weight: bold; left: 2px; top: -1px; }
@@ -192,23 +239,33 @@ export default {
                 .square-select:focus { border-color: #6366f1; }
             </style>
             </head>
-            <body class="p-4 md:p-8 pb-28">
-                <div class="max-w-6xl mx-auto" id="app">
-                    <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div></div>
+            <body class="pb-28">
+                
+                ${customModalScript}
+
+                <!-- Sticky Header -->
+                <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
+                    <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Admin <span class="text-white">Core</span></h1></div>
+                    <a href="/logout" class="px-4 py-2 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white transition">Logout</a>
+                </header>
+
+                <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
+                    <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
                 </div>
                 
+                <!-- Fixed Global Save Button -->
                 <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
                     <button id="save-btn" onclick="save()" class="w-full max-w-sm bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">SAVE ALL CHANGES</button>
                 </div>
 
                 <script>
-                    let db = {}; let tab = 'pins'; 
+                    let db = {}; let tab = 'pins'; let openPins = new Set(); let searchQuery = '';
 
                     async function load(){ const res = await fetch('/admin/api/data'); db = await res.json(); render(); }
                     async function save(){ 
                         document.getElementById('save-btn').innerText = 'SAVING...';
                         await fetch('/admin/api/save', {method:'POST', body:JSON.stringify(db)}); 
-                        setTimeout(() => { document.getElementById('save-btn').innerText = 'SAVE ALL CHANGES'; alert('✅ Database Successfully Updated!'); }, 500);
+                        setTimeout(() => { document.getElementById('save-btn').innerText = 'SAVE ALL CHANGES'; CustomModal.show({type:'alert', title:'Success', text:'Database Successfully Updated!'}); }, 500);
                     }
 
                     function uPinSt(pin, val) { db.pins[pin].status = val; render(); }
@@ -222,7 +279,7 @@ export default {
                         if(!db.pins[pin].siteConf) db.pins[pin].siteConf = {};
                         if(chk && !list.includes(siteId)) {
                             list.push(siteId);
-                            db.pins[pin].siteConf[siteId] = {u:'', r:'Super Agent'};
+                            db.pins[pin].siteConf[siteId] = {u:'', r:'Admin', p:''};
                         } else if(!chk) {
                             list = list.filter(i => i !== siteId);
                             delete db.pins[pin].siteConf[siteId];
@@ -233,7 +290,7 @@ export default {
 
                     function uPinSiteConf(pin, siteId, field, val) {
                         if(!db.pins[pin].siteConf) db.pins[pin].siteConf = {};
-                        if(!db.pins[pin].siteConf[siteId]) db.pins[pin].siteConf[siteId] = {u:'', r:'Super Agent'};
+                        if(!db.pins[pin].siteConf[siteId]) db.pins[pin].siteConf[siteId] = {u:'', r:'Admin', p:''};
                         db.pins[pin].siteConf[siteId][field] = val;
                     }
                     
@@ -247,29 +304,31 @@ export default {
                     function addSite() { db.sites['s_'+Date.now()] = {name:'New Website', agentLink:'', userLink:''}; tab='sites'; render(); }
                     
                     function addPin() { 
-                        let name = prompt('Enter User Name (e.g. John Doe):');
-                        if(!name) return;
-                        let p = prompt('Enter Secret PIN for this User (Any length, e.g. 12345678):'); 
-                        if(p && !db.pins[p]){ 
-                            db.pins[p] = { name: name, status:'active', sites:[], siteConf:{} }; 
-                            tab='pins'; render(); 
-                        } else if(db.pins[p]) {
-                            alert('This PIN already exists! Choose a different one.');
-                        }
+                        CustomModal.show({type:'prompt', title:'New User', text:'Enter User Name (e.g. John Doe):', onConfirm: (name) => {
+                            if(!name) return;
+                            CustomModal.show({type:'prompt', title:'Set PIN', text:'Enter Secret PIN for this User:', onConfirm: (p) => {
+                                if(p && !db.pins[p]){ 
+                                    db.pins[p] = { name: name, status:'active', sites:[], siteConf:{} }; 
+                                    openPins.add(p); tab='pins'; render(); 
+                                } else if(db.pins[p]) {
+                                    CustomModal.show({type:'alert', title:'Error', text:'This PIN already exists!'});
+                                }
+                            }});
+                        }});
                     }
 
-                    function delSite(id) { if(confirm('Delete Site?')) { delete db.sites[id]; render(); } }
-                    function delPin(pin) { if(confirm('Delete PIN?')) { delete db.pins[pin]; render(); } }
+                    function delSite(id) { CustomModal.show({type:'confirm', title:'Delete Site', text:'Are you sure you want to delete this site?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
+                    function delPin(pin) { CustomModal.show({type:'confirm', title:'Delete User', text:'Are you sure you want to delete this user PIN?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
+
+                    function toggleAdminPin(pin) {
+                        if(openPins.has(pin)) openPins.delete(pin); else openPins.add(pin);
+                        render();
+                    }
 
                     function render() {
                         if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.settings) db.settings = {whatsapp:'', notification:{enabled:false, target:'all', specificUsers:[]}};
                         
                         let html = \`
-                        <header class="flex justify-between items-center mb-6 border border-white/10 bg-[#0a0a0a] p-5">
-                            <div><h1 class="text-lg font-bold tracking-widest uppercase text-indigo-400">Admin <span class="text-white">Core</span></h1></div>
-                            <a href="/logout" class="px-4 py-2 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white transition">Logout</a>
-                        </header>
-
                         <!-- TABS -->
                         <div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
                             <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">User Pins</button>
@@ -278,57 +337,75 @@ export default {
                         </div>
                         \`;
 
+                        // --- USER PINS TAB ---
                         if(tab === 'pins') {
-                            html += \`<div class="flex justify-between items-center mb-6">
-                                <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Manage Access</h3>
-                                <button onclick="addPin()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition">+ Add New User</button>
+                            html += \`<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                                <input type="text" placeholder="Search Users or PIN..." value="\${searchQuery}" oninput="searchQuery=this.value.toLowerCase(); render()" class="w-full md:w-1/2 bg-black border border-white/10 p-3 text-xs text-white outline-none focus:border-indigo-500">
+                                <button onclick="addPin()" class="w-full md:w-auto bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-5 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition">+ Add New User</button>
                             </div>
-                            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">\`;
-                            Object.keys(db.pins).forEach(pin => {
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">\`;
+                            
+                            Object.keys(db.pins).filter(p => p.toLowerCase().includes(searchQuery) || (db.pins[p].name||'').toLowerCase().includes(searchQuery)).forEach(pin => {
                                 let pData = db.pins[pin];
                                 let st = pData.status;
                                 let bg = st==='active' ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
-                                html += \`<div class="square-card p-5 flex flex-col \${st==='suspended'?'opacity-70 grayscale':''}">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div class="w-full mr-2">
-                                            <input value="\${pData.name || ''}" oninput="uPinF('\${pin}','name',this.value)" placeholder="User Name" class="w-full bg-transparent text-xl font-bold text-white border-b border-transparent focus:border-indigo-500 outline-none truncate mb-1">
-                                            <div class="text-[10px] text-gray-500 uppercase tracking-widest">PIN: <span class="text-indigo-400 font-bold">\${pin}</span></div>
+                                let isOpen = openPins.has(pin);
+                                
+                                html += \`<div class="square-card flex flex-col \${st==='suspended'?'opacity-70 grayscale':''}">
+                                    
+                                    <!-- Accordion Header -->
+                                    <div class="flex justify-between items-center p-5 cursor-pointer hover:bg-white/5 transition" onclick="toggleAdminPin('\${pin}')">
+                                        <div class="flex flex-col truncate pr-4">
+                                            <span class="text-lg font-bold text-white truncate">\${pData.name || 'Unnamed'}</span>
+                                            <span class="text-[10px] text-indigo-400 uppercase tracking-widest font-bold mt-1">PIN: \${pin}</span>
                                         </div>
-                                        <select onchange="uPinSt('\${pin}', this.value)" class="square-select text-[9px] font-bold uppercase tracking-widest px-2 py-1 \${bg}">
-                                            <option value="active" \${st==='active'?'selected':''}>ACTIVE</option>
-                                            <option value="suspended" \${st==='suspended'?'selected':''}>SUSPENDED</option>
-                                        </select>
+                                        <div class="flex items-center gap-4 flex-shrink-0">
+                                            <select onclick="event.stopPropagation()" onchange="uPinSt('\${pin}', this.value)" class="square-select text-[9px] font-bold uppercase tracking-widest px-2 py-1 \${bg}">
+                                                <option value="active" \${st==='active'?'selected':''}>ACTIVE</option>
+                                                <option value="suspended" \${st==='suspended'?'selected':''}>SUSPEND</option>
+                                            </select>
+                                            <svg class="w-4 h-4 text-gray-500 transition-transform duration-300 \${isOpen?'rotate-180':''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
                                     </div>
-                                    <div class="mb-5 flex-grow">
+                                    
+                                    <!-- Accordion Body -->
+                                    <div class="\${isOpen?'block':'hidden'} p-5 border-t border-white/5 bg-black/40">
+                                        <div class="mb-4">
+                                            <label class="text-[8px] uppercase tracking-widest text-gray-500 mb-1 block">Edit User Name</label>
+                                            <input value="\${pData.name || ''}" oninput="uPinF('\${pin}','name',this.value)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                        </div>
                                         <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Assign Sites & Roles:</span>
-                                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">\`;
+                                        <div class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">\`;
                                         Object.keys(db.sites).forEach(siteId => {
                                             let hasSite = (pData.sites||[]).includes(siteId);
-                                            let conf = pData.siteConf?.[siteId] || {u:'', r:'Super Agent'};
-                                            html += \`<div class="bg-white/5 border border-white/5 p-2">
-                                                <label class="flex items-center gap-2 text-xs cursor-pointer">
-                                                    <input type="checkbox" \${hasSite ? 'checked':''} onchange="toggleSite('\${pin}', '\${siteId}', this.checked)" class="square-checkbox">
+                                            let conf = pData.siteConf?.[siteId] || {u:'', r:'Admin', p:''};
+                                            html += \`<div class="bg-[#0a0a0a] border border-white/10 p-3">
+                                                <label class="flex items-center gap-3 text-xs cursor-pointer">
+                                                    <input type="checkbox" \${hasSite ? 'checked':''} onchange="toggleSite('\${pin}', '\${siteId}', this.checked)" class="square-checkbox w-4 h-4">
                                                     <span class="truncate text-gray-300 font-bold">\${db.sites[siteId].name}</span>
                                                 </label>\`;
                                             if(hasSite) {
-                                                html += \`<div class="mt-2 pl-6 space-y-1.5 border-l border-white/10 ml-1.5">
-                                                    <input value="\${conf.u}" oninput="uPinSiteConf('\${pin}','\${siteId}','u',this.value)" placeholder="Username" class="w-full bg-black border border-white/10 p-1.5 text-[10px] text-white outline-none focus:border-indigo-500">
-                                                    <select onchange="uPinSiteConf('\${pin}','\${siteId}','r',this.value)" class="square-select w-full bg-black border border-white/10 p-1.5 text-[10px] text-gray-300 outline-none">
+                                                html += \`<div class="mt-3 pl-7 space-y-2 border-l border-white/10 ml-2">
+                                                    <input value="\${conf.u}" oninput="uPinSiteConf('\${pin}','\${siteId}','u',this.value)" placeholder="Username" class="w-full bg-black border border-white/10 p-2 text-[10px] text-white outline-none focus:border-indigo-500">
+                                                    <input value="\${conf.p||''}" oninput="uPinSiteConf('\${pin}','\${siteId}','p',this.value)" placeholder="Password" class="w-full bg-black border border-white/10 p-2 text-[10px] text-white outline-none focus:border-indigo-500">
+                                                    <select onchange="uPinSiteConf('\${pin}','\${siteId}','r',this.value)" class="square-select w-full bg-black border border-white/10 p-2 text-[10px] text-gray-300 outline-none focus:border-indigo-500">
                                                         <option value="Admin" \${conf.r==='Admin'?'selected':''}>Admin</option>
-                                                        <option value="Master Agent" \${conf.r==='Master Agent'?'selected':''}>Master Agent</option>
                                                         <option value="Super Agent" \${conf.r==='Super Agent'?'selected':''}>Super Agent</option>
+                                                        <option value="Master Agent" \${conf.r==='Master Agent'?'selected':''}>Master Agent</option>
                                                     </select>
                                                 </div>\`;
                                             }
                                             html += \`</div>\`;
                                         });
-                                    html += \`</div></div>
-                                    <button onclick="delPin('\${pin}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete User</button>
+                                    html += \`</div>
+                                    <button onclick="delPin('\${pin}')" class="mt-5 w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete User</button>
+                                    </div>
                                 </div>\`;
                             });
                             html += \`</div>\`;
                         }
 
+                        // --- GLOBAL SITES TAB ---
                         if(tab === 'sites') {
                             html += \`<div class="flex justify-between items-center mb-6">
                                 <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Website Directory</h3>
@@ -353,6 +430,7 @@ export default {
                             html += \`</div>\`;
                         }
 
+                        // --- SETTINGS TAB ---
                         if(tab === 'settings') {
                             let n = db.settings.notification;
                             html += \`<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -430,10 +508,9 @@ export default {
                     const statusText = isSuspended ? 'Suspended' : 'Active';
                     const statusColor = isSuspended ? 'text-red-400 border-red-400/20 bg-red-400/10' : 'text-green-400 border-green-400/20 bg-green-400/10';
                     
-                    // Specific Role & Details
-                    const siteConf = userData.siteConf?.[siteId] || { u: 'N/A', r: 'Super Agent' };
+                    const siteConf = userData.siteConf?.[siteId] || { u: 'N/A', r: 'Admin', p: '' };
                     let roleColor = siteConf.r === 'Admin' ? 'text-purple-400 border-purple-400/20 bg-purple-400/10' : 
-                                    siteConf.r === 'Master Agent' ? 'text-blue-400 border-blue-400/20 bg-blue-400/10' : 
+                                    siteConf.r === 'Super Agent' ? 'text-blue-400 border-blue-400/20 bg-blue-400/10' : 
                                     'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
 
                     const connectBtn = isSuspended 
@@ -458,16 +535,31 @@ export default {
                                 View Panel Details
                             </button>
                             
-                            <!-- Accordion Details -->
                             <div id="details-${siteId}" class="hidden mt-3 space-y-2 p-3 bg-black/40 border border-white/5">
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1 w-full">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap">Username</span>
                                     <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none w-full truncate select-all">
-                                    <button onclick="copyLink('${siteConf.u}', this)" class="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0">
-                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                    </button>
                                 </div>
-                                <div class="bg-white/5 border border-white/10 flex items-center p-1 w-full">
+                                
+                                <!-- Password Update Section -->
+                                <div class="bg-white/5 border border-white/10 p-2 w-full mt-2">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-[8px] font-bold text-gray-500 uppercase px-1">Password</span>
+                                        <button onclick="toggleEditPwd('${siteId}')" class="text-[8px] text-indigo-400 uppercase font-bold px-2 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 transition border border-indigo-500/30">UPDATE</button>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-1 outline-none w-full truncate secure-input">
+                                        <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0">
+                                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        </button>
+                                    </div>
+                                    <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2">
+                                        <input type="text" id="pwd-in-${siteId}" placeholder="New Password" class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                        <button onclick="savePwd('${siteId}')" class="px-3 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white text-[10px] font-bold uppercase transition">Save</button>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white/5 border border-white/10 flex items-center p-1 w-full mt-2">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap">Link</span>
                                     <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none w-full truncate select-all">
                                     <button onclick="copyLink('${site.userLink}', this)" class="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0">
@@ -511,37 +603,53 @@ export default {
                 </div>`;
             }
 
-            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script><style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
-            <body class="p-4 md:p-8 pb-20">
-                ${notifHTML} ${waHTML}
-                <div class="max-w-6xl mx-auto">
-                    <header class="flex justify-between items-center mb-8 border border-white/10 bg-[#0a0a0a] p-5">
-                        <div>
-                            <h1 class="text-lg font-bold tracking-widest uppercase text-indigo-400">Welcome <span class="text-white">${userData.name || userPin}</span></h1>
-                            <p class="text-[9px] text-gray-500 mt-1 uppercase tracking-[0.2em]">Secure Access Identity</p>
-                        </div>
-                        <a href="/logout" class="px-5 py-2.5 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white transition">Terminate</a>
-                    </header>
+            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
+            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }</style></head>
+            <body class="pb-20">
+                ${customModalScript} ${notifHTML} ${waHTML}
+                
+                <!-- STICKY HEADER -->
+                <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
+                    <div>
+                        <h1 class="text-lg font-bold tracking-widest uppercase text-indigo-400">Welcome <span class="text-white">${userData.name || userPin}</span></h1>
+                        <p class="text-[9px] text-gray-500 mt-0.5 uppercase tracking-[0.2em]">Secure Access Identity</p>
+                    </div>
+                    <a href="/logout" class="px-5 py-2.5 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white transition">Terminate</a>
+                </header>
+
+                <div class="max-w-6xl mx-auto p-4 md:p-8">
                     <h3 class="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-4 border-b border-white/10 pb-2">Your Environments</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">${sitesHTML}</div>
                 </div>
                 <script>
                     function copyLink(text, btn) {
+                        if(!text) return;
                         navigator.clipboard.writeText(text);
                         const old = btn.innerHTML;
                         btn.innerHTML = '<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
                         setTimeout(() => btn.innerHTML = old, 1500);
                     }
                     function toggleDetails(id) {
-                        const el = document.getElementById('details-' + id);
-                        const arrow = document.getElementById('arrow-' + id);
-                        if(el.classList.contains('hidden')) {
-                            el.classList.remove('hidden');
-                            arrow.classList.add('rotate-90');
-                        } else {
-                            el.classList.add('hidden');
-                            arrow.classList.remove('rotate-90');
-                        }
+                        const el = document.getElementById('details-' + id), arrow = document.getElementById('arrow-' + id);
+                        if(el.classList.contains('hidden')) { el.classList.remove('hidden'); arrow.classList.add('rotate-90'); } 
+                        else { el.classList.add('hidden'); arrow.classList.remove('rotate-90'); }
+                    }
+                    function toggleEditPwd(id) {
+                        const el = document.getElementById('pwd-edit-' + id);
+                        el.classList.toggle('hidden');
+                    }
+                    async function savePwd(siteId) {
+                        const pwd = document.getElementById('pwd-in-' + siteId).value;
+                        if(!pwd) return CustomModal.show({type:'alert', title:'Error', text:'Password cannot be empty!'});
+                        
+                        try {
+                            const res = await fetch('/api/update-password', { method: 'POST', body: JSON.stringify({ siteId, newPassword: pwd }) });
+                            if(res.ok) {
+                                document.getElementById('pwd-disp-' + siteId).value = pwd;
+                                document.getElementById('pwd-edit-' + siteId).classList.add('hidden');
+                                CustomModal.show({type:'alert', title:'Success', text:'Password Updated Successfully!'});
+                            }
+                        } catch(e) {}
                     }
                 </script>
             </body></html>`;
