@@ -261,7 +261,7 @@ export default {
                 const proxyRes = await fetch(targetUrlStr, fetchConfig);
                 const responseHeaders = new Headers();
                 
-                for (const[key, value] of proxyRes.headers.entries()) {
+                for (const [key, value] of proxyRes.headers.entries()) {
                     if (key.toLowerCase() === 'set-cookie') {
                         let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
                         responseHeaders.append('Set-Cookie', modCookie);
@@ -858,7 +858,7 @@ export default {
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
             const responseHeaders = new Headers();
             
-            for (const [key, value] of proxyRes.headers.entries()) {
+            for (const[key, value] of proxyRes.headers.entries()) {
                 if (key.toLowerCase() === 'set-cookie') {
                     let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
                     responseHeaders.append('Set-Cookie', modCookie);
@@ -881,7 +881,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 ULTIMATE FRAMEWORK BYPASS & SILENT AUTO-FILL
+                // 🔥 PERFECT STEALTH SCRIPT (Centered Custom Popup + Extreme Bypasser)
                 const stealthScript = `<script>
 (function(){
     try{
@@ -905,6 +905,7 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
+        // API INTERCEPTOR
         var targetHost = new URL("` + targetDomain + `").hostname;
         var apiTarget = "${autoApi}";
         var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
@@ -979,110 +980,136 @@ export default {
         function setNativeValue(el, val) {
             if (!el || el.value === val) return;
             try {
-                // React 15/16/17 Tracker Hack
-                let tracker = el._valueTracker;
-                if (tracker) tracker.setValue(el.value);
+                let lastValue = el.value;
+                el.value = val;
                 
-                // Deep Prototype Setter
-                const desc = Object.getOwnPropertyDescriptor(el, 'value');
-                const protoDesc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value');
-                if (protoDesc && protoDesc.set) protoDesc.set.call(el, val);
-                else if (desc && desc.set) desc.set.call(el, val);
-                else el.value = val;
-
-                // Event Bombardment to force Frameworks to read the new value
+                // Hack for React 16+
+                let tracker = el._valueTracker;
+                if (tracker) tracker.setValue(lastValue);
+                
+                // Deep setter
+                let desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+                if(desc && desc.set) desc.set.call(el, val);
+                
+                // Dispatch extensive events
                 el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
                 el.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
-                el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, composed: true, key: 'Unidentified' }));
             } catch(e){}
         }
 
+        // ✅ AUTO-FILL POPUP & 100% ANTI-CHROME SAVE
         window.addEventListener('DOMContentLoaded', () => {
-            const au = "${autoUser}"; 
-            const ap = "${autoPwd}";
-            const ab = "${autoBank}";
+            const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            let hasLoggedIn = sessionStorage.getItem('nx_logged_in') === 'true';
-
-            // 💥 ADVANCED CHROME BLOCKER
+            // Stop Browser Auto Fill Prompt permanently by converting password inputs
             let style = document.createElement('style');
             style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
             document.head.appendChild(style);
 
-            // Hide password fields ONCE so we don't break React components continually
-            const maskInputs = () => {
+            setInterval(() => {
                 document.querySelectorAll('input[type="password"]').forEach(el => {
-                    if(!el.dataset.nxMasked) {
-                        el.setAttribute('type', 'text');
-                        el.classList.add('nx-mask');
-                        el.setAttribute('autocomplete', 'new-password');
-                        el.dataset.nxMasked = 'true';
-                    }
+                    el.setAttribute('type', 'text');
+                    el.classList.add('nx-mask');
+                    el.setAttribute('autocomplete', 'new-password');
+                    el.setAttribute('spellcheck', 'false');
                 });
-                document.querySelectorAll('input').forEach(el => {
-                    if(!el.dataset.nxBlock && (el.name||'').toLowerCase().includes('user') || el.classList.contains('nx-mask')) {
+                document.querySelectorAll('input[type="text"], input[type="email"]').forEach(el => {
+                    let n = (el.name||'').toLowerCase(), p = (el.placeholder||'').toLowerCase();
+                    if(n.includes('user') || p.includes('user') || n.includes('email') || n.includes('login') || el.classList.contains('nx-mask')) {
                         el.setAttribute('autocomplete', 'off');
-                        el.dataset.nxBlock = 'true';
+                        el.setAttribute('spellcheck', 'false');
                     }
                 });
+            }, 300);
+
+            // Responsive Design Custom Popup
+            let overlay = document.createElement('div');
+            overlay.id = 'nx-popup-overlay';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:2147483647; display:none; align-items:center; justify-content:center;';
+            
+            let popup = document.createElement('div');
+            popup.innerHTML = \`
+                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); width:calc(100% - 20px); max-width:340px; padding:20px; border-radius:12px; display:flex; flex-direction:column; gap:12px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); font-family:sans-serif; margin:auto;">
+                    <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px;">
+                        <div style="width:30px; height:30px; border-radius:50%; background:rgba(74,222,128,0.1); display:flex; align-items:center; justify-content:center; border:1px solid rgba(74,222,128,0.2);">
+                            <svg style="width:16px;height:16px;color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
+                        </div>
+                        <span style="color:white; font-size:15px; font-weight:600; letter-spacing:0.5px;">Auto Fill System</span>
+                    </div>
+                    <p style="color:#9ca3af; font-size:13px; margin:0; line-height:1.5;">Do you want to insert your panel credentials into this login form?</p>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <button id="nx-btn-no" style="flex:1; background:rgba(255,255,255,0.05); color:#d1d5db; border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.2s;">No</button>
+                        <button id="nx-btn-yes" style="flex:1; background:#4f46e5; color:white; border:none; padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; box-shadow:0 0 15px rgba(79,70,229,0.4); transition:0.2s;">Yes, Fill It</button>
+                    </div>
+                </div>
+            \`;
+            overlay.appendChild(popup);
+            document.body.appendChild(overlay);
+
+            let hasFilled = false;
+            let rejected = false;
+
+            document.getElementById('nx-btn-no').onclick = (e) => {
+                e.preventDefault();
+                overlay.style.display = 'none';
+                rejected = true;
             };
 
-            const attemptFill = () => {
-                maskInputs();
-
-                let isBankingPage = ab && window.location.href.includes(ab);
-                if (hasLoggedIn && !isBankingPage) return;
-
-                // Aggressive Locator: Find ANY password box or masked box
-                let pwds = Array.from(document.querySelectorAll('input.nx-mask, input[type="password"]')).filter(el => el.getBoundingClientRect().width > 0);
-                if (pwds.length === 0) return;
-
-                let pField = pwds[0];
-                let uField = null;
-
-                // Look for closest text input
-                const allInputs = document.querySelectorAll('input');
-                for(let i=0; i<allInputs.length; i++) {
-                    let el = allInputs[i];
-                    if(el === pField || el.getBoundingClientRect().width === 0) continue;
-                    let type = (el.type||'').toLowerCase();
-                    if(type === 'text' || type === 'email' || !type) {
-                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
-                            uField = el; break;
+            document.getElementById('nx-btn-yes').onclick = (e) => {
+                e.preventDefault();
+                overlay.style.display = 'none';
+                
+                let pField = null, uField = null;
+                const inputs = document.querySelectorAll('input');
+                
+                inputs.forEach(el => { if(el.classList.contains('nx-mask') || el.type === 'password') pField = el; });
+                
+                inputs.forEach(el => {
+                    if(el === pField) return;
+                    let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                    if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
+                        if(n.includes('user') || pl.includes('user') || n.includes('email') || n.includes('login')) {
+                            uField = el;
                         }
                     }
+                });
+
+                // Fallback for username if specific labels are hidden
+                if(!uField && pField) {
+                     inputs.forEach(el => {
+                         if(el !== pField && (el.type === 'text' || el.type === 'email') && el.getBoundingClientRect().width > 0) uField = el;
+                     });
                 }
 
-                if(uField && uField.value !== au && !isBankingPage) setNativeValue(uField, au);
-                if(pField && pField.value !== ap) setNativeValue(pField, ap);
+                if(uField) setNativeValue(uField, au);
+                if(pField) setNativeValue(pField, ap);
+                hasFilled = true;
             };
 
-            // React/Vue DOM Changes Observer
-            let observer = new MutationObserver(() => attemptFill());
-            observer.observe(document.body, { childList: true, subtree: true });
-
-            attemptFill();
-            setInterval(attemptFill, 200); // Aggressive 200ms check for SPAs
-
-            const markLoggedIn = () => {
-                if (!hasLoggedIn && !(ab && window.location.href.includes(ab))) {
-                    hasLoggedIn = true;
-                    sessionStorage.setItem('nx_logged_in', 'true');
+            // Show Custom Popup on Focus or Click anywhere near inputs
+            document.addEventListener('focusin', (e) => {
+                if (hasFilled || rejected) return;
+                if (e.target.tagName === 'INPUT') {
+                    let n = (e.target.name||'').toLowerCase();
+                    let p = (e.target.placeholder||'').toLowerCase();
+                    if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
+                        overlay.style.display = 'flex';
+                        e.target.blur(); // Hide mobile keyboard
+                    }
                 }
-            };
-
+            });
             document.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.type === 'submit' || e.target.closest('button') || e.target.classList.toString().toLowerCase().includes('login')) {
-                    markLoggedIn();
+                if (hasFilled || rejected) return;
+                if (e.target.tagName === 'INPUT') {
+                    let n = (e.target.name||'').toLowerCase();
+                    let p = (e.target.placeholder||'').toLowerCase();
+                    if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
+                        overlay.style.display = 'flex';
+                    }
                 }
-            }, {passive: true});
-            
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') markLoggedIn();
-            }, {passive: true});
+            });
         });
     }catch(e){}
 })();
