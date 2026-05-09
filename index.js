@@ -9,7 +9,7 @@ const CONFIG = {
 };
 
 // ==========================================
-// 🔐 ADVANCED CRYPTO ENGINE (Unicode Safe)
+// 🔐 ADVANCED CRYPTO ENGINE
 // ==========================================
 const encrypt = (text) => {
     let res = '';
@@ -53,7 +53,6 @@ const landingPageHTML = `
             <div class="hidden md:flex gap-8 text-[10px] font-bold tracking-widest uppercase text-gray-400">
                 <a href="#services" class="hover:text-white transition">Services</a>
                 <a href="#network" class="hover:text-white transition">Global Network</a>
-                <a href="#about" class="hover:text-white transition">Company</a>
             </div>
             <button class="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition">Client Login</button>
         </div>
@@ -79,54 +78,6 @@ const landingPageHTML = `
             <p id="search-msg" class="text-[10px] font-bold text-gray-500 mt-4 tracking-widest uppercase opacity-0 transition-opacity h-4"></p>
         </div>
     </header>
-
-    <div class="w-full border-b border-white/5 bg-[#080808]">
-        <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 py-12 px-6 text-center">
-            <div><p class="text-3xl font-bold text-white mb-1">99.9%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Uptime SLA</p></div>
-            <div><p class="text-3xl font-bold text-white mb-1">120+</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Edge Datacenters</p></div>
-            <div><p class="text-3xl font-bold text-white mb-1">&lt;15ms</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Global Latency</p></div>
-            <div><p class="text-3xl font-bold text-white mb-1">AES</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">256-bit Encrypted</p></div>
-        </div>
-    </div>
-
-    <section id="services" class="py-24 px-6 max-w-7xl mx-auto">
-        <h2 class="text-3xl font-bold mb-4 text-center tracking-wide">Infrastructure <span class="text-indigo-400 font-light">Solutions</span></h2>
-        <p class="text-gray-500 text-sm text-center mb-16 max-w-2xl mx-auto leading-relaxed">We provide military-grade proxy routing and content delivery networks for high-traffic enterprise applications.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-white/5 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">Zero-Trust Vaults</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Our end-to-end encrypted architecture ensures that no unauthorized traffic can access your enterprise data components.</p>
-            </div>
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-white/5 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">Global Edge Proxy</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Traffic is intelligently routed through advanced edge networks to mask your origin IP and provide automated DDoS mitigation.</p>
-            </div>
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-white/5 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">High Performance</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Lightning-fast content delivery deployed worldwide. Latency reduced to mere milliseconds for an uninterrupted user experience.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-16 border-y border-white/5 bg-[#080808] text-center">
-        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-8">Trusted by Modern Technology Teams</p>
-        <div class="flex flex-wrap justify-center gap-10 opacity-30 grayscale">
-            <span class="text-xl font-bold font-serif">ACME Corp</span>
-            <span class="text-xl font-bold font-mono">Globex</span>
-            <span class="text-xl font-bold">Soylent</span>
-            <span class="text-xl font-bold font-sans">Initech</span>
-        </div>
-    </section>
-
-    <footer class="py-12 px-6 bg-[#050505] border-t border-white/5">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="text-xl font-bold tracking-widest uppercase text-white">Nexus<span class="text-indigo-500">.</span></div>
-            <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Enterprise. All rights reserved.</p>
-        </div>
-    </footer>
 
     <script>
         document.getElementById('search-form').addEventListener('submit', async (e) => {
@@ -179,11 +130,7 @@ export default {
                 const res = await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`);
                 let data = await res.json();
                 if (!data) {
-                    data = {
-                        adminPin: "SET_YOUR_PIN_HERE",
-                        settings: { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } },
-                        sites: {}, pins: {}
-                    };
+                    data = { adminPin: "SET_YOUR_PIN_HERE", settings: { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } }, sites: {}, pins: {} };
                     await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { method: 'PUT', body: JSON.stringify(data) });
                 }
                 return data;
@@ -203,17 +150,44 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
-        // --- 🕵️ DIRECT NAVIGATION TRAP (Does not break site CSS/JS) ---
         const destHeader = request.headers.get("Sec-Fetch-Dest") || "";
         const acceptHeader = request.headers.get("Accept") || "";
         const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
 
-        if (isProxyActive && request.method === "GET" && !path.startsWith("/api/") && isMainDocument) {
+        if (isProxyActive && request.method === "GET" && !path.startsWith("/api/") && !path.startsWith("/__api_proxy") && isMainDocument) {
             const secFetchSite = request.headers.get("Sec-Fetch-Site");
             const referer = request.headers.get("Referer");
             if (secFetchSite === "none" || (!secFetchSite && !referer)) {
                 return new Response("Killed", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
             }
+        }
+
+        // --- 📡 API INTERCEPTOR PROXY (CRUCIAL FOR LOGIN) ---
+        if (path === "/__api_proxy") {
+            const targetUrlStr = url.searchParams.get("target");
+            if(!targetUrlStr) return new Response("Bad Target", {status:400});
+            
+            const tObj = new URL(targetUrlStr);
+            const proxyHeaders = new Headers(request.headers);
+            proxyHeaders.set("Host", tObj.hostname);
+            proxyHeaders.set("Origin", tObj.origin);
+            proxyHeaders.set("Referer", tObj.origin + "/");
+            proxyHeaders.delete("Accept-Encoding");
+            
+            const cleanCookieStr = Object.entries(cookies).filter(([k]) => k !== 'portal_session' && k !== 'proxy_active').map(([k,v]) => `${k}=${v}`).join('; ');
+            if (cleanCookieStr) proxyHeaders.set("Cookie", cleanCookieStr); else proxyHeaders.delete("Cookie");
+
+            const fetchConfig = { method: request.method, headers: proxyHeaders, redirect: "manual" };
+            if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) fetchConfig.body = request.body;
+
+            const proxyRes = await fetch(targetUrlStr, fetchConfig);
+            const responseHeaders = new Headers(proxyRes.headers);
+            
+            // Allow JS to read the response smoothly
+            responseHeaders.set("Access-Control-Allow-Origin", "*");
+            responseHeaders.set("Access-Control-Allow-Credentials", "true");
+
+            return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
         }
 
         if (path === "/api/access" && request.method === "POST") {
@@ -241,7 +215,6 @@ export default {
             return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/; proxy_active=; Max-Age=0; Path=/" } });
         }
 
-        // --- 🛠️ COMMON MODAL TEMPLATE ---
         const customModalScript = `
         <div id="c-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
             <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-sm w-full mx-4 shadow-2xl flex flex-col">
@@ -297,20 +270,16 @@ export default {
             </head>
             <body class="pb-28">
                 ${customModalScript}
-
                 <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
                     <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Master <span class="text-white">Admin</span></h1></div>
                     <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition">Logout</a>
                 </header>
-
                 <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
                     <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
                 </div>
-                
                 <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
                     <button id="save-btn" onclick="save()" class="w-full max-w-sm bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">SAVE ALL CHANGES</button>
                 </div>
-
                 <script>
                     let db = {}; let tab = 'pins'; let openPins = new Set(); let searchQuery = '';
 
@@ -354,7 +323,7 @@ export default {
                         db.settings.notification.specificUsers = list;
                     }
 
-                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:''}; tab='sites'; render(); }
+                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:'', apiLink:''}; tab='sites'; render(); }
                     
                     function addPin() { 
                         CustomModal.show({type:'prompt', title:'New User', text:'Enter User Name (e.g. John Doe):', onConfirm: (name) => {
@@ -459,6 +428,8 @@ export default {
                                     <div class="space-y-3 mb-5 flex-grow">
                                         <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Panel/Agent Link</span>
                                         <input value="\${db.sites[id].agentLink}" oninput="uSiteF('\${id}','agentLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-2 text-xs text-green-400 outline-none focus:border-white/30"></div>
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Login API Link (Optional Fix)</span>
+                                        <input value="\${db.sites[id].apiLink||''}" oninput="uSiteF('\${id}','apiLink',this.value)" placeholder="e.g. https://liveapi247.live" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-purple-400 outline-none focus:border-white/30"></div>
                                         <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">User Link</span>
                                         <input value="\${db.sites[id].userLink}" oninput="uSiteF('\${id}','userLink',this.value)" placeholder="ag.example.com" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-blue-400 outline-none focus:border-white/30"></div>
                                     </div>
@@ -550,7 +521,6 @@ export default {
                                     siteConf.r === 'Super Agent' ? 'text-blue-400 border-blue-400/20 bg-blue-400/10' : 
                                     'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
 
-                    // MANDATORY PASSWORD CHECK
                     const hasPwd = siteConf.p && siteConf.p.trim() !== '';
                     const safeSiteName = (site.name || 'this site').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     
@@ -588,8 +558,8 @@ export default {
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
-                                    <!-- Hide from browser password manager -->
-                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
+                                    <!-- Using type text with custom masked class to bypass browser managers -->
+                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" data-lpignore="true" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate" style="-webkit-text-security: disc;">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -598,7 +568,7 @@ export default {
                                     </div>
                                 </div>
                                 <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
-                                    <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                    <input type="text" id="pwd-in-${siteId}" autocomplete="new-password" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
                                     <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
                                 </div>
 
@@ -653,7 +623,7 @@ export default {
             }
 
             const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
-            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }</style></head>
+            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
                 
@@ -704,7 +674,7 @@ export default {
             return new Response(html, { headers: { "Content-Type": "text/html" } });
         }
 
-        // --- 🚀 PROXY START WITH AUTO-FILL INJECTION DATA ---
+        // --- 🚀 PROXY START ---
         if (path === "/api/start-proxy") {
             if (!isUser) return new Response("Denied", { status: 403 });
             const siteId = url.searchParams.get("id");
@@ -712,7 +682,13 @@ export default {
             if (userData.status === 'suspended' || !userData.sites.includes(siteId) || !db.sites[siteId]) return new Response("Access Denied", { status: 403 });
             
             const conf = userData.siteConf?.[siteId] || {};
-            const proxyData = JSON.stringify({ t: db.sites[siteId].agentLink, u: conf.u || '', p: conf.p || '' });
+            // 🔥 Save target link and API link along with credentials
+            const proxyData = JSON.stringify({ 
+                t: db.sites[siteId].agentLink, 
+                a: db.sites[siteId].apiLink || '', 
+                u: conf.u || '', 
+                p: conf.p || '' 
+            });
             const encryptedData = encrypt(proxyData);
 
             return new Response("Starting...", {
@@ -722,15 +698,42 @@ export default {
         }
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
 
+        // --- 📡 API INTERCEPTOR ENGINE ---
+        if (path === "/__api_proxy") {
+            const targetUrlStr = url.searchParams.get("target");
+            if(!targetUrlStr) return new Response("Bad Target", {status:400});
+            
+            const tObj = new URL(targetUrlStr);
+            const proxyHeaders = new Headers(request.headers);
+            proxyHeaders.set("Host", tObj.hostname);
+            proxyHeaders.set("Origin", tObj.origin);
+            proxyHeaders.set("Referer", tObj.origin + "/");
+            
+            proxyHeaders.delete("Accept-Encoding");
+            const cleanCookieStr = Object.entries(cookies).filter(([k]) => k !== 'portal_session' && k !== 'proxy_active').map(([k,v]) => `${k}=${v}`).join('; ');
+            if (cleanCookieStr) proxyHeaders.set("Cookie", cleanCookieStr); else proxyHeaders.delete("Cookie");
+
+            const fetchConfig = { method: request.method, headers: proxyHeaders, redirect: "manual" };
+            if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) fetchConfig.body = request.body;
+
+            const proxyRes = await fetch(targetUrlStr, fetchConfig);
+            const responseHeaders = new Headers(proxyRes.headers);
+            responseHeaders.set("Access-Control-Allow-Origin", "*");
+            responseHeaders.set("Access-Control-Allow-Credentials", "true");
+
+            return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
+        }
+
         // --- 🌐 GLOBAL PROXY ENGINE ---
         if (isUser && isProxyActive) {
             const proxyDataString = decrypt(isProxyActive);
             if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
             
             let proxyData;
-            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, u: '', p: '' }; }
+            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, a: '', u: '', p: '' }; }
 
             const targetDomain = proxyData.t;
+            const autoApi = proxyData.a;
             const autoUser = proxyData.u;
             const autoPwd = proxyData.p;
 
@@ -744,8 +747,8 @@ export default {
             proxyHeaders.set("Host", targetUrl.hostname);
             proxyHeaders.set("Origin", targetDomain);
             proxyHeaders.set("Referer", targetDomain + targetUrl.pathname);
+            proxyHeaders.delete("Accept-Encoding"); 
 
-            // 🛠️ COOKIE STRIPPING FIX FOR API LOGIN (Crucial for Baji/React Sites)
             delete cookies['portal_session'];
             delete cookies['proxy_active'];
             const cleanCookieStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
@@ -755,12 +758,10 @@ export default {
             if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) fetchConfig.body = request.body;
 
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
-            
-            // 🛠️ PROPERLY REWRITE RESPONSE COOKIES
             const responseHeaders = new Headers();
+            
             for (const [key, value] of proxyRes.headers.entries()) {
                 if (key.toLowerCase() === 'set-cookie') {
-                    // Remove Domain restrictions from target so it saves in our proxy domain
                     let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
                     responseHeaders.append('Set-Cookie', modCookie);
                 } else {
@@ -777,10 +778,9 @@ export default {
             const contentType = responseHeaders.get("Content-Type") || "";
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
-                
                 htmlText = htmlText.split(targetDomain).join(url.origin);
                 
-                // --- 🛡️ THE ULTIMATE REACT-SAFE AUTO FILL SCRIPT ---
+                // --- 🛡️ STEALTH SCRIPT (FREEZING & API INTERCEPTION) ---
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 const stealthScript = `<script>
                 (function(){
@@ -791,14 +791,38 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
-                        // Password Manager Isolation
                         var ctx = '${encTargetTrim}';
                         if(!window.location.search.includes('_ctx=')){
                             var sep = window.location.search ? '&' : '?';
                             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
                         }
                         
-                        // React Native Value Setter (Bypasses React State Clear on Captcha Typing)
+                        // 🔥 API Bypass System
+                        var apiTarget = "${autoApi}";
+                        if(apiTarget) {
+                            var apiHost = new URL(apiTarget).hostname;
+                            
+                            var origFetch = window.fetch;
+                            window.fetch = async function() {
+                                var args = arguments;
+                                if(typeof args[0] === 'string' && args[0].includes(apiHost)) {
+                                    args[0] = '/__api_proxy?target=' + encodeURIComponent(args[0]);
+                                } else if (args[0] instanceof Request && args[0].url.includes(apiHost)) {
+                                    args[0] = new Request('/__api_proxy?target=' + encodeURIComponent(args[0].url), args[0]);
+                                }
+                                return origFetch.apply(this, args);
+                            };
+
+                            var origXhrOpen = XMLHttpRequest.prototype.open;
+                            XMLHttpRequest.prototype.open = function(method, url) {
+                                if(typeof url === 'string' && url.includes(apiHost)) {
+                                    url = '/__api_proxy?target=' + encodeURIComponent(url);
+                                }
+                                return origXhrOpen.apply(this,[method, url].concat(Array.prototype.slice.call(arguments, 2)));
+                            };
+                        }
+
+                        // 🔥 React Native Value Setter
                         function setNativeValue(el, val) {
                             if (!el || el.value === val) return;
                             try {
@@ -812,13 +836,12 @@ export default {
                             } catch(e){}
                         }
 
-                        // Intelligent Auto-Fill System
+                        // 🔥 Keyboard Freeze System
                         window.addEventListener('DOMContentLoaded', () => {
                             const au = "${autoUser}"; const ap = "${autoPwd}";
                             if(au && ap) {
-                                // Inject CSS to completely hide password dropdowns
                                 const style = document.createElement('style');
-                                style.innerHTML = '.masked-pwd { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif; }';
+                                style.innerHTML = '.frozen-input { pointer-events: none !important; user-select: none !important; touch-action: none !important; -webkit-text-security: disc !important; }';
                                 document.head.appendChild(style);
 
                                 const fill = () => {
@@ -828,22 +851,29 @@ export default {
                                     if(pwds.length > 0) {
                                         pField = pwds[0];
                                         pField.setAttribute('type', 'text');
-                                        pField.classList.add('masked-pwd');
+                                        pField.classList.add('frozen-input');
+                                        pField.setAttribute('readonly', 'true');
                                         pField.setAttribute('autocomplete', 'off');
                                     }
 
                                     const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
                                     for(let i=0; i<txts.length; i++) {
                                         let el = txts[i];
-                                        if(el === pField || el.classList.contains('masked-pwd')) continue;
+                                        if(el === pField || el.classList.contains('frozen-input')) continue;
+                                        
                                         let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                                        if(n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('email') || pl.includes('email') || n.includes('login')) {
-                                            uField = el; break;
+                                        // Ignore Captcha fields
+                                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
+                                            if(n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('email') || pl.includes('email') || n.includes('login') || n === 'id' || id === 'id') {
+                                                uField = el; break;
+                                            }
                                         }
                                     }
 
                                     if(uField) {
                                         setNativeValue(uField, au);
+                                        uField.classList.add('frozen-input');
+                                        uField.setAttribute('readonly', 'true');
                                         uField.setAttribute('autocomplete', 'off');
                                     }
                                     if(pField) {
@@ -855,7 +885,6 @@ export default {
                                 let attempts = 0;
                                 let intv = setInterval(()=>{ fill(); attempts++; if(attempts > 15) clearInterval(intv); }, 500);
                                 
-                                // Monitor clicks/typing (like captcha entry) to ensure it stays filled
                                 document.addEventListener('click', () => setTimeout(fill, 100));
                                 document.addEventListener('keyup', () => setTimeout(fill, 100));
                             }
