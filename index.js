@@ -175,17 +175,16 @@ export default {
         let isProxyActive = cookies['proxy_active'] === 'true';
 
         // ==========================================
-        // 🕵️ DIRECT NAVIGATION TRAP (NEW FEATURE)
+        // 🕵️ DIRECT NAVIGATION TRAP
         // ==========================================
         if (isProxyActive && request.method === "GET") {
             const secFetchSite = request.headers.get("Sec-Fetch-Site");
             const referer = request.headers.get("Referer");
             
-            // যদি ইউজার সরাসরি লিংক টাইপ করে বা ট্যাব কেটে দিয়ে নতুন ট্যাবে সার্চ করে
+            // Catch URL Typing or Bookmark clicking
             const isDirectSearch = (secFetchSite === "none") || (!secFetchSite && !referer);
 
             if (isDirectSearch) {
-                // সাথে সাথে প্রক্সি સেশন ডিলিট করে মূল কাস্টম ডিজাইনে পাঠিয়ে দিবে
                 return new Response("Killed Proxy", {
                     status: 302,
                     headers: {
@@ -205,7 +204,8 @@ export default {
                         status: 200,
                         headers: {
                             "Content-Type": "application/json",
-                            "Set-Cookie": `portal_session=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/; Max-Age=86400; SameSite=Lax`
+                            // STRICT SESSION COOKIE (No Max-Age) -> self destructs on app kill
+                            "Set-Cookie": `portal_session=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/; SameSite=Lax`
                         }
                     });
                 }
@@ -228,7 +228,8 @@ export default {
                 status: 302,
                 headers: {
                     "Location": "/",
-                    "Set-Cookie": "proxy_active=true; HttpOnly; Secure; Path=/; Max-Age=86400; SameSite=Lax"
+                    // STRICT SESSION COOKIE (No Max-Age) -> self destructs on app kill
+                    "Set-Cookie": "proxy_active=true; HttpOnly; Secure; Path=/; SameSite=Lax"
                 }
             });
         }
@@ -245,7 +246,7 @@ export default {
         }
 
         // ==========================================
-        // 🌐 GLOBAL PROXY ENGINE (SUPER FAST - NO EXIT BUTTON)
+        // 🌐 GLOBAL PROXY ENGINE (CACHE DESTROYER ADDED)
         // ==========================================
         if (isAuthorized && isProxyActive) {
             const targetUrl = new URL(request.url);
@@ -280,13 +281,23 @@ export default {
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
             const responseHeaders = new Headers(proxyRes.headers);
 
+            // Fix Redirects
             const locationHeader = responseHeaders.get("Location");
             if (locationHeader) {
                 const newLocation = locationHeader.replace(CONFIG.TARGET_DOMAIN, url.origin);
                 responseHeaders.set("Location", newLocation);
             }
 
-            // Return response directly (No HTML rewriting, making it lightning fast)
+            // 🔥 AGGRESSIVE ANTI-CACHE SYSTEM 🔥
+            // ব্রাউজারকে নির্দেশ দেওয়া হচ্ছে যেন কোনোভাবেই এই পেজ সেভ করে না রাখে।
+            const contentType = responseHeaders.get("Content-Type") || "";
+            if (contentType.includes("text/html")) {
+                responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+                responseHeaders.set("Pragma", "no-cache");
+                responseHeaders.set("Expires", "0");
+            }
+
+            // Return fast response
             return new Response(proxyRes.body, {
                 status: proxyRes.status,
                 statusText: proxyRes.statusText,
@@ -298,7 +309,10 @@ export default {
         // 🔒 DEFAULT: PUBLIC DECOY ROUTE
         // ==========================================
         return new Response(landingPageHTML, {
-            headers: { "Content-Type": "text/html;charset=UTF-8" },
+            headers: { 
+                "Content-Type": "text/html;charset=UTF-8",
+                "Cache-Control": "no-store, no-cache" // মেইন ল্যান্ডিং পেজেও যেন ক্যাশ না থাকে
+            },
         });
     }
 };
