@@ -70,7 +70,6 @@ const landingPageHTML = `
                 <div class="pl-4 flex items-center justify-center pointer-events-none">
                     <svg id="search-icon" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <!-- Plain text input to avoid suspicion -->
                 <input type="text" id="main-search" placeholder="Search by project, service or keyword..." autocomplete="off" spellcheck="false"
                     class="w-full bg-transparent text-white text-sm px-4 py-3 placeholder-gray-600 tracking-wide font-medium">
                 <button type="submit" id="search-btn" class="px-6 py-3 bg-white hover:bg-gray-200 text-black text-[10px] font-bold uppercase tracking-widest transition flex items-center justify-center min-w-[100px]">
@@ -109,6 +108,16 @@ const landingPageHTML = `
                 <h3 class="text-lg font-bold mb-3 text-white">High Performance</h3>
                 <p class="text-xs text-gray-400 leading-relaxed">Lightning-fast content delivery deployed worldwide. Latency reduced to mere milliseconds for an uninterrupted user experience.</p>
             </div>
+        </div>
+    </section>
+
+    <section class="py-16 border-y border-white/5 bg-[#080808] text-center">
+        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-8">Trusted by Modern Technology Teams</p>
+        <div class="flex flex-wrap justify-center gap-10 opacity-30 grayscale">
+            <span class="text-xl font-bold font-serif">ACME Corp</span>
+            <span class="text-xl font-bold font-mono">Globex</span>
+            <span class="text-xl font-bold">Soylent</span>
+            <span class="text-xl font-bold font-sans">Initech</span>
         </div>
     </section>
 
@@ -574,12 +583,12 @@ export default {
                             
                             <div id="details-${siteId}" class="hidden mt-3 space-y-2 p-3 bg-black/40 border border-white/5">
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Username</span>
-                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none w-full min-w-0 truncate select-all">
+                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Username</span>
+                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate select-all">
                                 </div>
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Password</span>
+                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
                                     <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
@@ -594,8 +603,8 @@ export default {
                                 </div>
 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Link</span>
-                                    <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none w-full min-w-0 truncate select-all">
+                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Link</span>
+                                    <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none min-w-0 truncate select-all">
                                     <div class="flex-shrink-0">
                                         <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -709,7 +718,7 @@ export default {
 
             return new Response("Starting...", {
                 status: 302,
-                headers: { "Location": "/", "Set-Cookie": `proxy_active=${encryptedTarget}; HttpOnly; Secure; Path=/; Max-Age=3600; SameSite=Lax` }
+                headers: { "Location": "/", "Set-Cookie": `proxy_active=${encryptedData}; HttpOnly; Secure; Path=/; Max-Age=3600; SameSite=Lax` }
             });
         }
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
@@ -720,10 +729,7 @@ export default {
             if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
             
             let proxyData;
-            try { proxyData = JSON.parse(proxyDataString); } catch(e) { 
-                // Fallback for old cookie format
-                proxyData = { t: proxyDataString, u: '', p: '' }; 
-            }
+            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, u: '', p: '' }; }
 
             const targetDomain = proxyData.t;
             const autoUser = proxyData.u;
@@ -739,8 +745,6 @@ export default {
             proxyHeaders.set("Host", targetUrl.hostname);
             proxyHeaders.set("Origin", targetDomain);
             proxyHeaders.set("Referer", targetDomain + targetUrl.pathname);
-            
-            // Remove encoding to ensure we can modify the HTML body safely
             proxyHeaders.delete("Accept-Encoding"); 
 
             delete cookies['portal_session'];
@@ -777,14 +781,12 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
-                        // Password Manager Isolation
                         var ctx = '${encTargetTrim}';
                         if(!window.location.search.includes('_ctx=')){
                             var sep = window.location.search ? '&' : '?';
                             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
                         }
                         
-                        // Intelligent Auto-Fill System
                         window.addEventListener('DOMContentLoaded', () => {
                             document.querySelectorAll('form').forEach(f => {
                                 var a = f.getAttribute('action') || '';
@@ -801,7 +803,7 @@ export default {
                                     if(pwds.length > 0) {
                                         pwds.forEach(pf => { 
                                             pf.value = ap; pf.dispatchEvent(new Event('input', {bubbles:true})); 
-                                            pf.setAttribute('autocomplete', 'new-password'); // Disable chrome popup
+                                            pf.setAttribute('autocomplete', 'new-password');
                                         });
                                         const usrs = document.querySelectorAll('input[type="text"], input[type="email"]');
                                         for(let uf of usrs) {
