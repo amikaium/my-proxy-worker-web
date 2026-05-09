@@ -207,7 +207,7 @@ export default {
             }
         }
 
-        // --- 📡 HIGH-PERFORMANCE API INTERCEPTOR PROXY ---
+        // --- 📡 UNIVERSAL API INTERCEPTOR PROXY ---
         if (path === "/__api_proxy") {
             let reqOrigin = request.headers.get("Origin") || url.origin;
 
@@ -229,9 +229,27 @@ export default {
             
             const tObj = new URL(targetUrlStr);
             const proxyHeaders = new Headers(request.headers);
+            
+            // ✅ Magic Spoofing: Make the API think the request is coming from the original domain
+            let originSpoof = tObj.origin;
+            let refererSpoof = tObj.origin + "/";
+            if (isProxyActive) {
+                let pDataString = decrypt(isProxyActive);
+                if (pDataString) {
+                    try {
+                        let pData = JSON.parse(pDataString);
+                        if (pData.t) {
+                            let originUrl = new URL(pData.t);
+                            originSpoof = originUrl.origin;
+                            refererSpoof = originUrl.origin + "/";
+                        }
+                    } catch(e) {}
+                }
+            }
+
             proxyHeaders.set("Host", tObj.hostname);
-            proxyHeaders.set("Origin", tObj.origin);
-            proxyHeaders.set("Referer", tObj.origin + "/");
+            proxyHeaders.set("Origin", originSpoof);
+            proxyHeaders.set("Referer", refererSpoof);
             proxyHeaders.delete("Accept-Encoding");
             
             const cleanCookieStr = Object.entries(cookies).filter(([k]) => k !== 'portal_session' && k !== 'proxy_active' && k !== 'admin_session').map(([k,v]) => `${k}=${v}`).join('; ');
@@ -851,7 +869,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 PERFECT STEALTH SCRIPT (No Popups, Smart Autofill, Balance Fix)
+                // 🔥 UNIVERSAL BYPASS & SILENT AUTOFILL SCRIPT
                 const stealthScript = `<script>
 (function(){
     try{
@@ -875,17 +893,13 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
-        // ✅ ADVANCED API SPOOFER (Fixes Live Balance Issue)
-        var targetHost = new URL("` + targetDomain + `").hostname;
-        var apiTarget = "${autoApi}";
-        var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
-        var rootDomain = targetHost.split('.').slice(-2).join('.'); 
-
+        // ✅ UNIVERSAL API INTERCEPTOR (Catches ALL cross-domain fetch/XHR calls)
         function shouldIntercept(urlStr) {
             if(typeof urlStr !== 'string') return false;
             try {
                 var u = urlStr.startsWith('http') ? new URL(urlStr) : new URL(urlStr, window.location.origin);
-                return u.hostname.includes(rootDomain) || (apiHost && u.hostname.includes(apiHost));
+                // Intercept ANY API request that is not pointing directly to our own Worker domain
+                return u.hostname !== window.location.hostname;
             } catch(e) { return false; }
         }
 
@@ -933,6 +947,20 @@ export default {
             });
         }
 
+        // ✅ WEBSOCKET UNIVERSAL BYPASS
+        var OrigWebSocket = window.WebSocket;
+        window.WebSocket = function(url, protocols) {
+            try {
+                var wsUrl = new URL(url);
+                if (wsUrl.hostname !== window.location.hostname) {
+                    var proxyWsUrl = new URL('/__ws_proxy?target=' + encodeURIComponent(url), window.location.origin);
+                    proxyWsUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    return new OrigWebSocket(proxyWsUrl.toString(), protocols);
+                }
+            } catch(e) {}
+            return new OrigWebSocket(url, protocols);
+        };
+
         function setNativeValue(el, val) {
             if (!el || el.value === val) return;
             try {
@@ -946,7 +974,7 @@ export default {
             } catch(e){}
         }
 
-        // ✅ SILENT AUTO-FILL (Fills Instantly, Blocks Chrome Password Prompt)
+        // ✅ SILENT AUTO-FILL
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
