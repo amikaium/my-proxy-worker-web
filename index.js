@@ -879,6 +879,14 @@ export default {
             targetUrl.protocol = tDomainObj.protocol;
             targetUrl.port = tDomainObj.port;
 
+            // 🚀 WEBSOCKET UPGRADE HANDLER
+            if (request.headers.get("Upgrade") === "websocket") {
+                const wsUrl = new URL(request.url);
+                wsUrl.hostname = tDomainObj.hostname;
+                wsUrl.protocol = tDomainObj.protocol === 'https:' ? 'wss:' : 'ws:';
+                return fetch(new Request(wsUrl.toString(), request));
+            }
+
             const proxyHeaders = new Headers(request.headers);
             proxyHeaders.set("Host", targetUrl.hostname);
             proxyHeaders.set("Origin", targetDomain);
@@ -918,122 +926,127 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 const stealthScript = `<script>
-                (function(){
-                    try{
-                        var p=performance.getEntriesByType("navigation")[0];
-                        if(p&&(p.type==="reload"||p.type==="back_forward")){window.location.replace("/api/stop-proxy");return;}
-                        var l=Date.now();
-                        setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
-                        document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
+(function(){
+    try{
+        var p=performance.getEntriesByType("navigation")[0];
+        if(p&&(p.type==="reload"||p.type==="back_forward")){window.location.replace("/api/stop-proxy");return;}
+        var l=Date.now();
+        setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
+        document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
+        
+        var ctx = '${encTargetTrim}';
+        if(!window.location.search.includes('_ctx=')){
+            var sep = window.location.search ? '&' : '?';
+            window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
+        }
+        
+        // 🔥 BROAD API INTERCEPTOR
+        var targetHost = new URL("` + targetDomain + `").hostname;
+        var apiTarget = "${autoApi}";
+        var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
+
+        function shouldIntercept(urlStr) {
+            if(typeof urlStr !== 'string') return false;
+            try {
+                var u = urlStr.startsWith('http') ? new URL(urlStr) : new URL(urlStr, window.location.origin);
+                return u.hostname.includes(targetHost) || (apiHost && u.hostname.includes(apiHost));
+            } catch(e) { return false; }
+        }
+
+        var origFetch = window.fetch;
+        window.fetch = async function() {
+            var args = arguments;
+            if(typeof args[0] === 'string' && shouldIntercept(args[0])) {
+                args[0] = '/__api_proxy?target=' + encodeURIComponent(args[0]);
+            } else if (args[0] instanceof Request && shouldIntercept(args[0].url)) {
+                args[0] = new Request('/__api_proxy?target=' + encodeURIComponent(args[0].url), args[0]);
+            }
+            return origFetch.apply(this, args);
+        };
+
+        var origXhrOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            if(typeof url === 'string' && shouldIntercept(url)) {
+                url = '/__api_proxy?target=' + encodeURIComponent(url);
+            }
+            return origXhrOpen.apply(this,[method, url].concat(Array.prototype.slice.call(arguments, 2)));
+        };
+
+        function setNativeValue(el, val) {
+            if (!el || el.value === val) return;
+            try {
+                const valueSetter = Object.getOwnPropertyDescriptor(el, 'value').set;
+                const prototype = Object.getPrototypeOf(el);
+                const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+                if (valueSetter && valueSetter !== prototypeValueSetter) prototypeValueSetter.call(el, val);
+                else valueSetter.call(el, val);
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch(e){}
+        }
+
+        // 🔥 SMART LOGIN PAGE ISOLATION
+        window.addEventListener('DOMContentLoaded', () => {
+            const au = "${autoUser}"; const ap = "${autoPwd}";
+            if(au && ap) {
+                const style = document.createElement('style');
+                style.innerHTML = '.frozen-input { pointer-events: none !important; user-select: none !important; touch-action: none !important; } .masked-pwd { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
+                document.head.appendChild(style);
+
+                let hasLoggedIn = false;
+
+                const fill = () => {
+                    if (hasLoggedIn) return;
+                    
+                    const pwds = Array.from(document.querySelectorAll('input[type="password"], input.masked-pwd')).filter(el => {
+                        const rect = el.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0;
+                    });
+
+                    if(pwds.length === 0) return;
+
+                    let pField = pwds[0];
+                    pField.setAttribute('type', 'text');
+                    pField.classList.add('frozen-input', 'masked-pwd');
+                    pField.setAttribute('readonly', 'true');
+                    pField.setAttribute('autocomplete', 'off');
+
+                    let uField = null;
+                    const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
+                    for(let i=0; i<txts.length; i++) {
+                        let el = txts[i];
+                        if(el === pField || el.classList.contains('masked-pwd') || el.getBoundingClientRect().width === 0) continue;
                         
-                        var ctx = '${encTargetTrim}';
-                        if(!window.location.search.includes('_ctx=')){
-                            var sep = window.location.search ? '&' : '?';
-                            window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
+                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
+                            uField = el; break;
                         }
-                        
-                        var apiTarget = "${autoApi}";
-                        if(apiTarget) {
-                            var apiHost = new URL(apiTarget).hostname;
-                            var origFetch = window.fetch;
-                            window.fetch = async function() {
-                                var args = arguments;
-                                if(typeof args[0] === 'string' && args[0].includes(apiHost)) {
-                                    args[0] = '/__api_proxy?target=' + encodeURIComponent(args[0]);
-                                } else if (args[0] instanceof Request && args[0].url.includes(apiHost)) {
-                                    args[0] = new Request('/__api_proxy?target=' + encodeURIComponent(args[0].url), args[0]);
-                                }
-                                return origFetch.apply(this, args);
-                            };
-                            var origXhrOpen = XMLHttpRequest.prototype.open;
-                            XMLHttpRequest.prototype.open = function(method, url) {
-                                if(typeof url === 'string' && url.includes(apiHost)) {
-                                    url = '/__api_proxy?target=' + encodeURIComponent(url);
-                                }
-                                return origXhrOpen.apply(this,[method, url].concat(Array.prototype.slice.call(arguments, 2)));
-                            };
-                        }
+                    }
 
-                        function setNativeValue(el, val) {
-                            if (!el || el.value === val) return;
-                            try {
-                                const valueSetter = Object.getOwnPropertyDescriptor(el, 'value').set;
-                                const prototype = Object.getPrototypeOf(el);
-                                const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
-                                if (valueSetter && valueSetter !== prototypeValueSetter) prototypeValueSetter.call(el, val);
-                                else valueSetter.call(el, val);
-                                el.dispatchEvent(new Event('input', { bubbles: true }));
-                                el.dispatchEvent(new Event('change', { bubbles: true }));
-                            } catch(e){}
-                        }
-
-                        // 🔥 SMART LOGIN PAGE ISOLATION
-                        window.addEventListener('DOMContentLoaded', () => {
-                            const au = "${autoUser}"; const ap = "${autoPwd}";
-                            if(au && ap) {
-                                const style = document.createElement('style');
-                                style.innerHTML = '.frozen-input { pointer-events: none !important; user-select: none !important; touch-action: none !important; } .masked-pwd { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
-                                document.head.appendChild(style);
-
-                                let hasLoggedIn = false;
-
-                                const fill = () => {
-                                    const path = window.location.pathname.toLowerCase();
-                                    
-                                    // 🚨 ONLY RUN ON LOGIN PAGE (Root / or /login or /auth)
-                                    if (hasLoggedIn || (path !== '/' && !path.includes('login') && !path.includes('auth'))) return;
-                                    
-                                    // 🚨 PREVENT AUTO-FILL ON "ADD AGENT" MODALS (If more than 1 password field exists)
-                                    const pwds = document.querySelectorAll('input[type="password"], input.masked-pwd');
-                                    if(pwds.length > 1) return; 
-
-                                    let pField = null, uField = null;
-                                    
-                                    if(pwds.length === 1) {
-                                        pField = pwds[0];
-                                        pField.setAttribute('type', 'text');
-                                        pField.classList.add('frozen-input', 'masked-pwd');
-                                        pField.setAttribute('readonly', 'true');
-                                        pField.setAttribute('autocomplete', 'off');
-                                    }
-
-                                    const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
-                                    for(let i=0; i<txts.length; i++) {
-                                        let el = txts[i];
-                                        if(el === pField || el.classList.contains('masked-pwd')) continue;
-                                        
-                                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
-                                            if(n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('email') || pl.includes('email') || n.includes('login') || n === 'id' || id === 'id') {
-                                                uField = el; break;
-                                            }
-                                        }
-                                    }
-
-                                    if(uField) {
-                                        setNativeValue(uField, au);
-                                        uField.classList.add('frozen-input');
-                                        uField.style.webkitTextSecurity = 'none'; // Visible Username
-                                        uField.setAttribute('readonly', 'true');
-                                        uField.setAttribute('autocomplete', 'off');
-                                    }
-                                    if(pField) setNativeValue(pField, ap);
-                                };
-                                
-                                fill();
-                                let attempts = 0;
-                                let intv = setInterval(()=>{ fill(); attempts++; if(attempts > 20) clearInterval(intv); }, 500);
-                                
-                                document.addEventListener('click', (e) => { 
-                                    if(e.target.tagName.toLowerCase() === 'button' || e.target.type === 'submit') hasLoggedIn = true;
-                                    setTimeout(fill, 100); 
-                                });
-                                document.addEventListener('keyup', () => setTimeout(fill, 100));
-                            }
-                        });
-                    }catch(e){}
-                })();
-                </script>`;
+                    if(uField) {
+                        setNativeValue(uField, au);
+                        uField.classList.add('frozen-input');
+                        uField.style.webkitTextSecurity = 'none';
+                        uField.setAttribute('readonly', 'true');
+                        uField.setAttribute('autocomplete', 'off');
+                    }
+                    if(pField) setNativeValue(pField, ap);
+                };
+                
+                fill();
+                let attempts = 0;
+                let intv = setInterval(()=>{ fill(); attempts++; if(attempts > 20) clearInterval(intv); }, 500);
+                
+                document.addEventListener('click', (e) => { 
+                    if(e.target.tagName.toLowerCase() === 'button' || e.target.type === 'submit') hasLoggedIn = true;
+                    setTimeout(fill, 100); 
+                });
+                document.addEventListener('keyup', () => setTimeout(fill, 100));
+            }
+        });
+    }catch(e){}
+})();
+<\/script>`;
                 
                 if (htmlText.includes("<head>")) htmlText = htmlText.replace("<head>", "<head>" + stealthScript); 
                 else htmlText = stealthScript + htmlText;
