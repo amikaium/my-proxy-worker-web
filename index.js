@@ -203,7 +203,7 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
-        // --- 🕵️ FIXED DIRECT NAVIGATION TRAP ---
+        // --- 🕵️ DIRECT NAVIGATION TRAP (Does not break site CSS/JS) ---
         const destHeader = request.headers.get("Sec-Fetch-Dest") || "";
         const acceptHeader = request.headers.get("Accept") || "";
         const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
@@ -297,16 +297,20 @@ export default {
             </head>
             <body class="pb-28">
                 ${customModalScript}
+
                 <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
                     <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Master <span class="text-white">Admin</span></h1></div>
                     <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition">Logout</a>
                 </header>
+
                 <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
                     <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
                 </div>
+                
                 <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
                     <button id="save-btn" onclick="save()" class="w-full max-w-sm bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">SAVE ALL CHANGES</button>
                 </div>
+
                 <script>
                     let db = {}; let tab = 'pins'; let openPins = new Set(); let searchQuery = '';
 
@@ -579,12 +583,13 @@ export default {
                             <div id="details-${siteId}" class="hidden mt-3 space-y-2 p-3 bg-black/40 border border-white/5">
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Username</span>
-                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate">
+                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate select-all">
                                 </div>
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
-                                    <input type="password" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate">
+                                    <!-- Hide from browser password manager -->
+                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -593,7 +598,7 @@ export default {
                                     </div>
                                 </div>
                                 <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
-                                    <input type="text" id="pwd-in-${siteId}" autocomplete="new-password" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                    <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
                                     <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
                                 </div>
 
@@ -648,7 +653,7 @@ export default {
             }
 
             const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
-            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
+            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }</style></head>
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
                 
@@ -699,7 +704,7 @@ export default {
             return new Response(html, { headers: { "Content-Type": "text/html" } });
         }
 
-        // --- 🚀 PROXY START ---
+        // --- 🚀 PROXY START WITH AUTO-FILL INJECTION DATA ---
         if (path === "/api/start-proxy") {
             if (!isUser) return new Response("Denied", { status: 403 });
             const siteId = url.searchParams.get("id");
@@ -717,7 +722,7 @@ export default {
         }
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
 
-        // --- 🌐 GLOBAL PROXY ENGINE (WITH REACT-SAFE AUTO-FILL & ISOLATION) ---
+        // --- 🌐 GLOBAL PROXY ENGINE ---
         if (isUser && isProxyActive) {
             const proxyDataString = decrypt(isProxyActive);
             if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
@@ -740,6 +745,7 @@ export default {
             proxyHeaders.set("Origin", targetDomain);
             proxyHeaders.set("Referer", targetDomain + targetUrl.pathname);
 
+            // 🛠️ COOKIE STRIPPING FIX FOR API LOGIN (Crucial for Baji/React Sites)
             delete cookies['portal_session'];
             delete cookies['proxy_active'];
             const cleanCookieStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
@@ -749,7 +755,18 @@ export default {
             if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) fetchConfig.body = request.body;
 
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
-            const responseHeaders = new Headers(proxyRes.headers);
+            
+            // 🛠️ PROPERLY REWRITE RESPONSE COOKIES
+            const responseHeaders = new Headers();
+            for (const [key, value] of proxyRes.headers.entries()) {
+                if (key.toLowerCase() === 'set-cookie') {
+                    // Remove Domain restrictions from target so it saves in our proxy domain
+                    let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
+                    responseHeaders.append('Set-Cookie', modCookie);
+                } else {
+                    responseHeaders.append(key, value);
+                }
+            }
 
             const locationHeader = responseHeaders.get("Location");
             if (locationHeader) responseHeaders.set("Location", locationHeader.replace(targetDomain, url.origin));
@@ -761,7 +778,10 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
-                // --- 🛡️ SMART REACT-SAFE AUTO FILL SCRIPT ---
+                htmlText = htmlText.split(targetDomain).join(url.origin);
+                
+                // --- 🛡️ THE ULTIMATE REACT-SAFE AUTO FILL SCRIPT ---
+                const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 const stealthScript = `<script>
                 (function(){
                     try{
@@ -771,42 +791,73 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
-                        function setReactValue(el, val) {
-                            if (el.value === val) return;
+                        // Password Manager Isolation
+                        var ctx = '${encTargetTrim}';
+                        if(!window.location.search.includes('_ctx=')){
+                            var sep = window.location.search ? '&' : '?';
+                            window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
+                        }
+                        
+                        // React Native Value Setter (Bypasses React State Clear on Captcha Typing)
+                        function setNativeValue(el, val) {
+                            if (!el || el.value === val) return;
                             try {
-                                let lastVal = el.value;
-                                el.value = val;
-                                let ev = new Event('input', { bubbles: true });
-                                ev.simulated = true;
-                                let tracker = el._valueTracker;
-                                if(tracker) tracker.setValue(lastVal);
-                                el.dispatchEvent(ev);
+                                const valueSetter = Object.getOwnPropertyDescriptor(el, 'value').set;
+                                const prototype = Object.getPrototypeOf(el);
+                                const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+                                if (valueSetter && valueSetter !== prototypeValueSetter) prototypeValueSetter.call(el, val);
+                                else valueSetter.call(el, val);
+                                el.dispatchEvent(new Event('input', { bubbles: true }));
+                                el.dispatchEvent(new Event('change', { bubbles: true }));
                             } catch(e){}
                         }
 
+                        // Intelligent Auto-Fill System
                         window.addEventListener('DOMContentLoaded', () => {
                             const au = "${autoUser}"; const ap = "${autoPwd}";
                             if(au && ap) {
+                                // Inject CSS to completely hide password dropdowns
+                                const style = document.createElement('style');
+                                style.innerHTML = '.masked-pwd { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif; }';
+                                document.head.appendChild(style);
+
                                 const fill = () => {
+                                    let pField = null, uField = null;
+                                    
                                     const pwds = document.querySelectorAll('input[type="password"]');
-                                    pwds.forEach(pf => { 
-                                        setReactValue(pf, ap);
-                                        pf.setAttribute('autocomplete', 'new-password');
-                                        pf.setAttribute('data-lpignore', 'true');
-                                    });
-                                    const usrs = document.querySelectorAll('input[type="text"], input[type="email"]');
-                                    usrs.forEach(uf => {
-                                        let n = (uf.name||'').toLowerCase(); let id = (uf.id||'').toLowerCase(); let pl = (uf.placeholder||'').toLowerCase();
-                                        if(n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('email') || pl.includes('email')) {
-                                            setReactValue(uf, au);
-                                            uf.setAttribute('autocomplete', 'new-password');
-                                            uf.setAttribute('data-lpignore', 'true');
+                                    if(pwds.length > 0) {
+                                        pField = pwds[0];
+                                        pField.setAttribute('type', 'text');
+                                        pField.classList.add('masked-pwd');
+                                        pField.setAttribute('autocomplete', 'off');
+                                    }
+
+                                    const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
+                                    for(let i=0; i<txts.length; i++) {
+                                        let el = txts[i];
+                                        if(el === pField || el.classList.contains('masked-pwd')) continue;
+                                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                                        if(n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('email') || pl.includes('email') || n.includes('login')) {
+                                            uField = el; break;
                                         }
-                                    });
+                                    }
+
+                                    if(uField) {
+                                        setNativeValue(uField, au);
+                                        uField.setAttribute('autocomplete', 'off');
+                                    }
+                                    if(pField) {
+                                        setNativeValue(pField, ap);
+                                    }
                                 };
                                 
-                                let intv = setInterval(fill, 500);
-                                setTimeout(() => clearInterval(intv), 10000); // Stop enforcing after 10s to let user login
+                                fill();
+                                let attempts = 0;
+                                let intv = setInterval(()=>{ fill(); attempts++; if(attempts > 15) clearInterval(intv); }, 500);
+                                
+                                // Monitor clicks/typing (like captcha entry) to ensure it stays filled
+                                document.addEventListener('click', () => setTimeout(fill, 100));
+                                document.addEventListener('keyup', () => setTimeout(fill, 100));
                             }
                         });
                     }catch(e){}
