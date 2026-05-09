@@ -3,9 +3,9 @@
 // ==========================================
 const CONFIG = {
     SESSION_SECRET: "nexus_enterprise_secure_tunnel_2026",
-    // আপনার ফায়ারবেস ডাটাবেজ (কোডে কোনো অ্যাডমিন পিন নেই)
     FB_URL: "https://private-panel-916b4-default-rtdb.firebaseio.com",
-    FB_KEY: "AIzaSyC5Ygv7umkM3LJ9XEDJUTcrn_DmJ19eY0c"
+    FB_KEY: "AIzaSyC5Ygv7umkM3LJ9XEDJUTcrn_DmJ19eY0c",
+    DB_NODE: "admin_web" // ফায়ারবেসে এই নামে ফোল্ডার তৈরি হবে
 };
 
 // ==========================================
@@ -125,24 +125,37 @@ export default {
         const url = new URL(request.url);
         const path = url.pathname;
 
-        // --- Helper: Cookie Parser ---
         const cookies = Object.fromEntries((request.headers.get("Cookie") || "").split(';').map(c => {
             const parts = c.split('='); return [parts[0].trim(), parts.slice(1).join('=')];
         }));
 
-        // --- Helper: Fetch DB from Firebase ---
+        // --- Helper: Fetch DB from Firebase (admin_web node) ---
         const getDB = async () => {
             try {
-                const res = await fetch(`${CONFIG.FB_URL}/.json?key=${CONFIG.FB_KEY}`);
-                return await res.json();
+                const res = await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`);
+                let data = await res.json();
+                
+                // যদি admin_web ফোল্ডার না থাকে, তবে অটোমেটিক তৈরি করবে
+                if (!data) {
+                    data = {
+                        adminPin: "SET_YOUR_PIN_HERE", // ইউজারকে দেখানোর জন্য মেসেজ
+                        settings: { whatsapp: "", notification: { enabled: false, text: "", image: "", btnText: "", btnLink: "" } },
+                        sites: {},
+                        pins: {}
+                    };
+                    await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { 
+                        method: 'PUT', 
+                        body: JSON.stringify(data) 
+                    });
+                }
+                return data;
             } catch(e) { return null; }
         };
         const updateDB = async (data) => {
-            await fetch(`${CONFIG.FB_URL}/.json?key=${CONFIG.FB_KEY}`, { method: 'PUT', body: JSON.stringify(data) });
+            await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { method: 'PUT', body: JSON.stringify(data) });
         };
 
         let db = await getDB() || {};
-        // Initialize defaults if empty
         if (!db.sites) db.sites = {};
         if (!db.pins) db.pins = {};
         if (!db.settings) db.settings = { whatsapp: "", notification: { enabled: false, text: "", image: "", btnText: "", btnLink: "" } };
@@ -152,7 +165,6 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
-        // --- 🕵️ Direct Navigation Trap ---
         if (isProxyActive && request.method === "GET" && !path.startsWith("/api/")) {
             const secFetchSite = request.headers.get("Sec-Fetch-Site");
             const referer = request.headers.get("Referer");
@@ -165,8 +177,8 @@ export default {
         if (path === "/api/access" && request.method === "POST") {
             const { code } = await request.json();
             
-            // Check Admin PIN (Only works if adminPin exists in Firebase)
-            if (db.adminPin && code === String(db.adminPin)) {
+            // Check Admin PIN (SET_YOUR_PIN_HERE দিয়ে লগইন করা যাবে না)
+            if (db.adminPin && db.adminPin !== "SET_YOUR_PIN_HERE" && code === String(db.adminPin)) {
                 return new Response(JSON.stringify({ success: true, role: 'admin' }), { headers: { "Set-Cookie": `admin_session=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/` } });
             }
             // Check User PIN
@@ -247,7 +259,6 @@ export default {
                         <div>
                             <h2 class="text-lg font-bold mb-4 border-b border-white/10 pb-2">System Settings</h2>
                             <div class="bg-[#0a0a0a] p-6 border border-white/10 space-y-5">
-                                <!-- Note: Admin PIN input removed for security -->
                                 <div><label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1 block">WhatsApp Floating Number</label><input value="\${db.settings.whatsapp||''}" onchange="db.settings.whatsapp=this.value" placeholder="+88017..." class="w-full bg-black border border-white/20 p-3 text-sm outline-none focus:border-green-500 text-green-400"></div>
                                 
                                 <div class="mt-6 border-t border-white/10 pt-5">
@@ -258,7 +269,7 @@ export default {
                                     <textarea onchange="db.settings.notification.text=this.value" placeholder="Notification Message..." class="w-full bg-black border border-white/20 p-3 text-sm mb-3 outline-none min-h-[80px]">\${db.settings.notification.text||''}</textarea>
                                     <input value="\${db.settings.notification.image||''}" onchange="db.settings.notification.image=this.value" placeholder="Image URL (Optional)" class="w-full bg-black border border-white/20 p-3 text-sm mb-3 outline-none">
                                     <div class="flex gap-3">
-                                        <input value="\${db.settings.notification.btnText||''}" onchange="db.settings.notification.btnText=this.value" placeholder="Button Text (e.g. JOIN NOW)" class="w-1/2 bg-black border border-white/20 p-3 text-sm outline-none">
+                                        <input value="\${db.settings.notification.btnText||''}" onchange="db.settings.notification.btnText=this.value" placeholder="Button Text" class="w-1/2 bg-black border border-white/20 p-3 text-sm outline-none">
                                         <input value="\${db.settings.notification.btnLink||''}" onchange="db.settings.notification.btnLink=this.value" placeholder="Button Link" class="w-1/2 bg-black border border-white/20 p-3 text-sm outline-none">
                                     </div>
                                 </div>
@@ -366,14 +377,13 @@ export default {
             return new Response(html, { headers: { "Content-Type": "text/html" } });
         }
 
-        // --- 🚀 PROXY START (Server-side hiding) ---
+        // --- 🚀 PROXY START ---
         if (path === "/api/start-proxy") {
             if (!isUser) return new Response("Denied", { status: 403 });
             const siteId = url.searchParams.get("id");
             const userData = db.pins[userPin];
             if (userData.status === 'suspended' || !userData.sites.includes(siteId) || !db.sites[siteId]) return new Response("Access Denied", { status: 403 });
             
-            // Encrypt Target URL for the cookie
             const encryptedTarget = encrypt(db.sites[siteId].agentLink);
 
             return new Response("Starting...", {
@@ -423,7 +433,7 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
-                // Form Isolation Script (Password Manager Trick)
+                // Form Isolation Script (Helps isolate password saving per target domain)
                 const stealthScript = `<script>
                 (function(){
                     try{
@@ -433,7 +443,6 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
-                        // Trick to separate passwords in some browsers
                         window.addEventListener('DOMContentLoaded', () => {
                             document.querySelectorAll('form').forEach(f => {
                                 if(f.action && !f.action.includes('realm=')) {
