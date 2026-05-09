@@ -23,6 +23,8 @@ const landingPageHTML = `
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .hidden-modal { opacity: 0; pointer-events: none; transition: all 0.4s ease; transform: scale(0.95); }
         .hidden-modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+        /* Browser Password Manager Bypass CSS */
+        .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }
     </style>
 </head>
 <body class="antialiased selection:bg-indigo-500 selection:text-white">
@@ -52,8 +54,11 @@ const landingPageHTML = `
         <div class="glass p-8 rounded-2xl w-full max-w-sm shadow-2xl relative">
             <h2 class="text-xs tracking-[0.2em] text-gray-500 mb-6 text-center uppercase">Secure Authentication</h2>
             <div class="space-y-4">
-                <input type="password" id="secret-code" placeholder="Enter Access Code" 
-                    class="w-full bg-black/50 border border-gray-800 rounded-lg px-4 py-3 text-center tracking-[0.5em] text-white focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                <!-- Changed to type="text" with secure-input class to bypass browser password saving -->
+                <input type="text" id="secret-code" inputmode="numeric" placeholder="Enter Access Code" 
+                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                    class="secure-input w-full bg-black/50 border border-gray-800 rounded-lg px-4 py-3 text-center tracking-[0.5em] text-white focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                
                 <button id="verify-btn" class="w-full bg-white text-black py-3 rounded-lg font-medium text-sm hover:bg-gray-200 transition flex justify-center items-center">
                     <span id="btn-text">Authenticate</span>
                 </button>
@@ -157,7 +162,6 @@ export default {
         const url = new URL(request.url);
         const path = url.pathname;
 
-        // Cookie Helper Functions
         const getCookies = (req) => {
             const header = req.headers.get("Cookie");
             if (!header) return {};
@@ -196,7 +200,7 @@ export default {
             return new Response(dashboardHTML, { headers: { "Content-Type": "text/html;charset=UTF-8" } });
         }
 
-        // 3. Start Proxy Mode (Sets cookie and redirects to root)
+        // 3. Start Proxy Mode
         if (path === "/api/start-proxy") {
             if (!isAuthorized) return new Response("Access Denied", { status: 403 });
             return new Response("Starting Proxy...", {
@@ -208,7 +212,7 @@ export default {
             });
         }
 
-        // 4. Stop Proxy Mode (Clears proxy cookie and goes to dashboard)
+        // 4. Stop Proxy Mode
         if (path === "/api/stop-proxy") {
             return new Response("Stopping Proxy...", {
                 status: 302,
@@ -231,23 +235,19 @@ export default {
         }
 
         // ==========================================
-        // 🌐 GLOBAL PROXY ENGINE (Only active if logged in & clicked "Open Link")
+        // 🌐 GLOBAL PROXY ENGINE
         // ==========================================
         if (isAuthorized && isProxyActive) {
-            
-            // Build absolute target URL
             const targetUrl = new URL(request.url);
             targetUrl.hostname = new URL(CONFIG.TARGET_DOMAIN).hostname;
             targetUrl.protocol = new URL(CONFIG.TARGET_DOMAIN).protocol;
             targetUrl.port = new URL(CONFIG.TARGET_DOMAIN).port;
 
-            // Prepare headers for target site (Strip our secret portal cookies, but pass target's login cookies)
             const proxyHeaders = new Headers(request.headers);
             proxyHeaders.set("Host", targetUrl.hostname);
             proxyHeaders.set("Origin", CONFIG.TARGET_DOMAIN);
             proxyHeaders.set("Referer", CONFIG.TARGET_DOMAIN + targetUrl.pathname);
 
-            // Filter out portal specific cookies before sending to Target
             delete cookies['portal_session'];
             delete cookies['proxy_active'];
             const cleanCookieStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
@@ -257,37 +257,30 @@ export default {
                 proxyHeaders.delete("Cookie");
             }
 
-            // Fetch Configuration
             const fetchConfig = {
                 method: request.method,
                 headers: proxyHeaders,
-                redirect: "manual" // Handle redirects manually so we can rewrite them!
+                redirect: "manual"
             };
-            // Only add body if not a GET/HEAD request
+            
             if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
                 fetchConfig.body = request.body;
             }
 
-            // Fetch from target site
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
-            
-            // Prepare response to send back to user
             const responseHeaders = new Headers(proxyRes.headers);
 
-            // SECURITY: Rewrite Redirects (Location headers) back to your Worker domain
             const locationHeader = responseHeaders.get("Location");
             if (locationHeader) {
                 const newLocation = locationHeader.replace(CONFIG.TARGET_DOMAIN, url.origin);
                 responseHeaders.set("Location", newLocation);
             }
 
-            // INJECT: Floating Exit Button in HTML pages
             let body = proxyRes.body;
             const contentType = responseHeaders.get("Content-Type") || "";
             
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
-                // A very stealthy, tiny 'Close Proxy' button fixed at bottom-right
                 const exitButton = `
                     <div style="position:fixed; bottom:20px; right:20px; z-index:2147483647;">
                         <a href="/api/stop-proxy" style="background:rgba(220, 38, 38, 0.8); color:white; padding:8px 16px; border-radius:99px; font-family:sans-serif; font-size:12px; font-weight:bold; text-decoration:none; backdrop-filter:blur(5px); transition:all 0.3s;" onmouseover="this.style.background='rgba(220,38,38,1)'" onmouseout="this.style.background='rgba(220,38,38,0.8)'">
@@ -298,10 +291,10 @@ export default {
                 if (htmlText.includes("</body>")) {
                     htmlText = htmlText.replace("</body>", exitButton + "</body>");
                 } else {
-                    htmlText += exitButton; // Fallback
+                    htmlText += exitButton; 
                 }
                 body = htmlText;
-                responseHeaders.delete("Content-Length"); // Because we modified the body size
+                responseHeaders.delete("Content-Length");
             }
 
             return new Response(body, {
