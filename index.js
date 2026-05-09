@@ -65,18 +65,17 @@ const landingPageHTML = `
         <div class="text-center z-10 w-full max-w-2xl mx-auto">
             <span class="text-[10px] font-bold tracking-widest uppercase text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 rounded-full mb-6 inline-block">Enterprise Data Registry</span>
             <h1 class="text-5xl md:text-7xl font-light tracking-tight mb-4">Secure <span class="font-bold text-white">Assets</span></h1>
-            <p class="text-gray-400 text-sm md:text-base tracking-wide mb-10 leading-relaxed">Access our global registry of encrypted projects, infrastructure documentation, and zero-trust edge nodes.</p>
+            <p class="text-gray-400 text-sm md:text-base tracking-wide mb-10 leading-relaxed">Search our global registry of digital projects, infrastructure documentation, and cloud services.</p>
             
-            <!-- Real-looking Search Box (NO DOTS) -->
             <form id="search-form" class="w-full flex items-center p-1.5 border border-white/10 bg-[#0a0a0a] focus-within:border-indigo-500/50 transition-all">
                 <div class="pl-4 flex items-center justify-center pointer-events-none">
                     <svg id="search-icon" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <!-- REMOVED secure-input class here so it shows plain text -->
-                <input type="text" id="main-search" placeholder="Search by Node ID or Access Key..." autocomplete="off" spellcheck="false"
+                <!-- Changed Placeholder & Plain Text Input -->
+                <input type="text" id="main-search" placeholder="Search by project, service or keyword..." autocomplete="off" spellcheck="false"
                     class="w-full bg-transparent text-white text-sm px-4 py-3 placeholder-gray-600 tracking-wide font-medium">
                 <button type="submit" id="search-btn" class="px-6 py-3 bg-white hover:bg-gray-200 text-black text-[10px] font-bold uppercase tracking-widest transition flex items-center justify-center min-w-[100px]">
-                    <span id="btn-text">Lookup</span><div id="search-spinner" class="loader hidden"></div>
+                    <span id="btn-text">Search</span><div id="search-spinner" class="loader hidden"></div>
                 </button>
             </form>
             <p id="search-msg" class="text-[10px] font-bold text-gray-500 mt-4 tracking-widest uppercase opacity-0 transition-opacity h-4"></p>
@@ -153,7 +152,7 @@ const landingPageHTML = `
                 if (res.ok) {
                     const data = await res.json();
                     document.getElementById('search-msg').style.color = '#4ade80'; 
-                    document.getElementById('search-msg').innerText = 'NODE IDENTIFIED. CONNECTING...';
+                    document.getElementById('search-msg').innerText = 'ACCESS GRANTED. CONNECTING...';
                     document.getElementById('search-msg').style.opacity = '1';
                     setTimeout(() => window.location.href = data.role === 'admin' ? '/admin' : '/dashboard', 800);
                 } else {
@@ -163,7 +162,9 @@ const landingPageHTML = `
                         document.getElementById('main-search').disabled = false;
                         document.getElementById('main-search').value = '';
                         document.getElementById('search-msg').style.color = '#ef4444'; 
-                        document.getElementById('search-msg').innerText = '0 SECURE NODES FOUND';
+                        
+                        // FIX: Realistic "Not Found" message instead of "0 secure nodes"
+                        document.getElementById('search-msg').innerText = 'NO RESULTS FOUND FOR "' + q.toUpperCase() + '"';
                         document.getElementById('search-msg').style.opacity = '1';
                     }, 1000);
                 }
@@ -285,7 +286,6 @@ export default {
         // --- 🛠️ ADMIN PANEL ---
         if (path.startsWith("/admin")) {
             if (!isAdmin) return Response.redirect(url.origin, 302);
-            
             if (path === "/admin/api/data") return new Response(JSON.stringify(db));
             if (path === "/admin/api/save" && request.method === "POST") {
                 const newData = await request.json();
@@ -598,29 +598,28 @@ export default {
                                     <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none w-full truncate select-all">
                                 </div>
                                 
-                                <div class="bg-white/5 border border-white/10 p-1.5 w-full mt-2">
-                                    <div class="flex items-center w-full">
-                                        <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Password</span>
-                                        <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none truncate">
-                                        <div class="flex items-center gap-1 flex-shrink-0 pr-1">
-                                            <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
-                                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                            </button>
-                                            <button onclick="toggleEditPwd('${siteId}')" class="px-2 h-7 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/40 transition text-[8px] font-bold uppercase tracking-widest">Update</button>
-                                        </div>
+                                <!-- FIXED: Password Box Alignment -->
+                                <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
+                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
+                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
+                                    <div class="flex gap-1 flex-shrink-0">
+                                        <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
+                                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        </button>
+                                        <button onclick="toggleEditPwd('${siteId}')" class="h-7 px-2 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 transition border border-indigo-500/30 text-[8px] font-bold uppercase tracking-widest whitespace-nowrap">Update</button>
                                     </div>
-                                    <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
-                                        <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
-                                        <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
-                                    </div>
+                                </div>
+                                <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
+                                    <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                    <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
                                 </div>
 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Link</span>
                                     <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none w-full truncate select-all">
-                                    <div class="flex-shrink-0 pr-1">
+                                    <div class="flex-shrink-0">
                                         <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
-                                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                         </button>
                                     </div>
                                 </div>
@@ -633,7 +632,6 @@ export default {
                 sitesHTML = `<p class="text-gray-500 text-xs text-center w-full mt-10">No sites assigned to this PIN.</p>`;
             }
 
-            // WhatsApp Button with Pulse Animation
             let waHTML = '';
             if (db.settings.whatsapp) {
                 waHTML = `
@@ -666,10 +664,12 @@ export default {
                 </div>`;
             }
 
-            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script><style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
+            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
+            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }</style></head>
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
                 
+                <!-- STICKY HEADER -->
                 <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
                     <div>
                         <h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Welcome <span class="text-white">${userData.name || userPin}</span></h1>
@@ -769,9 +769,6 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
-                // --- 🛡️ PASSWORD ISOLATION & STEALTH SCRIPT ---
-                // ক্রোমের পাসওয়ার্ড ম্যানেজার যেন বিভিন্ন সাইটকে আলাদা মনে করে, 
-                // সেজন্য ফর্মের একশন (Action) লিংকে সাইটের একটা ইউনিক আইডি বসিয়ে দেওয়া হচ্ছে।
                 const encTargetTrim = isProxyActive.substring(0,8);
                 const stealthScript = `<script>
                 (function(){
@@ -782,7 +779,6 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
-                        // Password Manager Isolation Trap
                         var ctx = '${encTargetTrim}';
                         if(!window.location.search.includes('_ctx=')){
                             var sep = window.location.search ? '&' : '?';
