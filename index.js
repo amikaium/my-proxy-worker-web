@@ -119,16 +119,7 @@ const landingPageHTML = `
 
     <!-- Massive Footer -->
     <footer class="pt-20 pb-10 px-6 bg-[#030303] border-t border-white/5">
-        <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
-            <div class="col-span-2 md:col-span-2">
-                <div class="text-2xl font-bold tracking-widest uppercase cursor-default select-none flex items-center gap-2 mb-4">
-                    <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                    Nexus<span class="text-gray-500">.</span>
-                </div>
-                <p class="text-xs text-gray-500 leading-relaxed max-w-sm">Building the foundation of the decentralized web. Secure, scalable, and resilient enterprise cloud solutions.</p>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/10 pt-8">
+        <div class="max-w-7xl mx-auto flex flex-col items-center">
             <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Digital Enterprise. All rights reserved.</p>
         </div>
     </footer>
@@ -216,11 +207,10 @@ export default {
             }
         }
 
-        // --- 📡 HIGH-PERFORMANCE API INTERCEPTOR PROXY (Fixes Missing Balance Issue) ---
+        // --- 📡 HIGH-PERFORMANCE API INTERCEPTOR PROXY ---
         if (path === "/__api_proxy") {
             let reqOrigin = request.headers.get("Origin") || url.origin;
 
-            // ✅ 1. Fix CORS Preflight (OPTIONS Request) strictly needed for liveapi247.live
             if (request.method === "OPTIONS") {
                 return new Response(null, {
                     status: 204,
@@ -265,7 +255,6 @@ export default {
                 
                 responseHeaders.set("Access-Control-Allow-Origin", reqOrigin);
                 responseHeaders.set("Access-Control-Allow-Credentials", "true");
-                // Essential headers exposed to frontend frameworks (React/Vue/Axios)
                 responseHeaders.set("Access-Control-Expose-Headers", "Content-Length, Content-Type, Date, Server, Transfer-Encoding, Authorization, sid, Token"); 
 
                 return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
@@ -274,7 +263,6 @@ export default {
             }
         }
 
-        // --- 📡 WEBSOCKET INTERCEPTOR (For Live Casino & Odds) ---
         if (path === "/__ws_proxy" && request.headers.get("Upgrade") === "websocket") {
             const targetUrlStr = url.searchParams.get("target");
             if(!targetUrlStr) return new Response("Bad Target", {status:400});
@@ -811,7 +799,6 @@ export default {
             targetUrl.protocol = tDomainObj.protocol;
             targetUrl.port = tDomainObj.port;
 
-            // 🚀 NATIVE WEBSOCKET ROUTING (Fix for WebSockets failing across domains)
             if (request.headers.get("Upgrade") === "websocket") {
                 const wsUrl = new URL(request.url);
                 wsUrl.hostname = tDomainObj.hostname;
@@ -868,7 +855,6 @@ export default {
                 const stealthScript = `<script>
 (function(){
     try{
-        // ✅ 1. FIXED REFRESH (F5) REDIRECT TO HOME
         var p = performance.getEntriesByType("navigation")[0];
         if (p && p.type === "reload") {
             window.location.replace("/api/stop-proxy");
@@ -889,7 +875,7 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
-        // ✅ 2. ADVANCED API SPOOFER (Fixes the missing Live Balance issue in React/Vue)
+        // ✅ ADVANCED API SPOOFER (Fixes Live Balance Issue)
         var targetHost = new URL("` + targetDomain + `").hostname;
         var apiTarget = "${autoApi}";
         var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
@@ -915,12 +901,12 @@ export default {
                         let reqInit = { method: resource.method, headers: resource.headers, credentials: resource.credentials, mode: 'cors', redirect: resource.redirect };
                         if (['POST', 'PUT', 'PATCH'].includes(resource.method)) reqInit.body = await resource.clone().blob();
                         let res = await origFetch.call(window, proxyUrl, reqInit);
-                        Object.defineProperty(res, 'url', { value: fullUrl }); // Trick the frontend framework!
+                        Object.defineProperty(res, 'url', { value: fullUrl }); 
                         return res;
                     })();
                 } else {
                     return origFetch.call(window, proxyUrl, options).then(res => {
-                        Object.defineProperty(res, 'url', { value: fullUrl }); // Trick the frontend framework!
+                        Object.defineProperty(res, 'url', { value: fullUrl }); 
                         return res;
                     });
                 }
@@ -960,29 +946,21 @@ export default {
             } catch(e){}
         }
 
-        // ✅ 3. SILENT AUTO-FILL (No Popups, No Chrome Prompts, Fills Instantly on Login Box)
+        // ✅ SILENT AUTO-FILL (Fills Instantly, Blocks Chrome Password Prompt)
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            let style = document.createElement('style');
-            style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; pointer-events: none !important; user-select: none !important; } .nx-frozen { pointer-events: none !important; user-select: none !important; }';
-            document.head.appendChild(style);
+            let filled = false;
 
-            let hasLoggedIn = false;
-
-            const fillForm = () => {
-                if(hasLoggedIn) return;
-                
-                const pwds = Array.from(document.querySelectorAll('input[type="password"]')).filter(el => {
-                    const rect = el.getBoundingClientRect();
-                    return rect.width > 0 && rect.height > 0;
-                });
-                if(pwds.length === 0) return; // Not a login page
+            const attemptFill = () => {
+                if (filled) return;
+                const pwds = Array.from(document.querySelectorAll('input[type="password"]')).filter(el => el.getBoundingClientRect().width > 0);
+                if (pwds.length === 0) return;
 
                 let pField = pwds[0];
                 let uField = null;
-                
+
                 const txts = document.querySelectorAll('input[type="text"], input[type="email"], input:not([type])');
                 for(let i=0; i<txts.length; i++) {
                     let el = txts[i];
@@ -993,42 +971,35 @@ export default {
                     }
                 }
 
-                if(uField) {
-                    uField.setAttribute('autocomplete', 'off');
-                    uField.classList.add('nx-frozen');
-                    if(uField.value !== au) setNativeValue(uField, au);
+                let changed = false;
+                if(uField && uField.value !== au) {
+                    uField.setAttribute('readonly', 'true');
+                    setNativeValue(uField, au);
+                    setTimeout(() => uField.removeAttribute('readonly'), 800);
+                    changed = true;
                 }
-                if(pField) {
-                    pField.setAttribute('type', 'text');
-                    pField.setAttribute('autocomplete', 'new-password');
-                    pField.classList.add('nx-mask');
-                    if(pField.value !== ap) setNativeValue(pField, ap);
+                if(pField && pField.value !== ap) {
+                    pField.setAttribute('readonly', 'true');
+                    setNativeValue(pField, ap);
+                    setTimeout(() => pField.removeAttribute('readonly'), 800);
+                    changed = true;
+                }
+
+                if (changed) {
+                    filled = true;
+                    let toast = document.createElement('div');
+                    toast.innerHTML = '✅ Auto-Filled: ' + au;
+                    toast.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#10b981; color:white; padding:8px 16px; border-radius:8px; font-family:sans-serif; font-size:12px; font-weight:bold; z-index:999999; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.5s;';
+                    document.body.appendChild(toast);
+                    setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.remove(), 500); }, 3000);
                 }
             };
 
-            fillForm();
-            let intv = setInterval(fillForm, 500);
-            setTimeout(() => clearInterval(intv), 5000);
+            let observer = new MutationObserver(() => attemptFill());
+            observer.observe(document.body, { childList: true, subtree: true });
 
-            // Unlock inputs momentarily on form submission so they work natively
-            const unlockAndProceed = () => {
-                hasLoggedIn = true;
-                document.querySelectorAll('.nx-mask, .nx-frozen').forEach(el => {
-                    el.classList.remove('nx-mask');
-                    el.classList.remove('nx-frozen');
-                    if(el.getAttribute('type') === 'text' && el.value === ap) el.setAttribute('type', 'password');
-                });
-            };
-
-            document.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.type === 'submit' || e.target.closest('button')) {
-                    unlockAndProceed();
-                }
-            }, {passive: true});
-            
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') unlockAndProceed();
-            }, {passive: true});
+            attemptFill();
+            setInterval(attemptFill, 1000); 
         });
     }catch(e){}
 })();
