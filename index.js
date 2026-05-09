@@ -26,7 +26,7 @@ const decrypt = (b64) => {
 };
 
 // ==========================================
-// 🎨 UI: PUBLIC DECOY LANDING PAGE (REALISTIC)
+// 🎨 UI: PUBLIC DECOY LANDING PAGE
 // ==========================================
 const landingPageHTML = `
 <!DOCTYPE html>
@@ -46,7 +46,6 @@ const landingPageHTML = `
     </style>
 </head>
 <body class="antialiased selection:bg-white selection:text-black">
-    <!-- Navbar -->
     <nav class="fixed w-full z-50 border-b border-white/10 bg-[#050505]/90 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-xl font-bold tracking-widest uppercase cursor-default select-none">Nexus<span class="text-indigo-500">.</span></div>
@@ -59,7 +58,6 @@ const landingPageHTML = `
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <header class="relative pt-32 pb-20 md:pt-48 md:pb-24 px-4 flex flex-col items-center justify-center border-b border-white/5">
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-indigo-900/10 blur-[120px] rounded-full pointer-events-none"></div>
         <div class="text-center z-10 w-full max-w-2xl mx-auto">
@@ -71,18 +69,16 @@ const landingPageHTML = `
                 <div class="pl-4 flex items-center justify-center pointer-events-none">
                     <svg id="search-icon" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <!-- Changed Placeholder & Plain Text Input -->
                 <input type="text" id="main-search" placeholder="Search by project, service or keyword..." autocomplete="off" spellcheck="false"
                     class="w-full bg-transparent text-white text-sm px-4 py-3 placeholder-gray-600 tracking-wide font-medium">
                 <button type="submit" id="search-btn" class="px-6 py-3 bg-white hover:bg-gray-200 text-black text-[10px] font-bold uppercase tracking-widest transition flex items-center justify-center min-w-[100px]">
-                    <span id="btn-text">Search</span><div id="search-spinner" class="loader hidden"></div>
+                    <span id="btn-text">Lookup</span><div id="search-spinner" class="loader hidden"></div>
                 </button>
             </form>
             <p id="search-msg" class="text-[10px] font-bold text-gray-500 mt-4 tracking-widest uppercase opacity-0 transition-opacity h-4"></p>
         </div>
     </header>
 
-    <!-- Stats Section -->
     <div class="w-full border-b border-white/5 bg-[#080808]">
         <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 py-12 px-6 text-center">
             <div><p class="text-3xl font-bold text-white mb-1">99.9%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Uptime SLA</p></div>
@@ -92,7 +88,6 @@ const landingPageHTML = `
         </div>
     </div>
 
-    <!-- Realistic Services Section -->
     <section id="services" class="py-24 px-6 max-w-7xl mx-auto">
         <h2 class="text-3xl font-bold mb-4 text-center tracking-wide">Infrastructure <span class="text-indigo-400 font-light">Solutions</span></h2>
         <p class="text-gray-500 text-sm text-center mb-16 max-w-2xl mx-auto leading-relaxed">We provide military-grade proxy routing and content delivery networks for high-traffic enterprise applications.</p>
@@ -115,7 +110,6 @@ const landingPageHTML = `
         </div>
     </section>
 
-    <!-- Fake Integration / Partners Section -->
     <section class="py-16 border-y border-white/5 bg-[#080808] text-center">
         <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-8">Trusted by Modern Technology Teams</p>
         <div class="flex flex-wrap justify-center gap-10 opacity-30 grayscale">
@@ -126,15 +120,9 @@ const landingPageHTML = `
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="py-12 px-6 bg-[#050505] border-t border-white/5">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="text-xl font-bold tracking-widest uppercase text-white">Nexus<span class="text-indigo-500">.</span></div>
-            <div class="flex gap-6 text-[10px] uppercase tracking-widest text-gray-500">
-                <a href="#" class="hover:text-white transition">Privacy Policy</a>
-                <a href="#" class="hover:text-white transition">Terms of Service</a>
-                <a href="#" class="hover:text-white transition">System Status</a>
-            </div>
             <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Enterprise. All rights reserved.</p>
         </div>
     </footer>
@@ -152,7 +140,7 @@ const landingPageHTML = `
                 if (res.ok) {
                     const data = await res.json();
                     document.getElementById('search-msg').style.color = '#4ade80'; 
-                    document.getElementById('search-msg').innerText = 'ACCESS GRANTED. CONNECTING...';
+                    document.getElementById('search-msg').innerText = 'NODE IDENTIFIED. CONNECTING...';
                     document.getElementById('search-msg').style.opacity = '1';
                     setTimeout(() => window.location.href = data.role === 'admin' ? '/admin' : '/dashboard', 800);
                 } else {
@@ -162,8 +150,6 @@ const landingPageHTML = `
                         document.getElementById('main-search').disabled = false;
                         document.getElementById('main-search').value = '';
                         document.getElementById('search-msg').style.color = '#ef4444'; 
-                        
-                        // FIX: Realistic "Not Found" message instead of "0 secure nodes"
                         document.getElementById('search-msg').innerText = 'NO RESULTS FOUND FOR "' + q.toUpperCase() + '"';
                         document.getElementById('search-msg').style.opacity = '1';
                     }, 1000);
@@ -216,10 +202,15 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
-        if (isProxyActive && request.method === "GET" && !path.startsWith("/api/")) {
-            const secFetchSite = request.headers.get("Sec-Fetch-Site");
-            const referer = request.headers.get("Referer");
-            if (secFetchSite === "none" || (!secFetchSite && !referer)) {
+        // --- 🕵️ FIXED DIRECT NAVIGATION TRAP ---
+        // This ensures assets (CSS, JS, Images) are NEVER blocked. Only the main document is blocked if directly navigated.
+        const acceptHeader = request.headers.get("Accept") || "";
+        const destHeader = request.headers.get("Sec-Fetch-Dest");
+        const siteHeader = request.headers.get("Sec-Fetch-Site");
+        const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
+
+        if (isProxyActive && request.method === "GET" && !path.startsWith("/api/") && isMainDocument) {
+            if (siteHeader === "none") { // User typed URL or used bookmark
                 return new Response("Killed", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
             }
         }
@@ -240,7 +231,6 @@ export default {
             const { siteId, newPassword } = await request.json();
             if (!db.pins[userPin].siteConf) db.pins[userPin].siteConf = {};
             if (!db.pins[userPin].siteConf[siteId]) db.pins[userPin].siteConf[siteId] = {u:'', r:'Admin', p:''};
-            
             db.pins[userPin].siteConf[siteId].p = newPassword;
             await updateDB(db);
             return new Response(JSON.stringify({ success: true }));
@@ -271,10 +261,8 @@ export default {
                     tTitle.innerHTML = title; tText.innerText = text;
                     inp.value = ''; inp.placeholder = placeholder || '';
                     inp.classList.add('hidden'); bCan.classList.add('hidden');
-                    
                     if(type === 'prompt') { inp.classList.remove('hidden'); bCan.classList.remove('hidden'); setTimeout(()=>inp.focus(),100); }
                     else if(type === 'confirm') { bCan.classList.remove('hidden'); }
-                    
                     m.classList.remove('hidden');
                     bCan.onclick = () => { m.classList.add('hidden'); if(type==='prompt') onConfirm(null); else onConfirm(false); };
                     bCon.onclick = () => { m.classList.add('hidden'); if(type==='prompt') onConfirm(inp.value.trim()); else onConfirm(true); };
@@ -595,11 +583,10 @@ export default {
                             <div id="details-${siteId}" class="hidden mt-3 space-y-2 p-3 bg-black/40 border border-white/5">
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Username</span>
-                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none w-full truncate select-all">
+                                    <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none w-full min-w-0 truncate select-all">
                                 </div>
                                 
-                                <!-- FIXED: Password Box Alignment -->
-                                <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
+                                <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
                                     <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
                                     <div class="flex gap-1 flex-shrink-0">
@@ -616,7 +603,7 @@ export default {
 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Link</span>
-                                    <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none w-full truncate select-all">
+                                    <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none w-full min-w-0 truncate select-all">
                                     <div class="flex-shrink-0">
                                         <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -669,7 +656,6 @@ export default {
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
                 
-                <!-- STICKY HEADER -->
                 <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
                     <div>
                         <h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Welcome <span class="text-white">${userData.name || userPin}</span></h1>
@@ -747,6 +733,9 @@ export default {
             proxyHeaders.set("Host", targetUrl.hostname);
             proxyHeaders.set("Origin", targetDomain);
             proxyHeaders.set("Referer", targetDomain + targetUrl.pathname);
+            
+            // SECURITY: Removing Accept-Encoding ensures the origin sends plain HTML so we don't corrupt it
+            proxyHeaders.delete("Accept-Encoding"); 
 
             delete cookies['portal_session'];
             delete cookies['proxy_active'];
@@ -769,6 +758,9 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
+                // Replace any hardcoded absolute target URLs with our worker domain
+                htmlText = htmlText.split(targetDomain).join(url.origin);
+                
                 const encTargetTrim = isProxyActive.substring(0,8);
                 const stealthScript = `<script>
                 (function(){
@@ -780,10 +772,6 @@ export default {
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
                         var ctx = '${encTargetTrim}';
-                        if(!window.location.search.includes('_ctx=')){
-                            var sep = window.location.search ? '&' : '?';
-                            window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
-                        }
                         window.addEventListener('DOMContentLoaded', () => {
                             document.querySelectorAll('form').forEach(f => {
                                 var a = f.getAttribute('action') || '';
