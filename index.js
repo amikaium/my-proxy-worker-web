@@ -1,111 +1,270 @@
-export default {
-  async fetch(request) {
-    const url = new URL(request.url);
-    const currentHost = url.host; // এটি অটোমেটিক আপনার বর্তমান ডোমেইন চিনে নেবে
-    const targetHost = 'ag.tenx365x.live'; // আপনার মূল টার্গেট সার্ভার
-    
-    // ব্রাউজারের কুকি চেক করা (সিকিউরিটি আনলক করা আছে কি না)
-    const cookieString = request.headers.get('Cookie') || '';
-    const isAuthenticated = cookieString.includes('secure_auth=73829'); 
+// ==========================================
+// ⚙️ CONFIGURATION (এখানে আপনার ডাটা দিন)
+// ==========================================
+const CONFIG = {
+    SECRET_CODE: "381168", // ড্যাশবোর্ডে ঢোকার সিক্রেট কোড
+    SESSION_SECRET: "secure_random_key_998877", // কুকি সিক্রেট (যে কোনো লেখা দিতে পারেন)
+    TARGET_DOMAIN: "https://ag.tenx365x.live" // যে সাইটটি হাইড করে প্রক্সি করবেন
+};
 
-    // ========================================================
-    // 🛡️ পার্ট ১: প্রো-লেভেল সার্চ ইঞ্জিন ডেকয় (Unauthenticated)
-    // ========================================================
-    if (!isAuthenticated) {
-      return new Response(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Web Search</title>
-          <style>
-            * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-            body { background-color: #f8f9fa; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-top: 20vh; }
-            .logo { font-size: 45px; font-weight: bold; margin-bottom: 30px; letter-spacing: -2px; }
-            .logo span:nth-child(1) { color: #4285f4; } .logo span:nth-child(2) { color: #ea4335; }
-            .logo span:nth-child(3) { color: #fbbc05; } .logo span:nth-child(4) { color: #4285f4; }
-            .logo span:nth-child(5) { color: #34a853; } .logo span:nth-child(6) { color: #ea4335; }
-            .search-box { width: 90%; max-width: 600px; padding: 15px 25px; border-radius: 30px; border: 1px solid #dfe1e5; font-size: 16px; outline: none; box-shadow: 0 1px 6px rgba(32,33,36,0.2); }
-          </style>
-        </head>
-        <body>
-          <div class="logo"><span>S</span><span>e</span><span>a</span><span>r</span><span>c</span><span>h</span><span>e</span><span>r</span></div>
-          <input type="text" id="searchInput" class="search-box" placeholder="Search the web..." autocomplete="off">
-          <script>
-            document.getElementById('searchInput').onkeypress = function(e) {
-              if (e.which == 13) {
-                const q = this.value.trim();
-                if (q === '*#73829#') {
-                  document.cookie = "secure_auth=73829; path=/; max-age=2592000";
-                  window.location.reload();
-                } else if(q !== '') {
-                  window.location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
-                }
-              }
-            };
-          </script>
-        </body>
-        </html>
-      `, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
-    }
+// ==========================================
+// 🎨 UI: PUBLIC LANDING PAGE (DECOY)
+// ==========================================
+const landingPageHTML = `
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Digital | Creative Agency</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #09090b; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .hidden-modal { opacity: 0; pointer-events: none; transition: all 0.4s ease; transform: scale(0.95); }
+        .hidden-modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
 
-    // ========================================================
-    // 🚀 পার্ট ২: ফুল ইউআরএল মাস্কিং রিভার্স প্রক্সি (Authenticated)
-    // ========================================================
-    const targetUrl = 'https://' + targetHost + url.pathname + url.search;
+    <nav class="fixed w-full z-50 glass border-b-0">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Hidden Trigger: এই লোগোতে ৩ বার ক্লিক করলে লগইন বক্স আসবে -->
+            <div id="logo-trigger" class="text-xl font-bold tracking-tighter cursor-pointer select-none">NEXUS<span class="text-indigo-500">.</span></div>
+            <div class="hidden md:flex space-x-8 text-sm text-gray-400">
+                <a href="#" class="hover:text-white transition">Services</a>
+                <a href="#" class="hover:text-white transition">Work</a>
+                <a href="#" class="hover:text-white transition">About</a>
+            </div>
+            <button class="px-5 py-2 text-sm bg-white text-black font-medium rounded-full hover:bg-gray-200 transition">Get in touch</button>
+        </div>
+    </nav>
 
-    // অরিজিনাল রিকোয়েস্ট তৈরি
-    let modifiedHeaders = new Headers(request.headers);
-    modifiedHeaders.set('Host', targetHost);
-    modifiedHeaders.delete('X-Requested-With');
+    <main class="h-screen flex items-center justify-center relative">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#09090b] to-[#09090b]"></div>
+        <div class="text-center z-10 px-4">
+            <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-6">Crafting Digital <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Experiences</span></h1>
+            <p class="text-gray-400 max-w-lg mx-auto text-lg mb-8">We build premium, highly secure and scalable web applications for enterprise clients worldwide.</p>
+        </div>
+    </main>
 
-    const originalResponse = await fetch(targetUrl, {
-      method: request.method,
-      headers: modifiedHeaders,
-      body: request.body,
-      redirect: 'manual' // রিডাইরেক্ট আমরা নিজেরা হ্যান্ডেল করবো
-    });
+    <!-- Secret Access Modal -->
+    <div id="access-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden-modal">
+        <div class="glass p-8 rounded-2xl w-full max-w-sm shadow-2xl relative">
+            <h2 class="text-xs tracking-[0.2em] text-gray-500 mb-6 text-center uppercase">Secure Authentication</h2>
+            <div class="space-y-4">
+                <input type="password" id="secret-code" placeholder="Enter Access Code" 
+                    class="w-full bg-black/50 border border-gray-800 rounded-lg px-4 py-3 text-center tracking-[0.5em] text-white focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                <button id="verify-btn" class="w-full bg-white text-black py-3 rounded-lg font-medium text-sm hover:bg-gray-200 transition flex justify-center items-center">
+                    <span id="btn-text">Authenticate</span>
+                </button>
+                <p id="error-msg" class="text-red-500 text-xs text-center hidden pt-2">Authentication Failed</p>
+            </div>
+        </div>
+    </div>
 
-    // ১. রিডাইরেক্ট হ্যান্ডলিং (Redirect Interception)
-    // যদি সার্ভার ইউজারকে অন্য লিংকে পাঠাতে চায়, তবে আমরা লিংকটি আমাদের ডোমেইনে বদলে দেবো।
-    if ([301, 302, 303, 307, 308].includes(originalResponse.status)) {
-      const location = originalResponse.headers.get('Location');
-      if (location) {
-        const newLocation = location.replace(targetHost, currentHost);
-        return new Response(null, {
-          status: originalResponse.status,
-          headers: { ...originalResponse.headers, 'Location': newLocation }
+    <script>
+        let clickCount = 0;
+        let clickTimer;
+        const logo = document.getElementById('logo-trigger');
+        const modal = document.getElementById('access-modal');
+        const codeInput = document.getElementById('secret-code');
+        const verifyBtn = document.getElementById('verify-btn');
+        const errorMsg = document.getElementById('error-msg');
+
+        logo.addEventListener('click', () => {
+            clickCount++;
+            clearTimeout(clickTimer);
+            if (clickCount === 3) {
+                modal.classList.add('active');
+                codeInput.focus();
+                clickCount = 0;
+            } else {
+                clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
+            }
         });
-      }
+
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) modal.classList.remove('active');
+        });
+
+        verifyBtn.addEventListener('click', async () => {
+            const code = codeInput.value;
+            verifyBtn.innerHTML = 'Verifying...';
+            
+            try {
+                const res = await fetch('/api/access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+
+                if (res.ok) {
+                    window.location.href = '/dashboard';
+                } else {
+                    errorMsg.classList.remove('hidden');
+                    codeInput.classList.add('border-red-500');
+                    setTimeout(() => {
+                        errorMsg.classList.add('hidden');
+                        codeInput.classList.remove('border-red-500');
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                verifyBtn.innerHTML = 'Authenticate';
+                codeInput.value = '';
+            }
+        });
+
+        codeInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') verifyBtn.click();
+        });
+    </script>
+</body>
+</html>
+`;
+
+// ==========================================
+// 🎨 UI: PRIVATE DASHBOARD
+// ==========================================
+const dashboardHTML = `
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System | Secure Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+        .glass-card:hover { border-color: rgba(255,255,255,0.15); background: rgba(255, 255, 255, 0.04); transform: translateY(-2px); }
+    </style>
+</head>
+<body class="antialiased min-h-screen p-6 md:p-12">
+    
+    <div class="max-w-4xl mx-auto">
+        <header class="flex justify-between items-center mb-12 border-b border-white/10 pb-6">
+            <div>
+                <h1 class="text-2xl font-light tracking-wide text-gray-200">System <span class="font-bold text-white">Access</span></h1>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">End-to-End Encrypted Session</p>
+            </div>
+            <a href="/logout" class="px-4 py-2 text-xs font-medium border border-gray-800 rounded-md hover:bg-white hover:text-black transition">Terminate Session</a>
+        </header>
+
+        <div class="space-y-4">
+            <h3 class="text-xs uppercase tracking-widest text-gray-500 mb-4">Available Environments</h3>
+            
+            <div class="glass-card rounded-xl p-5 flex items-center justify-between group">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-200">Tenx365x Core</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Secure Proxy Route Active</p>
+                    </div>
+                </div>
+                
+                <a href="/proxy/" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500 transition duration-300">
+                    <svg class="w-4 h-4 text-gray-400 group-hover:text-white transition duration-300 transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+// ==========================================
+// 🚀 BACKEND & REVERSE PROXY LOGIC
+// ==========================================
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        const path = url.pathname;
+
+        // Session Check Function
+        const isAuthorized = (req) => {
+            const cookieHeader = req.headers.get("Cookie") || "";
+            return cookieHeader.includes(`session_token=${CONFIG.SESSION_SECRET}`);
+        };
+
+        // 1. Auth API Route
+        if (path === "/api/access" && request.method === "POST") {
+            try {
+                const { code } = await request.json();
+                if (code === CONFIG.SECRET_CODE) {
+                    return new Response(JSON.stringify({ success: true }), {
+                        status: 200,
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Set-Cookie": `session_token=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/; Max-Age=86400; SameSite=Strict`
+                        }
+                    });
+                }
+                return new Response(JSON.stringify({ error: "Invalid Code" }), { status: 401 });
+            } catch (e) {
+                return new Response("Bad Request", { status: 400 });
+            }
+        }
+
+        // 2. Dashboard Route
+        if (path === "/dashboard") {
+            if (!isAuthorized(request)) {
+                return Response.redirect(url.origin, 302);
+            }
+            return new Response(dashboardHTML, {
+                headers: { "Content-Type": "text/html;charset=UTF-8" },
+            });
+        }
+
+        // 3. Reverse Proxy Route
+        if (path.startsWith("/proxy/")) {
+            if (!isAuthorized(request)) {
+                return new Response("Access Denied", { status: 403 });
+            }
+
+            // Create target URL (e.g., https://ag.tenx365x.live/something)
+            const targetPath = path.replace("/proxy", "");
+            const targetUrl = new URL(targetPath + url.search, CONFIG.TARGET_DOMAIN);
+
+            // Fetch from Target Domain
+            const proxyRequest = new Request(targetUrl, {
+                method: request.method,
+                headers: request.headers,
+                body: request.body,
+                redirect: "manual"
+            });
+
+            // Hide original host and set target host
+            proxyRequest.headers.set("Host", new URL(CONFIG.TARGET_DOMAIN).hostname);
+            proxyRequest.headers.set("Origin", CONFIG.TARGET_DOMAIN);
+            proxyRequest.headers.delete("Cookie"); // Ensure proxy doesn't receive your auth cookie
+
+            const response = await fetch(proxyRequest);
+            
+            // Return response directly to user
+            return new Response(response.body, response);
+        }
+
+        // 4. Logout Route
+        if (path === "/logout") {
+            return new Response("Logged out", {
+                status: 302,
+                headers: {
+                    "Location": "/",
+                    "Set-Cookie": "session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
+                }
+            });
+        }
+
+        // 5. Default Route (Public Landing Page)
+        return new Response(landingPageHTML, {
+            headers: { "Content-Type": "text/html;charset=UTF-8" },
+        });
     }
-
-    // ২. কন্টেন্ট মাস্কিং (HTML Content Rewriting)
-    // এইচটিএমএল এর ভেতরে সব অরিজিনাল লিংক রিপ্লেস করে নিজের লিংক বসানো।
-    const contentType = originalResponse.headers.get("content-type") || "";
-    if (contentType.includes("text/html")) {
-      let body = await originalResponse.text();
-      
-      // বডির ভেতর থাকা সব অরিজিনাল ডোমেইন নাম রিপ্লেস করা
-      const regex = new RegExp(targetHost, 'g');
-      body = body.replace(regex, currentHost);
-
-      // অ্যান্টি-লগআউট (Keep-Alive) ইনজেকশন
-      const keepAliveScript = `
-        <script>
-          setInterval(() => {
-            fetch(window.location.origin + '/favicon.ico', { method: 'HEAD', cache: 'no-store' });
-          }, 180000);
-        </script>
-      `;
-      body = body.replace('</body>', keepAliveScript + '</body>');
-
-      return new Response(body, {
-        headers: originalResponse.headers
-      });
-    }
-
-    // ইমেজ বা অন্যান্য ফাইলের জন্য সরাসরি রেসপন্স
-    return originalResponse;
-  }
 };
