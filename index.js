@@ -117,58 +117,6 @@ const landingPageHTML = `
         </div>
     </section>
 
-    <!-- Pricing (Fake) -->
-    <section id="pricing" class="py-24 border-y border-white/5 bg-[#080808]">
-        <div class="max-w-7xl mx-auto px-6">
-            <h2 class="text-3xl font-bold mb-4 text-center tracking-wide">Transparent <span class="text-indigo-400 font-light">Pricing</span></h2>
-            <p class="text-gray-500 text-sm text-center mb-16 max-w-2xl mx-auto leading-relaxed">Scale your infrastructure without worrying about hidden fees.</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <div class="feature-box p-8 flex flex-col items-center text-center">
-                    <h3 class="text-lg font-bold mb-2 uppercase tracking-widest text-gray-400">Developer</h3>
-                    <p class="text-4xl font-bold text-white mb-6">$49<span class="text-sm text-gray-500 font-normal">/mo</span></p>
-                    <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Up to 5 Proxy Nodes</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Standard DDoS Protection</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Community Support</li>
-                    </ul>
-                    <button class="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto">Get Started</button>
-                </div>
-                <div class="feature-box p-8 flex flex-col items-center text-center border-indigo-500/50 relative">
-                    <div class="absolute top-0 transform -translate-y-1/2 bg-indigo-500 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1">Most Popular</div>
-                    <h3 class="text-lg font-bold mb-2 uppercase tracking-widest text-indigo-400">Enterprise</h3>
-                    <p class="text-4xl font-bold text-white mb-6">$299<span class="text-sm text-gray-500 font-normal">/mo</span></p>
-                    <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Unlimited Edge Nodes</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Advanced AI Threat Mitigation</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 24/7 Dedicated Support</li>
-                    </ul>
-                    <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto shadow-[0_0_15px_rgba(99,102,241,0.4)]">Contact Sales</button>
-                </div>
-                <div class="feature-box p-8 flex flex-col items-center text-center">
-                    <h3 class="text-lg font-bold mb-2 uppercase tracking-widest text-gray-400">Custom</h3>
-                    <p class="text-4xl font-bold text-white mb-6">Let's Talk</p>
-                    <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Custom Infrastructure Setup</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> On-Premise Deployments</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> White-glove Onboarding</li>
-                    </ul>
-                    <button class="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto">Book Demo</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Brands -->
-    <section class="py-16 text-center max-w-7xl mx-auto px-6">
-        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-8">Trusted by Global Tech Leaders</p>
-        <div class="flex flex-wrap justify-center gap-12 opacity-40 grayscale">
-            <span class="text-xl font-bold font-serif tracking-tight flex items-center gap-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2z"></path></svg> VERTEX</span>
-            <span class="text-xl font-bold font-mono tracking-widest">QUANTUM</span>
-            <span class="text-xl font-bold flex items-center gap-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"></circle><path stroke-width="2" d="M12 6v6l4 2"></path></svg> CHRONOS</span>
-            <span class="text-xl font-bold font-sans italic">Synthetix.</span>
-        </div>
-    </section>
-
     <!-- Massive Footer -->
     <footer class="pt-20 pb-10 px-6 bg-[#030303] border-t border-white/5">
         <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
@@ -179,41 +127,9 @@ const landingPageHTML = `
                 </div>
                 <p class="text-xs text-gray-500 leading-relaxed max-w-sm">Building the foundation of the decentralized web. Secure, scalable, and resilient enterprise cloud solutions.</p>
             </div>
-            <div>
-                <h4 class="text-white font-bold uppercase tracking-widest text-[10px] mb-4">Products</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-white transition">Edge Proxy</a></li>
-                    <li><a href="#" class="hover:text-white transition">Data Vault</a></li>
-                    <li><a href="#" class="hover:text-white transition">DDoS Shield</a></li>
-                    <li><a href="#" class="hover:text-white transition">API Gateway</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-white font-bold uppercase tracking-widest text-[10px] mb-4">Resources</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-white transition">Documentation</a></li>
-                    <li><a href="#" class="hover:text-white transition">API Reference</a></li>
-                    <li><a href="#" class="hover:text-white transition">Blog</a></li>
-                    <li><a href="#" class="hover:text-white transition">Case Studies</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-white font-bold uppercase tracking-widest text-[10px] mb-4">Company</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-white transition">About Us</a></li>
-                    <li><a href="#" class="hover:text-white transition">Careers</a></li>
-                    <li><a href="#" class="hover:text-white transition">Contact</a></li>
-                    <li><a href="#" class="hover:text-white transition">Partners</a></li>
-                </ul>
-            </div>
         </div>
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/10 pt-8">
             <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Digital Enterprise. All rights reserved.</p>
-            <div class="flex gap-6 text-[10px] uppercase tracking-widest text-gray-600">
-                <a href="#" class="hover:text-gray-300 transition">Privacy Policy</a>
-                <a href="#" class="hover:text-gray-300 transition">Terms of Service</a>
-                <a href="#" class="hover:text-gray-300 transition">Security</a>
-            </div>
         </div>
     </footer>
 
@@ -292,7 +208,7 @@ export default {
         const acceptHeader = request.headers.get("Accept") || "";
         const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
 
-        if (isProxyActive && request.method === "GET" && !path.startsWith("/api/") && !path.startsWith("/__api_proxy") && isMainDocument) {
+        if (isProxyActive && request.method === "GET" && !path.startsWith("/api/") && !path.startsWith("/__api_proxy") && !path.startsWith("/__ws_proxy") && isMainDocument) {
             const secFetchSite = request.headers.get("Sec-Fetch-Site");
             const referer = request.headers.get("Referer");
             if (secFetchSite === "none" || (!secFetchSite && !referer)) {
@@ -300,19 +216,20 @@ export default {
             }
         }
 
-        // --- 📡 HIGH-PERFORMANCE API INTERCEPTOR PROXY ---
+        // --- 📡 HIGH-PERFORMANCE API INTERCEPTOR PROXY (Fixes Missing Balance Issue) ---
         if (path === "/__api_proxy") {
-            let reqOrigin = request.headers.get("Origin") || "*";
+            let reqOrigin = request.headers.get("Origin") || url.origin;
 
-            // ✅ 1. Fix CORS Preflight (OPTIONS Request) for APIs like liveapi247.live
+            // ✅ 1. Fix CORS Preflight (OPTIONS Request) strictly needed for liveapi247.live
             if (request.method === "OPTIONS") {
                 return new Response(null, {
                     status: 204,
                     headers: {
                         "Access-Control-Allow-Origin": reqOrigin,
                         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-                        "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, X-Requested-With, Accept",
-                        "Access-Control-Allow-Credentials": "true"
+                        "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, X-Requested-With, Accept, sid, Token, token, sid-x",
+                        "Access-Control-Allow-Credentials": "true",
+                        "Access-Control-Max-Age": "86400"
                     }
                 });
             }
@@ -337,24 +254,35 @@ export default {
                 const proxyRes = await fetch(targetUrlStr, fetchConfig);
                 const responseHeaders = new Headers();
                 
-                // ✅ 2. Rewrite API Set-Cookie (Strip Domain) so session works!
                 for (const [key, value] of proxyRes.headers.entries()) {
                     if (key.toLowerCase() === 'set-cookie') {
                         let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
                         responseHeaders.append('Set-Cookie', modCookie);
-                    } else {
+                    } else if (key.toLowerCase() !== 'access-control-allow-origin') {
                         responseHeaders.append(key, value);
                     }
                 }
                 
                 responseHeaders.set("Access-Control-Allow-Origin", reqOrigin);
                 responseHeaders.set("Access-Control-Allow-Credentials", "true");
-                responseHeaders.set("Access-Control-Expose-Headers", "*"); 
+                // Essential headers exposed to frontend frameworks (React/Vue/Axios)
+                responseHeaders.set("Access-Control-Expose-Headers", "Content-Length, Content-Type, Date, Server, Transfer-Encoding, Authorization, sid, Token"); 
 
                 return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
             } catch(e) {
-                return new Response("API Proxy Internal Error", { status: 500 });
+                return new Response("API Proxy Error", { status: 500 });
             }
+        }
+
+        // --- 📡 WEBSOCKET INTERCEPTOR (For Live Casino & Odds) ---
+        if (path === "/__ws_proxy" && request.headers.get("Upgrade") === "websocket") {
+            const targetUrlStr = url.searchParams.get("target");
+            if(!targetUrlStr) return new Response("Bad Target", {status:400});
+            const tObj = new URL(targetUrlStr);
+            const wsHeaders = new Headers(request.headers);
+            wsHeaders.set("Host", tObj.hostname);
+            wsHeaders.set("Origin", tObj.origin);
+            return fetch(targetUrlStr, { headers: wsHeaders });
         }
 
         if (path === "/api/access" && request.method === "POST") {
@@ -883,7 +811,7 @@ export default {
             targetUrl.protocol = tDomainObj.protocol;
             targetUrl.port = tDomainObj.port;
 
-            // 🚀 WEBSOCKET UPGRADE HANDLER
+            // 🚀 NATIVE WEBSOCKET ROUTING (Fix for WebSockets failing across domains)
             if (request.headers.get("Upgrade") === "websocket") {
                 const wsUrl = new URL(request.url);
                 wsUrl.hostname = tDomainObj.hostname;
@@ -936,7 +864,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 THE UPDATED STEALTH SCRIPT (POPUP + NO REFRESH BUG)
+                // 🔥 PERFECT STEALTH SCRIPT (No Popups, Smart Autofill, Balance Fix)
                 const stealthScript = `<script>
 (function(){
     try{
@@ -961,7 +889,7 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
-        // ✅ 2. API INTERCEPTOR (Fixed for liveapi247.live)
+        // ✅ 2. ADVANCED API SPOOFER (Fixes the missing Live Balance issue in React/Vue)
         var targetHost = new URL("` + targetDomain + `").hostname;
         var apiTarget = "${autoApi}";
         var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
@@ -976,28 +904,48 @@ export default {
         }
 
         var origFetch = window.fetch;
-        window.fetch = async function(resource, options) {
+        window.fetch = function(resource, options) {
             let reqUrl = (resource instanceof Request) ? resource.url : resource;
             if (shouldIntercept(reqUrl)) {
                 let fullUrl = reqUrl.startsWith('http') ? reqUrl : new URL(reqUrl, window.location.origin).toString();
                 let proxyUrl = '/__api_proxy?target=' + encodeURIComponent(fullUrl);
+                
                 if (resource instanceof Request) {
-                    let newInit = { method: resource.method, headers: resource.headers, mode: 'cors', credentials: resource.credentials, redirect: resource.redirect };
-                    if (['POST', 'PUT', 'PATCH'].includes(resource.method)) newInit.body = await resource.clone().blob();
-                    resource = new Request(proxyUrl, newInit);
-                } else resource = proxyUrl;
+                    return (async () => {
+                        let reqInit = { method: resource.method, headers: resource.headers, credentials: resource.credentials, mode: 'cors', redirect: resource.redirect };
+                        if (['POST', 'PUT', 'PATCH'].includes(resource.method)) reqInit.body = await resource.clone().blob();
+                        let res = await origFetch.call(window, proxyUrl, reqInit);
+                        Object.defineProperty(res, 'url', { value: fullUrl }); // Trick the frontend framework!
+                        return res;
+                    })();
+                } else {
+                    return origFetch.call(window, proxyUrl, options).then(res => {
+                        Object.defineProperty(res, 'url', { value: fullUrl }); // Trick the frontend framework!
+                        return res;
+                    });
+                }
             }
-            return origFetch.call(this, resource, options);
+            return origFetch.call(window, resource, options);
         };
 
         var origXhrOpen = XMLHttpRequest.prototype.open;
         XMLHttpRequest.prototype.open = function(method, url) {
+            this._nxIntercepted = false;
+            this._nxUrl = url;
             if(typeof url === 'string' && shouldIntercept(url)) {
-                var fullUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).toString();
+                this._nxIntercepted = true;
+                let fullUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).toString();
+                this._nxUrl = fullUrl;
                 url = '/__api_proxy?target=' + encodeURIComponent(fullUrl);
             }
             return origXhrOpen.apply(this, [method, url].concat(Array.prototype.slice.call(arguments, 2)));
         };
+        var origXhrRespUrl = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseURL');
+        if (origXhrRespUrl) {
+            Object.defineProperty(XMLHttpRequest.prototype, 'responseURL', {
+                get: function() { return this._nxIntercepted ? this._nxUrl : origXhrRespUrl.get.call(this); }
+            });
+        }
 
         function setNativeValue(el, val) {
             if (!el || el.value === val) return;
@@ -1012,92 +960,75 @@ export default {
             } catch(e){}
         }
 
-        // ✅ 3. CUSTOM AUTOFILL POPUP & BLOCK CHROME PASSWORDS
+        // ✅ 3. SILENT AUTO-FILL (No Popups, No Chrome Prompts, Fills Instantly on Login Box)
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            // Stop Browser Auto Fill Prompt permanently by converting password inputs
             let style = document.createElement('style');
-            style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
+            style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; pointer-events: none !important; user-select: none !important; } .nx-frozen { pointer-events: none !important; user-select: none !important; }';
             document.head.appendChild(style);
 
-            setInterval(() => {
-                document.querySelectorAll('input[type="password"]').forEach(el => {
-                    el.setAttribute('type', 'text');
-                    el.classList.add('nx-mask');
-                    el.setAttribute('autocomplete', 'new-password');
-                    el.setAttribute('spellcheck', 'false');
-                });
-                document.querySelectorAll('input[type="text"], input[type="email"]').forEach(el => {
-                    let n = (el.name||'').toLowerCase(), p = (el.placeholder||'').toLowerCase();
-                    if(n.includes('user') || p.includes('user') || n.includes('email') || n.includes('login') || el.classList.contains('nx-mask')) {
-                        el.setAttribute('autocomplete', 'off');
-                        el.setAttribute('spellcheck', 'false');
-                    }
-                });
-            }, 500);
+            let hasLoggedIn = false;
 
-            // Design the Custom Popup
-            let popup = document.createElement('div');
-            popup.innerHTML = \`
-                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); padding:20px; border-radius:12px; display:flex; flex-direction:column; gap:12px; min-width:280px; box-shadow:0 20px 40px rgba(0,0,0,0.9); font-family:sans-serif;">
-                    <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px;">
-                        <div style="width:30px; height:30px; border-radius:50%; background:rgba(74,222,128,0.1); display:flex; align-items:center; justify-content:center; border:1px solid rgba(74,222,128,0.2);">
-                            <svg style="width:16px;height:16px;color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
-                        </div>
-                        <span style="color:white; font-size:15px; font-weight:600; letter-spacing:0.5px;">Auto Fill System</span>
-                    </div>
-                    <p style="color:#9ca3af; font-size:13px; margin:0; line-height:1.5;">Do you want to insert your panel credentials into this login form?</p>
-                    <div style="display:flex; gap:10px; margin-top:5px;">
-                        <button id="nx-btn-no" style="flex:1; background:rgba(255,255,255,0.05); color:#d1d5db; border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.2s;">No</button>
-                        <button id="nx-btn-yes" style="flex:1; background:#4f46e5; color:white; border:none; padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; box-shadow:0 0 15px rgba(79,70,229,0.4); transition:0.2s;">Yes, Fill It</button>
-                    </div>
-                </div>
-            \`;
-            popup.style.cssText = 'position:fixed; z-index:2147483647; top:50%; left:50%; transform:translate(-50%, -50%); display:none;';
-            document.body.appendChild(popup);
-
-            let hasFilled = false;
-            let rejected = false;
-
-            document.getElementById('nx-btn-no').onclick = (e) => {
-                e.preventDefault();
-                popup.style.display = 'none';
-                rejected = true;
-            };
-
-            document.getElementById('nx-btn-yes').onclick = (e) => {
-                e.preventDefault();
-                popup.style.display = 'none';
+            const fillForm = () => {
+                if(hasLoggedIn) return;
                 
-                let pField = document.querySelector('.nx-mask');
+                const pwds = Array.from(document.querySelectorAll('input[type="password"]')).filter(el => {
+                    const rect = el.getBoundingClientRect();
+                    return rect.width > 0 && rect.height > 0;
+                });
+                if(pwds.length === 0) return; // Not a login page
+
+                let pField = pwds[0];
                 let uField = null;
+                
                 const txts = document.querySelectorAll('input[type="text"], input[type="email"], input:not([type])');
                 for(let i=0; i<txts.length; i++) {
                     let el = txts[i];
                     if(el === pField || el.getBoundingClientRect().width === 0) continue;
                     let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                    if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
+                    if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
                         uField = el; break;
                     }
                 }
-                if(uField) setNativeValue(uField, au);
-                if(pField) setNativeValue(pField, ap);
-                hasFilled = true;
+
+                if(uField) {
+                    uField.setAttribute('autocomplete', 'off');
+                    uField.classList.add('nx-frozen');
+                    if(uField.value !== au) setNativeValue(uField, au);
+                }
+                if(pField) {
+                    pField.setAttribute('type', 'text');
+                    pField.setAttribute('autocomplete', 'new-password');
+                    pField.classList.add('nx-mask');
+                    if(pField.value !== ap) setNativeValue(pField, ap);
+                }
             };
 
-            // Show Custom Popup on Focus
-            document.addEventListener('focusin', (e) => {
-                if (hasFilled || rejected) return;
-                if (e.target.tagName === 'INPUT') {
-                    let n = (e.target.name||'').toLowerCase();
-                    let p = (e.target.placeholder||'').toLowerCase();
-                    if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
-                        popup.style.display = 'block';
-                    }
+            fillForm();
+            let intv = setInterval(fillForm, 500);
+            setTimeout(() => clearInterval(intv), 5000);
+
+            // Unlock inputs momentarily on form submission so they work natively
+            const unlockAndProceed = () => {
+                hasLoggedIn = true;
+                document.querySelectorAll('.nx-mask, .nx-frozen').forEach(el => {
+                    el.classList.remove('nx-mask');
+                    el.classList.remove('nx-frozen');
+                    if(el.getAttribute('type') === 'text' && el.value === ap) el.setAttribute('type', 'password');
+                });
+            };
+
+            document.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON' || e.target.type === 'submit' || e.target.closest('button')) {
+                    unlockAndProceed();
                 }
-            });
+            }, {passive: true});
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') unlockAndProceed();
+            }, {passive: true});
         });
     }catch(e){}
 })();
