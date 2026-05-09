@@ -879,7 +879,7 @@ export default {
             targetUrl.protocol = tDomainObj.protocol;
             targetUrl.port = tDomainObj.port;
 
-            // 🚀 WEBSOCKET UPGRADE HANDLER (Fixed with proper Headers)
+            // 🚀 WEBSOCKET UPGRADE HANDLER
             if (request.headers.get("Upgrade") === "websocket") {
                 const wsUrl = new URL(request.url);
                 wsUrl.hostname = tDomainObj.hostname;
@@ -930,6 +930,8 @@ export default {
                 htmlText = htmlText.split(targetDomain).join(url.origin);
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
+                
+                // 🔥 THE UPDATED STEALTH SCRIPT
                 const stealthScript = `<script>
 (function(){
     try{
@@ -945,15 +947,17 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
-        // 🔥 BROAD API INTERCEPTOR (For Live Balance & WebSocket Routing)
+        // 🔥 BROAD API INTERCEPTOR (Fixed for liveapi247.live)
         var targetHost = new URL("` + targetDomain + `").hostname;
-        var rootDomain = targetHost.split('.').slice(-2).join('.'); // Captures subdomains like m.velkix.live or api.velkix.live
-        
+        var apiTarget = "${autoApi}";
+        var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
+        var rootDomain = targetHost.split('.').slice(-2).join('.'); 
+
         function shouldIntercept(urlStr) {
             if(typeof urlStr !== 'string') return false;
             try {
                 var u = urlStr.startsWith('http') ? new URL(urlStr) : new URL(urlStr, window.location.origin);
-                return u.hostname.includes(rootDomain);
+                return u.hostname.includes(rootDomain) || (apiHost && u.hostname.includes(apiHost));
             } catch(e) { return false; }
         }
 
@@ -989,58 +993,57 @@ export default {
             } catch(e){}
         }
 
-        // 🔥 SMART MANUAL FILL BUTTON
+        // 🔥 SMART INTERACTION-BASED FILL (No Button, No Chrome Confusion)
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(au && ap) {
-                const path = window.location.pathname.toLowerCase();
+                let hasLoggedIn = false;
                 
-                // শুধুমাত্র লগইন পেজেই বাটনটি দেখাবে
-                if(path === '/' || path.includes('login') || path.includes('auth')) {
-                    const btn = document.createElement('button');
-                    btn.innerHTML = '<svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Fill Login';
-                    btn.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:999999;background:#4f46e5;color:white;border:none;padding:12px 18px;border-radius:8px;font-weight:bold;font-family:sans-serif;font-size:12px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.5);display:flex;align-items:center;gap:6px;transition:0.3s;';
-                    
-                    btn.onmouseover = () => btn.style.background = '#4338ca';
-                    btn.onmouseout = () => btn.style.background = '#4f46e5';
-
-                    document.body.appendChild(btn);
-
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        
-                        const pwds = Array.from(document.querySelectorAll('input[type="password"]')).filter(el => {
-                            const rect = el.getBoundingClientRect();
-                            return rect.width > 0 && rect.height > 0;
-                        });
-
-                        if(pwds.length === 0) {
-                            btn.innerHTML = 'Box Not Found';
-                            btn.style.background = '#ef4444';
-                            setTimeout(() => { btn.innerHTML = '⚡ Fill Login'; btn.style.background = '#4f46e5'; }, 2000);
-                            return;
-                        }
-
-                        let pField = pwds[0];
-                        let uField = null;
-                        
-                        const txts = document.querySelectorAll('input[type="text"], input[type="email"], input:not([type])');
-                        for(let i=0; i<txts.length; i++) {
-                            let el = txts[i];
-                            if(el === pField || el.getBoundingClientRect().width === 0) continue;
-                            
-                            let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                            if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
-                                uField = el; break;
-                            }
-                        }
-
-                        if(uField) setNativeValue(uField, au);
-                        if(pField) setNativeValue(pField, ap);
-                        
-                        btn.style.display = 'none'; // কাজ হয়ে গেলে বাটন গায়েব হয়ে যাবে
+                const fillForm = () => {
+                    if(hasLoggedIn) return;
+                    const pwds = Array.from(document.querySelectorAll('input[type="password"]')).filter(el => {
+                        const rect = el.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0;
                     });
-                }
+                    if(pwds.length === 0) return;
+
+                    let pField = pwds[0];
+                    let uField = null;
+                    
+                    const txts = document.querySelectorAll('input[type="text"], input[type="email"], input:not([type])');
+                    for(let i=0; i<txts.length; i++) {
+                        let el = txts[i];
+                        if(el === pField || el.getBoundingClientRect().width === 0) continue;
+                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
+                            uField = el; break;
+                        }
+                    }
+
+                    // Turn off browser autocomplete so it doesn't mix up proxy sites
+                    if(uField) {
+                        uField.setAttribute('autocomplete', 'off');
+                        if(uField.value !== au) setNativeValue(uField, au);
+                    }
+                    if(pField) {
+                        pField.setAttribute('autocomplete', 'new-password');
+                        if(pField.value !== ap) setNativeValue(pField, ap);
+                    }
+                };
+
+                // Trigger on interaction (fixes React issues and blocks Chrome saved password dropdown)['click', 'focusin', 'input'].forEach(evt => {
+                    document.addEventListener(evt, (e) => {
+                        if (e.target.tagName === 'BUTTON' || e.target.type === 'submit') {
+                            hasLoggedIn = true;
+                        } else if (e.target.tagName === 'INPUT' || e.target.closest('form')) {
+                            fillForm();
+                        }
+                    }, {passive: true});
+                });
+                
+                // Attempt to fill automatically after a short delay for standard sites
+                setTimeout(fillForm, 1000);
+                setTimeout(fillForm, 2500);
             }
         });
     }catch(e){}
