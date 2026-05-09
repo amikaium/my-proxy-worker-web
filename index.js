@@ -5,7 +5,7 @@ const CONFIG = {
     SESSION_SECRET: "nexus_enterprise_secure_tunnel_2026",
     FB_URL: "https://private-panel-916b4-default-rtdb.firebaseio.com",
     FB_KEY: "AIzaSyC5Ygv7umkM3LJ9XEDJUTcrn_DmJ19eY0c",
-    DB_NODE: "admin_web" // ফায়ারবেসে এই নামে ফোল্ডার তৈরি হবে
+    DB_NODE: "admin_web"
 };
 
 // ==========================================
@@ -69,20 +69,7 @@ const landingPageHTML = `
             </form>
             <p id="search-msg" class="text-[10px] font-bold text-gray-500 mt-4 tracking-widest uppercase opacity-0 transition-opacity h-4"></p>
         </div>
-        <div class="mt-12 w-full max-w-3xl mx-auto grid grid-cols-3 gap-4 text-center z-10">
-            <div><p class="text-xl md:text-2xl font-bold">142</p><p class="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Active Nodes</p></div>
-            <div><p class="text-xl md:text-2xl font-bold">99.9%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Uptime SLA</p></div>
-            <div><p class="text-xl md:text-2xl font-bold">AES-256</p><p class="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Encryption</p></div>
-        </div>
     </header>
-    <section class="py-24 px-6 max-w-7xl mx-auto border-b border-white/5">
-        <h2 class="text-2xl font-bold mb-12 text-center tracking-wide">Infrastructure <span class="text-gray-500 font-light">Solutions</span></h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="feature-box p-8"><h3 class="text-lg font-bold mb-2">Zero-Trust Vaults</h3><p class="text-xs text-gray-500">End-to-end encrypted architecture.</p></div>
-            <div class="feature-box p-8"><h3 class="text-lg font-bold mb-2">Global Edge Proxy</h3><p class="text-xs text-gray-500">Traffic routed to mask origin IP.</p></div>
-            <div class="feature-box p-8"><h3 class="text-lg font-bold mb-2">High Performance</h3><p class="text-xs text-gray-500">Lightning-fast content delivery.</p></div>
-        </div>
-    </section>
     <script>
         document.getElementById('search-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -129,24 +116,17 @@ export default {
             const parts = c.split('='); return [parts[0].trim(), parts.slice(1).join('=')];
         }));
 
-        // --- Helper: Fetch DB from Firebase (admin_web node) ---
         const getDB = async () => {
             try {
                 const res = await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`);
                 let data = await res.json();
-                
-                // যদি admin_web ফোল্ডার না থাকে, তবে অটোমেটিক তৈরি করবে
                 if (!data) {
                     data = {
-                        adminPin: "SET_YOUR_PIN_HERE", // ইউজারকে দেখানোর জন্য মেসেজ
+                        adminPin: "SET_YOUR_PIN_HERE",
                         settings: { whatsapp: "", notification: { enabled: false, text: "", image: "", btnText: "", btnLink: "" } },
-                        sites: {},
-                        pins: {}
+                        sites: {}, pins: {}
                     };
-                    await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { 
-                        method: 'PUT', 
-                        body: JSON.stringify(data) 
-                    });
+                    await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { method: 'PUT', body: JSON.stringify(data) });
                 }
                 return data;
             } catch(e) { return null; }
@@ -176,12 +156,9 @@ export default {
         // --- 🔑 Authentication API ---
         if (path === "/api/access" && request.method === "POST") {
             const { code } = await request.json();
-            
-            // Check Admin PIN (SET_YOUR_PIN_HERE দিয়ে লগইন করা যাবে না)
             if (db.adminPin && db.adminPin !== "SET_YOUR_PIN_HERE" && code === String(db.adminPin)) {
                 return new Response(JSON.stringify({ success: true, role: 'admin' }), { headers: { "Set-Cookie": `admin_session=${CONFIG.SESSION_SECRET}; HttpOnly; Secure; Path=/` } });
             }
-            // Check User PIN
             if (db.pins && db.pins[code]) {
                 return new Response(JSON.stringify({ success: true, role: 'user' }), { headers: { "Set-Cookie": `portal_session=${code}; HttpOnly; Secure; Path=/` } });
             }
@@ -193,7 +170,7 @@ export default {
             return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/" } });
         }
 
-        // --- 🛠️ ADMIN PANEL (UI & API) ---
+        // --- 🛠️ ADMIN PANEL (PREMIUM UI) ---
         if (path.startsWith("/admin")) {
             if (!isAdmin) return Response.redirect(url.origin, 302);
             
@@ -204,89 +181,170 @@ export default {
                 return new Response("Saved");
             }
 
-            const adminHTML = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><title>Admin Portal</title><script src="https://cdn.tailwindcss.com"></script></head>
-            <body class="bg-[#050505] text-white p-8"><div class="max-w-6xl mx-auto" id="app">Loading Dashboard...</div>
-            <script>
-                let db = {};
-                async function load(){ const res = await fetch('/admin/api/data'); db = await res.json(); render(); }
-                async function save(){ 
-                    await fetch('/admin/api/save', {method:'POST', body:JSON.stringify(db)}); 
-                    alert('Database Synced Successfully!'); load(); 
-                }
-                function render(){
-                    if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {};
-                    let html = \`<div class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
-                        <h1 class="text-2xl font-bold uppercase tracking-widest text-indigo-500">Master Admin</h1>
-                        <a href="/logout" class="bg-red-900/50 text-red-500 px-4 py-2 text-xs font-bold uppercase hover:bg-red-500 hover:text-white transition">Logout</a>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div>
-                            <h2 class="text-lg font-bold mb-4 border-b border-white/10 pb-2">Global Sites Directory</h2>
-                            <div class="space-y-3 mb-6">\`;
-                            Object.keys(db.sites).forEach(id => {
-                                html += \`<div class="bg-[#0a0a0a] p-4 border border-white/10 relative">
-                                    <input value="\${db.sites[id].name}" onchange="db.sites['\${id}'].name=this.value" placeholder="Site Name" class="bg-black text-sm p-2 mb-2 w-full border border-white/20 outline-none focus:border-indigo-500">
-                                    <input value="\${db.sites[id].agentLink}" onchange="db.sites['\${id}'].agentLink=this.value" placeholder="Agent/Panel Login Link (https://...)" class="bg-black text-xs p-2 mb-2 w-full border border-white/20 outline-none text-green-400">
-                                    <input value="\${db.sites[id].userLink}" onchange="db.sites['\${id}'].userLink=this.value" placeholder="User Link (e.g. ag.tenx365.com)" class="bg-black text-xs p-2 w-full border border-white/20 outline-none text-blue-400">
-                                    <button onclick="delete db.sites['\${id}']; render()" class="absolute top-4 right-4 text-red-500 text-xs font-bold uppercase">Delete</button>
-                                </div>\`;
-                            });
-                            html += \`<button onclick="db.sites['site_'+Date.now()]={name:'', agentLink:'', userLink:''}; render()" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition px-4 py-3 text-xs font-bold uppercase tracking-widest w-full">+ Add New Site</button>
-                            
-                            <h2 class="text-lg font-bold mt-10 mb-4 border-b border-white/10 pb-2">User Pins Management</h2>
-                            <div class="space-y-3 mb-6">\`;
+            const adminHTML = `<!DOCTYPE html><html lang="en" class="dark">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Portal</title><script src="https://cdn.tailwindcss.com"></script>
+            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } .square-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); } .active-tab { border-bottom: 2px solid white; color: white; }</style>
+            </head>
+            <body class="p-4 md:p-8 pb-28">
+                <div class="max-w-6xl mx-auto" id="app">
+                    <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div></div>
+                </div>
+                
+                <!-- Fixed Global Save Button -->
+                <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
+                    <button id="save-btn" onclick="save()" class="w-full max-w-sm bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">SAVE ALL CHANGES</button>
+                </div>
+
+                <script>
+                    let db = {};
+                    let tab = 'pins'; // tabs: pins, sites, settings
+
+                    async function load(){ const res = await fetch('/admin/api/data'); db = await res.json(); render(); }
+                    async function save(){ 
+                        document.getElementById('save-btn').innerText = 'SAVING...';
+                        await fetch('/admin/api/save', {method:'POST', body:JSON.stringify(db)}); 
+                        setTimeout(() => { document.getElementById('save-btn').innerText = 'SAVE ALL CHANGES'; alert('✅ Database Successfully Updated!'); }, 500);
+                    }
+
+                    // Helpers to update DB object easily from HTML inputs without escaping issues
+                    function uPinSt(pin, val) { db.pins[pin].status = val; render(); }
+                    function uSiteF(id, f, val) { db.sites[id][f] = val; }
+                    function uSet(f, val) { db.settings[f] = val; }
+                    function uNotif(f, val) { db.settings.notification[f] = val; }
+                    function toggleSite(pin, siteId, chk) {
+                        let list = db.pins[pin].sites ||[];
+                        if(chk && !list.includes(siteId)) list.push(siteId);
+                        else if(!chk) list = list.filter(i => i !== siteId);
+                        db.pins[pin].sites = list;
+                    }
+                    function addSite() { db.sites['s_'+Date.now()] = {name:'New Website', agentLink:'', userLink:''}; tab='sites'; render(); }
+                    function addPin() { let p = prompt('Enter New Unique PIN:'); if(p && !db.pins[p]){ db.pins[p] = {status:'active', sites:[]}; tab='pins'; render(); } }
+                    function delSite(id) { if(confirm('Delete Site?')) { delete db.sites[id]; render(); } }
+                    function delPin(pin) { if(confirm('Delete PIN?')) { delete db.pins[pin]; render(); } }
+
+                    function render() {
+                        if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.settings) db.settings = {whatsapp:'', notification:{enabled:false}};
+                        
+                        let html = \`
+                        <header class="flex justify-between items-center mb-6 border border-white/10 bg-[#0a0a0a] p-5">
+                            <div>
+                                <h1 class="text-lg font-bold tracking-widest uppercase text-indigo-400">Admin <span class="text-white">Core</span></h1>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <button onclick="tab='settings'; render()" class="text-gray-400 hover:text-white flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <span class="hidden sm:inline">Settings</span>
+                                </button>
+                                <a href="/logout" class="px-4 py-2 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white transition">Logout</a>
+                            </div>
+                        </header>
+
+                        <!-- TABS -->
+                        <div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
+                            <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">User Pins</button>
+                            <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">Global Sites</button>
+                            <button onclick="tab='settings'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='settings'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">System Settings</button>
+                        </div>
+                        \`;
+
+                        if(tab === 'pins') {
+                            html += \`<div class="flex justify-between items-center mb-6">
+                                <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Manage Access</h3>
+                                <button onclick="addPin()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition">+ New Pin</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">\`;
                             Object.keys(db.pins).forEach(pin => {
-                                html += \`<div class="bg-[#0a0a0a] p-4 border border-white/10 relative">
-                                    <div class="flex gap-4 items-center mb-3 border-b border-white/5 pb-2">
-                                        <span class="font-bold text-xl tracking-widest text-indigo-400">\${pin}</span>
-                                        <select onchange="db.pins['\${pin}'].status=this.value" class="\${db.pins[pin].status=='suspended'?'bg-red-900/50 text-red-400':'bg-green-900/50 text-green-400'} text-xs border-none p-1 font-bold uppercase outline-none">
-                                            <option value="active" \${db.pins[pin].status=='active'?'selected':''}>Active</option>
-                                            <option value="suspended" \${db.pins[pin].status=='suspended'?'selected':''}>Suspended</option>
+                                let st = db.pins[pin].status;
+                                let bg = st==='active' ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
+                                html += \`<div class="square-card p-5 flex flex-col \${st==='suspended'?'opacity-70 grayscale':''}">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <span class="text-2xl font-bold tracking-widest text-white">\${pin}</span>
+                                        <select onchange="uPinSt('\${pin}', this.value)" class="text-[9px] font-bold uppercase tracking-widest px-2 py-1 border outline-none \${bg}">
+                                            <option value="active" \${st==='active'?'selected':''}>ACTIVE</option>
+                                            <option value="suspended" \${st==='suspended'?'selected':''}>SUSPENDED</option>
                                         </select>
                                     </div>
-                                    <div class="text-[10px] uppercase tracking-widest text-gray-500 mb-2">Assign Sites:</div>
-                                    <div class="grid grid-cols-2 gap-2">\`;
-                                    Object.keys(db.sites).forEach(siteId => {
-                                        let checked = (db.pins[pin].sites ||[]).includes(siteId) ? 'checked' : '';
-                                        html += \`<label class="text-xs flex items-center gap-2 bg-black p-2 border border-white/10 cursor-pointer hover:border-white/30"><input type="checkbox" \${checked} onchange="toggleSite('\${pin}', '\${siteId}', this.checked)"> <span class="truncate">\${db.sites[siteId].name || 'Unnamed'}</span></label>\`;
-                                    });
-                                html += \`</div><button onclick="delete db.pins['\${pin}']; render()" class="absolute top-4 right-4 text-red-500 text-xs font-bold uppercase">Delete</button></div>\`;
+                                    <div class="mb-5 flex-grow">
+                                        <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Assign Sites to this PIN:</span>
+                                        <div class="space-y-1 max-h-32 overflow-y-auto pr-2 custom-scrollbar">\`;
+                                        Object.keys(db.sites).forEach(siteId => {
+                                            let chk = (db.pins[pin].sites||[]).includes(siteId) ? 'checked' : '';
+                                            html += \`<label class="flex items-center gap-2 text-xs bg-white/5 border border-white/5 p-2 cursor-pointer hover:bg-white/10">
+                                                <input type="checkbox" \${chk} onchange="toggleSite('\${pin}', '\${siteId}', this.checked)" class="accent-indigo-500">
+                                                <span class="truncate text-gray-300">\${db.sites[siteId].name}</span>
+                                            </label>\`;
+                                        });
+                                    html += \`</div></div>
+                                    <button onclick="delPin('\${pin}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete Pin</button>
+                                </div>\`;
                             });
-                            html += \`<button onclick="let p=prompt('Enter new 6 digit PIN:'); if(p){ db.pins[p]={status:'active', sites:[]}; render();}" class="bg-green-600/20 text-green-400 border border-green-500/50 hover:bg-green-600 hover:text-white transition px-4 py-3 text-xs font-bold uppercase tracking-widest w-full">+ Create User Pin</button>
-                        </div>
-                        
-                        <div>
-                            <h2 class="text-lg font-bold mb-4 border-b border-white/10 pb-2">System Settings</h2>
-                            <div class="bg-[#0a0a0a] p-6 border border-white/10 space-y-5">
-                                <div><label class="text-[10px] uppercase tracking-widest text-gray-500 mb-1 block">WhatsApp Floating Number</label><input value="\${db.settings.whatsapp||''}" onchange="db.settings.whatsapp=this.value" placeholder="+88017..." class="w-full bg-black border border-white/20 p-3 text-sm outline-none focus:border-green-500 text-green-400"></div>
-                                
-                                <div class="mt-6 border-t border-white/10 pt-5">
-                                    <div class="flex justify-between items-center mb-4">
-                                        <h3 class="text-sm font-bold uppercase tracking-widest text-indigo-400">Popup Notification</h3>
-                                        <label class="flex items-center gap-2 text-xs font-bold uppercase cursor-pointer"><input type="checkbox" \${db.settings.notification.enabled?'checked':''} onchange="db.settings.notification.enabled=this.checked"> Enable</label>
+                            html += \`</div>\`;
+                        }
+
+                        if(tab === 'sites') {
+                            html += \`<div class="flex justify-between items-center mb-6">
+                                <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Website Directory</h3>
+                                <button onclick="addSite()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition">+ Add Site</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">\`;
+                            Object.keys(db.sites).forEach(id => {
+                                html += \`<div class="square-card p-5 flex flex-col">
+                                    <div class="mb-4">
+                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Site Name</span>
+                                        <input value="\${db.sites[id].name}" oninput="uSiteF('\${id}','name',this.value)" class="w-full bg-transparent text-xl font-bold text-white border-b border-white/10 outline-none pb-1 focus:border-indigo-500">
                                     </div>
-                                    <textarea onchange="db.settings.notification.text=this.value" placeholder="Notification Message..." class="w-full bg-black border border-white/20 p-3 text-sm mb-3 outline-none min-h-[80px]">\${db.settings.notification.text||''}</textarea>
-                                    <input value="\${db.settings.notification.image||''}" onchange="db.settings.notification.image=this.value" placeholder="Image URL (Optional)" class="w-full bg-black border border-white/20 p-3 text-sm mb-3 outline-none">
+                                    <div class="space-y-3 mb-5 flex-grow">
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Panel/Agent Link</span>
+                                        <input value="\${db.sites[id].agentLink}" oninput="uSiteF('\${id}','agentLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-2 text-xs text-green-400 outline-none focus:border-white/30"></div>
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">User Link</span>
+                                        <input value="\${db.sites[id].userLink}" oninput="uSiteF('\${id}','userLink',this.value)" placeholder="ag.example.com" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-blue-400 outline-none focus:border-white/30"></div>
+                                    </div>
+                                    <button onclick="delSite('\${id}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete Site</button>
+                                </div>\`;
+                            });
+                            html += \`</div>\`;
+                        }
+
+                        if(tab === 'settings') {
+                            let n = db.settings.notification;
+                            html += \`
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="square-card p-6">
+                                    <h2 class="text-sm font-bold tracking-widest uppercase mb-6 flex items-center gap-2"><svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.12.55 4.195 1.597 6.012L.15 24l6.104-1.602a11.96 11.96 0 005.777 1.488h.005c6.645 0 12.031-5.385 12.031-12.031S18.676 0 12.031 0zm0 21.884c-1.785 0-3.535-.48-5.07-1.386l-.364-.215-3.766.988.996-3.668-.236-.376a9.998 9.998 0 01-1.528-5.342c0-5.523 4.494-10.017 10.017-10.017 5.522 0 10.016 4.494 10.016 10.017 0 5.523-4.494 10.017-10.016 10.017zm5.503-7.518c-.302-.152-1.785-.882-2.062-.982-.277-.101-.48-.152-.682.152-.202.302-.782.982-.958 1.183-.176.202-.353.227-.655.075-1.677-.822-2.825-1.73-3.92-3.623-.177-.303.176-.277.625-1.182.075-.152.038-.278-.038-.429-.075-.152-.682-1.642-.934-2.247-.245-.588-.496-.51-.682-.52h-.58c-.202 0-.53.076-.807.378-.277.303-1.06 1.035-1.06 2.525s1.085 2.928 1.236 3.13c.151.202 2.133 3.257 5.17 4.57 1.956.845 2.76.907 3.754.764.935-.136 2.875-1.176 3.279-2.311.404-1.136.404-2.108.277-2.311-.126-.203-.454-.303-.757-.454z"></path></svg> WhatsApp Float</h2>
+                                    <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Phone Number</label>
+                                    <input value="\${db.settings.whatsapp||''}" oninput="uSet('whatsapp',this.value)" placeholder="+8801..." class="w-full bg-black/50 border border-white/10 p-3 text-sm outline-none focus:border-green-500 text-green-400">
+                                </div>
+
+                                <div class="square-card p-6">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h2 class="text-sm font-bold tracking-widest uppercase flex items-center gap-2"><svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg> Notice Popup</h2>
+                                        <label class="flex items-center gap-2 text-[10px] font-bold uppercase cursor-pointer text-indigo-400 bg-indigo-900/20 px-3 py-1 border border-indigo-500/30 rounded"><input type="checkbox" \${n.enabled?'checked':''} onchange="uNotif('enabled',this.checked)" class="accent-indigo-500"> Enable</label>
+                                    </div>
+                                    <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Message</label>
+                                    <textarea oninput="uNotif('text',this.value)" placeholder="Enter notice..." class="w-full bg-black/50 border border-white/10 p-3 text-xs mb-3 outline-none min-h-[80px] focus:border-indigo-500 custom-scrollbar">\${n.text||''}</textarea>
+                                    <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Image URL (Optional)</label>
+                                    <input value="\${n.image||''}" oninput="uNotif('image',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-3 text-xs mb-3 outline-none focus:border-indigo-500">
                                     <div class="flex gap-3">
-                                        <input value="\${db.settings.notification.btnText||''}" onchange="db.settings.notification.btnText=this.value" placeholder="Button Text" class="w-1/2 bg-black border border-white/20 p-3 text-sm outline-none">
-                                        <input value="\${db.settings.notification.btnLink||''}" onchange="db.settings.notification.btnLink=this.value" placeholder="Button Link" class="w-1/2 bg-black border border-white/20 p-3 text-sm outline-none">
+                                        <div class="w-1/2">
+                                            <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Button Text</label>
+                                            <input value="\${n.btnText||''}" oninput="uNotif('btnText',this.value)" placeholder="JOIN NOW" class="w-full bg-black/50 border border-white/10 p-3 text-xs outline-none focus:border-indigo-500">
+                                        </div>
+                                        <div class="w-1/2">
+                                            <label class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 block">Button Link</label>
+                                            <input value="\${n.btnLink||''}" oninput="uNotif('btnLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-3 text-xs outline-none focus:border-indigo-500">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <button onclick="save()" class="mt-8 bg-white text-black font-bold uppercase tracking-widest py-4 w-full hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">Save Database Changes</button>
-                        </div>
-                    </div>\`;
-                    document.getElementById('app').innerHTML = html;
-                }
-                function toggleSite(pin, siteId, checked){
-                    let list = db.pins[pin].sites ||[];
-                    if(checked && !list.includes(siteId)) list.push(siteId);
-                    else if(!checked) list = list.filter(id => id !== siteId);
-                    db.pins[pin].sites = list;
-                }
-                load();
-            </script></body></html>`;
+                            \`;
+                        }
+
+                        document.getElementById('app').innerHTML = html;
+                    }
+                    load();
+                </script>
+            </body>
+            </html>`;
             return new Response(adminHTML, { headers: { "Content-Type": "text/html" } });
         }
 
@@ -306,7 +364,7 @@ export default {
                     const statusText = isSuspended ? 'Suspended' : 'Active';
                     const statusColor = isSuspended ? 'text-red-400 border-red-400/20 bg-red-400/10' : 'text-green-400 border-green-400/20 bg-green-400/10';
                     const connectBtn = isSuspended 
-                        ? `<button disabled class="w-full py-3 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed">Suspended</button>`
+                        ? `<button disabled class="w-full py-3 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5">Suspended</button>`
                         : `<a href="/api/start-proxy?id=${siteId}" class="w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"><span>Login Your Panel</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>`;
 
                     sitesHTML += `
@@ -329,7 +387,7 @@ export default {
                     </div>`;
                 });
             } else {
-                sitesHTML = `<p class="text-gray-500 text-xs">No sites assigned to this PIN.</p>`;
+                sitesHTML = `<p class="text-gray-500 text-xs text-center w-full mt-10">No sites assigned to this PIN.</p>`;
             }
 
             let waHTML = '';
@@ -340,14 +398,14 @@ export default {
             }
 
             let notifHTML = '';
-            if (db.settings.notification && db.settings.notification.enabled) {
+            if (db.settings.notification && db.settings.notification.enabled && db.settings.notification.text) {
                 const n = db.settings.notification;
                 notifHTML = `
                 <div id="notif-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
                     <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-sm w-full mx-4 relative shadow-2xl">
                         <button onclick="document.getElementById('notif-modal').remove()" class="absolute top-3 right-3 text-gray-500 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                         ${n.image ? `<img src="${n.image}" class="w-full h-32 object-cover mb-4 border border-white/5">` : ''}
-                        <h3 class="text-white font-bold tracking-wide mb-2 uppercase text-sm">System Notice</h3>
+                        <h3 class="text-white font-bold tracking-wide mb-2 uppercase text-sm flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> System Notice</h3>
                         <p class="text-gray-400 text-xs mb-6 leading-relaxed whitespace-pre-wrap">${n.text}</p>
                         ${(n.btnText && n.btnLink) ? `<a href="${n.btnLink}" target="_blank" class="block w-full text-center bg-white hover:bg-gray-200 transition text-black py-3 text-[10px] font-bold uppercase tracking-widest">${n.btnText}</a>` : ''}
                     </div>
@@ -355,7 +413,7 @@ export default {
             }
 
             const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script><style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
-            <body class="p-4 md:p-8">
+            <body class="p-4 md:p-8 pb-20">
                 ${notifHTML} ${waHTML}
                 <div class="max-w-6xl mx-auto">
                     <header class="flex justify-between items-center mb-8 border border-white/10 bg-[#0a0a0a] p-5">
@@ -388,10 +446,7 @@ export default {
 
             return new Response("Starting...", {
                 status: 302,
-                headers: {
-                    "Location": "/",
-                    "Set-Cookie": `proxy_active=${encryptedTarget}; HttpOnly; Secure; Path=/; Max-Age=3600; SameSite=Lax`
-                }
+                headers: { "Location": "/", "Set-Cookie": `proxy_active=${encryptedTarget}; HttpOnly; Secure; Path=/; Max-Age=3600; SameSite=Lax` }
             });
         }
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
@@ -433,7 +488,6 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
-                // Form Isolation Script (Helps isolate password saving per target domain)
                 const stealthScript = `<script>
                 (function(){
                     try{
