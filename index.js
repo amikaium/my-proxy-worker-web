@@ -203,7 +203,6 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
-        // --- 🕵️ FIXED DIRECT NAVIGATION TRAP (Does not break site CSS/JS) ---
         const destHeader = request.headers.get("Sec-Fetch-Dest") || "";
         const acceptHeader = request.headers.get("Accept") || "";
         const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
@@ -259,7 +258,7 @@ export default {
                 show: function({ type, title, text, placeholder, onConfirm }) {
                     const m = document.getElementById('c-modal'), tTitle = document.getElementById('cm-title'), tText = document.getElementById('cm-text');
                     const inp = document.getElementById('cm-input'), bCan = document.getElementById('cm-cancel'), bCon = document.getElementById('cm-confirm');
-                    tTitle.innerHTML = title; tText.innerText = text;
+                    tTitle.innerHTML = title; tText.innerHTML = text;
                     inp.value = ''; inp.placeholder = placeholder || '';
                     inp.classList.add('hidden'); bCan.classList.add('hidden');
                     if(type === 'prompt') { inp.classList.remove('hidden'); bCan.classList.remove('hidden'); setTimeout(()=>inp.focus(),100); }
@@ -354,7 +353,7 @@ export default {
                         db.settings.notification.specificUsers = list;
                     }
 
-                    function addSite() { db.sites['s_'+Date.now()] = {name:'New Website', agentLink:'', userLink:''}; tab='sites'; render(); }
+                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:''}; tab='sites'; render(); }
                     
                     function addPin() { 
                         CustomModal.show({type:'prompt', title:'New User', text:'Enter User Name (e.g. John Doe):', onConfirm: (name) => {
@@ -430,7 +429,7 @@ export default {
                                             html += \`<div class="bg-[#0a0a0a] border border-white/10 p-3">
                                                 <label class="flex items-center gap-3 text-xs cursor-pointer">
                                                     <input type="checkbox" \${hasSite ? 'checked':''} onchange="toggleSite('\${pin}', '\${siteId}', this.checked)" class="square-checkbox w-4 h-4">
-                                                    <span class="truncate text-gray-300 font-bold">\${db.sites[siteId].name}</span>
+                                                    <span class="truncate text-gray-300 font-bold">\${db.sites[siteId].name || 'Unnamed Site'}</span>
                                                 </label>\`;
                                             if(hasSite) {
                                                 html += \`<div class="mt-3 pl-7 space-y-2 border-l border-white/10 ml-2">
@@ -463,7 +462,7 @@ export default {
                                 html += \`<div class="square-card p-5 flex flex-col">
                                     <div class="mb-4">
                                         <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Site Name</span>
-                                        <input value="\${db.sites[id].name}" oninput="uSiteF('\${id}','name',this.value)" class="w-full bg-transparent text-xl font-bold text-white border-b border-white/10 outline-none pb-1 focus:border-indigo-500">
+                                        <input value="\${db.sites[id].name}" oninput="uSiteF('\${id}','name',this.value)" placeholder="Enter Website Name..." class="w-full bg-transparent text-xl font-bold text-white border-b border-white/10 outline-none pb-1 focus:border-indigo-500">
                                     </div>
                                     <div class="space-y-3 mb-5 flex-grow">
                                         <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Panel/Agent Link</span>
@@ -559,9 +558,17 @@ export default {
                                     siteConf.r === 'Super Agent' ? 'text-blue-400 border-blue-400/20 bg-blue-400/10' : 
                                     'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
 
+                    // MANDATORY PASSWORD LOGIC
+                    const hasPwd = siteConf.p && siteConf.p.trim() !== '';
+                    const safeSiteName = (site.name || 'this site').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    
+                    const loginAction = hasPwd 
+                        ? `window.location.href='/api/start-proxy?id=${siteId}'` 
+                        : `CustomModal.show({type:'alert', title:'<span class=\\'text-red-500\\'>⚠</span> Password Required', text:'Please setup your panel password for <b>${safeSiteName}</b> before logging in.'})`;
+
                     const connectBtn = isSuspended 
                         ? `<button disabled class="w-full py-4 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5 mt-4">Suspended</button>`
-                        : `<a href="/api/start-proxy?id=${siteId}" class="w-full py-4 bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mt-4 shadow-[0_0_15px_rgba(255,255,255,0.1)]"><span>Login Your Panel</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>`;
+                        : `<button onclick="${loginAction}" class="w-full py-4 bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mt-4 shadow-[0_0_15px_rgba(255,255,255,0.1)] outline-none"><span>Login Your Panel</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button>`;
 
                     sitesHTML += `
                     <div class="border border-white/5 bg-[#0a0a0a] p-5 flex flex-col justify-between ${isSuspended ? 'opacity-60 grayscale' : ''}">
@@ -574,7 +581,7 @@ export default {
                         </div>
                         
                         <div class="flex-grow">
-                            <h2 class="text-xl font-bold text-white tracking-wide truncate mb-3">${site.name}</h2>
+                            <h2 class="text-xl font-bold text-white tracking-wide truncate mb-3">${site.name || 'Unnamed Site'}</h2>
                             
                             <button onclick="toggleDetails('${siteId}')" class="flex items-center gap-2 text-[9px] font-bold text-gray-400 hover:text-white uppercase tracking-widest transition mb-2 group outline-none">
                                 <svg id="arrow-${siteId}" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -589,7 +596,8 @@ export default {
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
-                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
+                                    <!-- Changed to hide suggestions using autocomplete new-password -->
+                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" data-lpignore="true" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate secure-input">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -598,7 +606,7 @@ export default {
                                     </div>
                                 </div>
                                 <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
-                                    <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                    <input type="text" id="pwd-in-${siteId}" autocomplete="new-password" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
                                     <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
                                 </div>
 
@@ -711,7 +719,6 @@ export default {
             const userData = db.pins[userPin];
             if (userData.status === 'suspended' || !userData.sites.includes(siteId) || !db.sites[siteId]) return new Response("Access Denied", { status: 403 });
             
-            // 🔥 WE STORE THE TARGET AND CREDENTIALS IN THE COOKIE SO THE PROXY ENGINE CAN AUTO-FILL 🔥
             const conf = userData.siteConf?.[siteId] || {};
             const proxyData = JSON.stringify({ t: db.sites[siteId].agentLink, u: conf.u || '', p: conf.p || '' });
             const encryptedData = encrypt(proxyData);
@@ -723,7 +730,7 @@ export default {
         }
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
 
-        // --- 🌐 GLOBAL PROXY ENGINE (WITH AUTO-FILL & ISOLATION) ---
+        // --- 🌐 GLOBAL PROXY ENGINE (WITH REACT-SAFE AUTO-FILL & ISOLATION) ---
         if (isUser && isProxyActive) {
             const proxyDataString = decrypt(isProxyActive);
             if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
@@ -770,7 +777,7 @@ export default {
                 
                 htmlText = htmlText.split(targetDomain).join(url.origin);
                 
-                // --- 🛡️ PASSWORD ISOLATION & AUTO-FILL SCRIPT ---
+                // --- 🛡️ THE ULTIMATE REACT-SAFE AUTO FILL SCRIPT ---
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 const stealthScript = `<script>
                 (function(){
@@ -781,12 +788,27 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
+                        // Password Manager Isolation
                         var ctx = '${encTargetTrim}';
                         if(!window.location.search.includes('_ctx=')){
                             var sep = window.location.search ? '&' : '?';
                             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
                         }
                         
+                        // React Native Value Setter (Bypasses React State Clear on Captcha Typing)
+                        function setReactValue(el, val) {
+                            try {
+                                let lastVal = el.value;
+                                el.value = val;
+                                let ev = new Event('input', { bubbles: true });
+                                ev.simulated = true;
+                                let tracker = el._valueTracker;
+                                if(tracker) tracker.setValue(lastVal);
+                                el.dispatchEvent(ev);
+                            } catch(e){}
+                        }
+
+                        // Intelligent Auto-Fill System
                         window.addEventListener('DOMContentLoaded', () => {
                             document.querySelectorAll('form').forEach(f => {
                                 var a = f.getAttribute('action') || '';
@@ -798,23 +820,34 @@ export default {
 
                             const au = "${autoUser}"; const ap = "${autoPwd}";
                             if(au && ap) {
-                                setTimeout(() => {
+                                const fill = () => {
                                     const pwds = document.querySelectorAll('input[type="password"]');
-                                    if(pwds.length > 0) {
-                                        pwds.forEach(pf => { 
-                                            pf.value = ap; pf.dispatchEvent(new Event('input', {bubbles:true})); 
-                                            pf.setAttribute('autocomplete', 'new-password');
-                                        });
-                                        const usrs = document.querySelectorAll('input[type="text"], input[type="email"]');
-                                        for(let uf of usrs) {
-                                            if(uf.name.toLowerCase().includes('user') || uf.id.toLowerCase().includes('user') || uf.placeholder.toLowerCase().includes('user')) {
-                                                uf.value = au; uf.dispatchEvent(new Event('input', {bubbles:true}));
-                                                uf.setAttribute('autocomplete', 'new-password');
-                                                break;
-                                            }
+                                    pwds.forEach(pf => { 
+                                        if(pf.value !== ap) setReactValue(pf, ap);
+                                        pf.setAttribute('autocomplete', 'new-password');
+                                        pf.setAttribute('data-lpignore', 'true');
+                                    });
+                                    const usrs = document.querySelectorAll('input[type="text"], input[type="email"]');
+                                    usrs.forEach(uf => {
+                                        let n = (uf.name||'').toLowerCase(); let id = (uf.id||'').toLowerCase(); let p = (uf.placeholder||'').toLowerCase();
+                                        if(n.includes('user') || id.includes('user') || p.includes('user') || n.includes('email') || p.includes('email')) {
+                                            if(uf.value !== au) setReactValue(uf, au);
+                                            uf.setAttribute('autocomplete', 'new-password');
+                                            uf.setAttribute('data-lpignore', 'true');
                                         }
-                                    }
+                                    });
+                                };
+                                
+                                fill();
+                                let attempts = 0;
+                                let intv = setInterval(()=>{
+                                    fill(); attempts++;
+                                    if(attempts > 10) clearInterval(intv);
                                 }, 500);
+
+                                // Continually enforce if user interacts with page (like typing Captcha)
+                                document.addEventListener('keyup', () => { setTimeout(fill, 50); });
+                                document.addEventListener('click', () => { setTimeout(fill, 50); });
                             }
                         });
                     }catch(e){}
