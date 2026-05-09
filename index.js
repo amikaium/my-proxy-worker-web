@@ -230,7 +230,6 @@ export default {
             const tObj = new URL(targetUrlStr);
             const proxyHeaders = new Headers(request.headers);
             
-            // ✅ Magic Spoofing: Make the API think the request is coming from the original domain
             let originSpoof = tObj.origin;
             let refererSpoof = tObj.origin + "/";
             if (isProxyActive) {
@@ -532,8 +531,11 @@ export default {
                                         <input value="\${db.sites[id].agentLink}" oninput="uSiteF('\${id}','agentLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-2 text-xs text-green-400 outline-none focus:border-white/30"></div>
                                         <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">User Link</span>
                                         <input value="\${db.sites[id].userLink}" oninput="uSiteF('\${id}','userLink',this.value)" placeholder="ag.example.com" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-blue-400 outline-none focus:border-white/30"></div>
-                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Login API Link (Optional)</span>
-                                        <input value="\${db.sites[id].apiLink||''}" oninput="uSiteF('\${id}','apiLink',this.value)" placeholder="e.g. https://liveapi247.live" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-purple-400 outline-none focus:border-white/30"></div>
+                                        <div>
+                                            <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Backend API Link (For Login/Live Balance)</span>
+                                            <input value="\${db.sites[id].apiLink||''}" oninput="uSiteF('\${id}','apiLink',this.value)" placeholder="e.g. https://liveapi247.live" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-purple-400 outline-none focus:border-white/30">
+                                            <p class="text-[8px] text-gray-600 mt-1 italic">If the site loads balance from another domain, put it here.</p>
+                                        </div>
                                     </div>
                                     <button onclick="delSite('\${id}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete Site</button>
                                 </div>\`;
@@ -869,7 +871,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 UNIVERSAL BYPASS & SILENT AUTOFILL SCRIPT
+                // 🔥 FINAL STEALTH SCRIPT: Custom Popup + Chrome Blocker
                 const stealthScript = `<script>
 (function(){
     try{
@@ -893,12 +895,16 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
-        // ✅ UNIVERSAL API INTERCEPTOR (Catches ALL cross-domain fetch/XHR calls)
+        // API INTERCEPTOR
+        var targetHost = new URL("` + targetDomain + `").hostname;
+        var apiTarget = "${autoApi}";
+        var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
+        var rootDomain = targetHost.split('.').slice(-2).join('.'); 
+
         function shouldIntercept(urlStr) {
             if(typeof urlStr !== 'string') return false;
             try {
                 var u = urlStr.startsWith('http') ? new URL(urlStr) : new URL(urlStr, window.location.origin);
-                // Intercept ANY API request that is not pointing directly to our own Worker domain
                 return u.hostname !== window.location.hostname;
             } catch(e) { return false; }
         }
@@ -947,7 +953,6 @@ export default {
             });
         }
 
-        // ✅ WEBSOCKET UNIVERSAL BYPASS
         var OrigWebSocket = window.WebSocket;
         window.WebSocket = function(url, protocols) {
             try {
@@ -974,60 +979,102 @@ export default {
             } catch(e){}
         }
 
-        // ✅ SILENT AUTO-FILL
+        // ✅ AUTO-FILL POPUP & 100% ANTI-CHROME SAVE
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            let filled = false;
+            let style = document.createElement('style');
+            style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
+            document.head.appendChild(style);
 
-            const attemptFill = () => {
-                if (filled) return;
-                const pwds = Array.from(document.querySelectorAll('input[type="password"]')).filter(el => el.getBoundingClientRect().width > 0);
-                if (pwds.length === 0) return;
+            // Hide password fields from Chrome's password manager
+            setInterval(() => {
+                document.querySelectorAll('input[type="password"]').forEach(el => {
+                    el.setAttribute('type', 'text');
+                    el.classList.add('nx-mask');
+                    el.setAttribute('autocomplete', 'new-password');
+                    el.setAttribute('spellcheck', 'false');
+                });
+                document.querySelectorAll('input[type="text"], input[type="email"]').forEach(el => {
+                    let n = (el.name||'').toLowerCase(), p = (el.placeholder||'').toLowerCase();
+                    if(n.includes('user') || p.includes('user') || n.includes('email') || n.includes('login') || el.classList.contains('nx-mask')) {
+                        el.setAttribute('autocomplete', 'off');
+                        el.setAttribute('spellcheck', 'false');
+                    }
+                });
+            }, 500);
 
-                let pField = pwds[0];
-                let uField = null;
+            // Create Custom Popup
+            let popup = document.createElement('div');
+            popup.innerHTML = \`
+                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); padding:20px; border-radius:12px; display:flex; flex-direction:column; gap:12px; min-width:280px; box-shadow:0 20px 40px rgba(0,0,0,0.9); font-family:sans-serif;">
+                    <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px;">
+                        <div style="width:30px; height:30px; border-radius:50%; background:rgba(74,222,128,0.1); display:flex; align-items:center; justify-content:center; border:1px solid rgba(74,222,128,0.2);">
+                            <svg style="width:16px;height:16px;color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
+                        </div>
+                        <span style="color:white; font-size:15px; font-weight:600; letter-spacing:0.5px;">Auto Fill System</span>
+                    </div>
+                    <p style="color:#9ca3af; font-size:13px; margin:0; line-height:1.5;">Do you want to insert your panel credentials into this login form?</p>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <button id="nx-btn-no" style="flex:1; background:rgba(255,255,255,0.05); color:#d1d5db; border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.2s;">No</button>
+                        <button id="nx-btn-yes" style="flex:1; background:#4f46e5; color:white; border:none; padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; box-shadow:0 0 15px rgba(79,70,229,0.4); transition:0.2s;">Yes, Fill It</button>
+                    </div>
+                </div>
+            \`;
+            popup.style.cssText = 'position:fixed; z-index:2147483647; top:50%; left:50%; transform:translate(-50%, -50%); display:none;';
+            document.body.appendChild(popup);
 
-                const txts = document.querySelectorAll('input[type="text"], input[type="email"], input:not([type])');
-                for(let i=0; i<txts.length; i++) {
-                    let el = txts[i];
-                    if(el === pField || el.getBoundingClientRect().width === 0) continue;
-                    let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                    if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
-                        uField = el; break;
+            let hasFilled = false;
+            let rejected = false;
+
+            document.addEventListener('focusin', (e) => {
+                if (hasFilled || rejected) return;
+                if (e.target.tagName === 'INPUT') {
+                    let n = (e.target.name||'').toLowerCase();
+                    let p = (e.target.placeholder||'').toLowerCase();
+                    if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
+                        popup.style.display = 'block';
+                        e.target.blur(); // Stop keyboard popup on mobile initially
                     }
                 }
+            });
 
-                let changed = false;
-                if(uField && uField.value !== au) {
-                    uField.setAttribute('readonly', 'true');
-                    setNativeValue(uField, au);
-                    setTimeout(() => uField.removeAttribute('readonly'), 800);
-                    changed = true;
-                }
-                if(pField && pField.value !== ap) {
-                    pField.setAttribute('readonly', 'true');
-                    setNativeValue(pField, ap);
-                    setTimeout(() => pField.removeAttribute('readonly'), 800);
-                    changed = true;
-                }
-
-                if (changed) {
-                    filled = true;
-                    let toast = document.createElement('div');
-                    toast.innerHTML = '✅ Auto-Filled: ' + au;
-                    toast.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#10b981; color:white; padding:8px 16px; border-radius:8px; font-family:sans-serif; font-size:12px; font-weight:bold; z-index:999999; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.5s;';
-                    document.body.appendChild(toast);
-                    setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.remove(), 500); }, 3000);
-                }
+            document.getElementById('nx-btn-no').onclick = (e) => {
+                e.preventDefault();
+                popup.style.display = 'none';
+                rejected = true;
             };
 
-            let observer = new MutationObserver(() => attemptFill());
-            observer.observe(document.body, { childList: true, subtree: true });
+            document.getElementById('nx-btn-yes').onclick = (e) => {
+                e.preventDefault();
+                popup.style.display = 'none';
+                
+                let pField = null, uField = null;
+                const inputs = document.querySelectorAll('input');
+                
+                inputs.forEach(el => { if(el.classList.contains('nx-mask') || el.type === 'password') pField = el; });
+                
+                inputs.forEach(el => {
+                    if(el === pField) return;
+                    let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                    if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
+                        if(n.includes('user') || pl.includes('user') || n.includes('email') || n.includes('login')) {
+                            uField = el;
+                        }
+                    }
+                });
 
-            attemptFill();
-            setInterval(attemptFill, 1000); 
+                if(!uField && pField) {
+                     inputs.forEach(el => {
+                         if(el !== pField && (el.type === 'text' || el.type === 'email') && el.getBoundingClientRect().width > 0) uField = el;
+                     });
+                }
+
+                if(uField) setNativeValue(uField, au);
+                if(pField) setNativeValue(pField, ap);
+                hasFilled = true;
+            };
         });
     }catch(e){}
 })();
