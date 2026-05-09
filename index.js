@@ -26,7 +26,7 @@ const decrypt = (b64) => {
 };
 
 // ==========================================
-// 🎨 UI: PUBLIC DECOY LANDING PAGE
+// 🎨 UI: PUBLIC DECOY LANDING PAGE (REALISTIC)
 // ==========================================
 const landingPageHTML = `
 <!DOCTYPE html>
@@ -41,35 +41,105 @@ const landingPageHTML = `
         .loader { border: 2px solid transparent; border-top-color: #000; border-radius: 50%; width: 14px; height: 14px; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         input:focus { outline: none; box-shadow: none; }
-        .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }
-        .feature-box { border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); }
+        .feature-box { border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); transition: all 0.3s; }
+        .feature-box:hover { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
     </style>
 </head>
 <body class="antialiased selection:bg-white selection:text-black">
+    <!-- Navbar -->
     <nav class="fixed w-full z-50 border-b border-white/10 bg-[#050505]/90 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-xl font-bold tracking-widest uppercase cursor-default select-none">Nexus<span class="text-gray-500">.</span></div>
-            <button class="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition">Contact Sales</button>
+            <div class="text-xl font-bold tracking-widest uppercase cursor-default select-none">Nexus<span class="text-indigo-500">.</span></div>
+            <div class="hidden md:flex gap-8 text-[10px] font-bold tracking-widest uppercase text-gray-400">
+                <a href="#services" class="hover:text-white transition">Services</a>
+                <a href="#network" class="hover:text-white transition">Global Network</a>
+                <a href="#about" class="hover:text-white transition">Company</a>
+            </div>
+            <button class="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition">Client Login</button>
         </div>
     </nav>
-    <header class="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4 flex flex-col items-center justify-center border-b border-white/5">
+
+    <!-- Hero Section -->
+    <header class="relative pt-32 pb-20 md:pt-48 md:pb-24 px-4 flex flex-col items-center justify-center border-b border-white/5">
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-indigo-900/10 blur-[120px] rounded-full pointer-events-none"></div>
-        <div class="text-center z-10 w-full max-w-xl mx-auto">
-            <h1 class="text-5xl md:text-6xl font-light tracking-tight mb-4">Enterprise <span class="font-bold">Assets</span></h1>
-            <p class="text-gray-400 text-sm md:text-base tracking-wide mb-10">Secure infrastructure registry for our global network.</p>
-            <form id="search-form" class="w-full flex items-center p-1.5 border border-white/10 bg-[#0a0a0a] focus-within:border-white/30 transition-all">
+        <div class="text-center z-10 w-full max-w-2xl mx-auto">
+            <span class="text-[10px] font-bold tracking-widest uppercase text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 rounded-full mb-6 inline-block">Enterprise Data Registry</span>
+            <h1 class="text-5xl md:text-7xl font-light tracking-tight mb-4">Secure <span class="font-bold text-white">Assets</span></h1>
+            <p class="text-gray-400 text-sm md:text-base tracking-wide mb-10 leading-relaxed">Access our global registry of encrypted projects, infrastructure documentation, and zero-trust edge nodes.</p>
+            
+            <!-- Real-looking Search Box (NO DOTS) -->
+            <form id="search-form" class="w-full flex items-center p-1.5 border border-white/10 bg-[#0a0a0a] focus-within:border-indigo-500/50 transition-all">
                 <div class="pl-4 flex items-center justify-center pointer-events-none">
                     <svg id="search-icon" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <input type="text" id="main-search" placeholder="Search by Project ID..." autocomplete="off" spellcheck="false"
-                    class="w-full bg-transparent text-white text-sm px-4 py-3 placeholder-gray-600 tracking-wide font-medium secure-input">
+                <!-- REMOVED secure-input class here so it shows plain text -->
+                <input type="text" id="main-search" placeholder="Search by Node ID or Access Key..." autocomplete="off" spellcheck="false"
+                    class="w-full bg-transparent text-white text-sm px-4 py-3 placeholder-gray-600 tracking-wide font-medium">
                 <button type="submit" id="search-btn" class="px-6 py-3 bg-white hover:bg-gray-200 text-black text-[10px] font-bold uppercase tracking-widest transition flex items-center justify-center min-w-[100px]">
-                    <span id="btn-text">Search</span><div id="search-spinner" class="loader hidden"></div>
+                    <span id="btn-text">Lookup</span><div id="search-spinner" class="loader hidden"></div>
                 </button>
             </form>
             <p id="search-msg" class="text-[10px] font-bold text-gray-500 mt-4 tracking-widest uppercase opacity-0 transition-opacity h-4"></p>
         </div>
     </header>
+
+    <!-- Stats Section -->
+    <div class="w-full border-b border-white/5 bg-[#080808]">
+        <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 py-12 px-6 text-center">
+            <div><p class="text-3xl font-bold text-white mb-1">99.9%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Uptime SLA</p></div>
+            <div><p class="text-3xl font-bold text-white mb-1">120+</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Edge Datacenters</p></div>
+            <div><p class="text-3xl font-bold text-white mb-1">&lt;15ms</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Global Latency</p></div>
+            <div><p class="text-3xl font-bold text-white mb-1">AES</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">256-bit Encrypted</p></div>
+        </div>
+    </div>
+
+    <!-- Realistic Services Section -->
+    <section id="services" class="py-24 px-6 max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold mb-4 text-center tracking-wide">Infrastructure <span class="text-indigo-400 font-light">Solutions</span></h2>
+        <p class="text-gray-500 text-sm text-center mb-16 max-w-2xl mx-auto leading-relaxed">We provide military-grade proxy routing and content delivery networks for high-traffic enterprise applications.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="feature-box p-8">
+                <div class="w-12 h-12 bg-white/5 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg></div>
+                <h3 class="text-lg font-bold mb-3 text-white">Zero-Trust Vaults</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Our end-to-end encrypted architecture ensures that no unauthorized traffic can access your enterprise data components.</p>
+            </div>
+            <div class="feature-box p-8">
+                <div class="w-12 h-12 bg-white/5 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                <h3 class="text-lg font-bold mb-3 text-white">Global Edge Proxy</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Traffic is intelligently routed through advanced edge networks to mask your origin IP and provide automated DDoS mitigation.</p>
+            </div>
+            <div class="feature-box p-8">
+                <div class="w-12 h-12 bg-white/5 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                <h3 class="text-lg font-bold mb-3 text-white">High Performance</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Lightning-fast content delivery deployed worldwide. Latency reduced to mere milliseconds for an uninterrupted user experience.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fake Integration / Partners Section -->
+    <section class="py-16 border-y border-white/5 bg-[#080808] text-center">
+        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-8">Trusted by Modern Technology Teams</p>
+        <div class="flex flex-wrap justify-center gap-10 opacity-30 grayscale">
+            <span class="text-xl font-bold font-serif">ACME Corp</span>
+            <span class="text-xl font-bold font-mono">Globex</span>
+            <span class="text-xl font-bold">Soylent</span>
+            <span class="text-xl font-bold font-sans">Initech</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 bg-[#050505] border-t border-white/5">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-xl font-bold tracking-widest uppercase text-white">Nexus<span class="text-indigo-500">.</span></div>
+            <div class="flex gap-6 text-[10px] uppercase tracking-widest text-gray-500">
+                <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition">Terms of Service</a>
+                <a href="#" class="hover:text-white transition">System Status</a>
+            </div>
+            <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Enterprise. All rights reserved.</p>
+        </div>
+    </footer>
+
     <script>
         document.getElementById('search-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -83,7 +153,7 @@ const landingPageHTML = `
                 if (res.ok) {
                     const data = await res.json();
                     document.getElementById('search-msg').style.color = '#4ade80'; 
-                    document.getElementById('search-msg').innerText = 'ACCESS GRANTED...';
+                    document.getElementById('search-msg').innerText = 'NODE IDENTIFIED. CONNECTING...';
                     document.getElementById('search-msg').style.opacity = '1';
                     setTimeout(() => window.location.href = data.role === 'admin' ? '/admin' : '/dashboard', 800);
                 } else {
@@ -93,7 +163,7 @@ const landingPageHTML = `
                         document.getElementById('main-search').disabled = false;
                         document.getElementById('main-search').value = '';
                         document.getElementById('search-msg').style.color = '#ef4444'; 
-                        document.getElementById('search-msg').innerText = '0 RESULTS FOUND';
+                        document.getElementById('search-msg').innerText = '0 SECURE NODES FOUND';
                         document.getElementById('search-msg').style.opacity = '1';
                     }, 1000);
                 }
@@ -153,7 +223,6 @@ export default {
             }
         }
 
-        // --- 🔑 Authentication API ---
         if (path === "/api/access" && request.method === "POST") {
             const { code } = await request.json();
             if (db.adminPin && db.adminPin !== "SET_YOUR_PIN_HERE" && code === String(db.adminPin)) {
@@ -165,7 +234,6 @@ export default {
             return new Response("Invalid", { status: 401 });
         }
 
-        // --- 🔑 Password Update API (User Side) ---
         if (path === "/api/update-password" && request.method === "POST") {
             if (!isUser) return new Response("Denied", { status: 403 });
             const { siteId, newPassword } = await request.json();
@@ -177,21 +245,20 @@ export default {
             return new Response(JSON.stringify({ success: true }));
         }
 
-        // --- 🚪 Logout ---
         if (path === "/logout") {
             return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/" } });
         }
 
-        // --- 🛠️ COMMON MODAL TEMPLATE ---
+        // --- 🛠️ COMMON MODAL TEMPLATE (SQUARE) ---
         const customModalScript = `
-        <div id="c-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-xs w-full mx-4 shadow-2xl flex flex-col">
-                <h3 id="cm-title" class="text-indigo-400 font-bold tracking-widest mb-2 uppercase text-sm"></h3>
-                <p id="cm-text" class="text-gray-400 text-xs mb-5 leading-relaxed"></p>
+        <div id="c-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
+            <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-sm w-full mx-4 shadow-2xl flex flex-col">
+                <h3 id="cm-title" class="text-white font-bold tracking-widest mb-3 uppercase text-sm flex items-center gap-2"></h3>
+                <p id="cm-text" class="text-gray-400 text-xs mb-6 leading-relaxed"></p>
                 <input type="text" id="cm-input" class="hidden w-full bg-black border border-white/10 p-3 text-xs mb-5 outline-none focus:border-indigo-500 text-white" autocomplete="off">
                 <div class="flex gap-3 justify-end">
-                    <button id="cm-cancel" class="hidden px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest transition border border-white/5">Cancel</button>
-                    <button id="cm-confirm" class="px-5 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white text-[10px] font-bold uppercase tracking-widest transition">OK</button>
+                    <button id="cm-cancel" class="hidden px-5 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-[10px] font-bold uppercase tracking-widest transition border border-white/5">Cancel</button>
+                    <button id="cm-confirm" class="px-6 py-2.5 bg-indigo-600 text-white hover:bg-indigo-500 text-[10px] font-bold uppercase tracking-widest transition shadow-[0_0_15px_rgba(99,102,241,0.4)]">Confirm</button>
                 </div>
             </div>
         </div>
@@ -200,7 +267,7 @@ export default {
                 show: function({ type, title, text, placeholder, onConfirm }) {
                     const m = document.getElementById('c-modal'), tTitle = document.getElementById('cm-title'), tText = document.getElementById('cm-text');
                     const inp = document.getElementById('cm-input'), bCan = document.getElementById('cm-cancel'), bCon = document.getElementById('cm-confirm');
-                    tTitle.innerText = title; tText.innerText = text;
+                    tTitle.innerHTML = title; tText.innerText = text;
                     inp.value = ''; inp.placeholder = placeholder || '';
                     inp.classList.add('hidden'); bCan.classList.add('hidden');
                     
@@ -215,7 +282,7 @@ export default {
             };
         </script>`;
 
-        // --- 🛠️ ADMIN PANEL (V15) ---
+        // --- 🛠️ ADMIN PANEL ---
         if (path.startsWith("/admin")) {
             if (!isAdmin) return Response.redirect(url.origin, 302);
             
@@ -240,20 +307,17 @@ export default {
             </style>
             </head>
             <body class="pb-28">
-                
                 ${customModalScript}
 
-                <!-- Sticky Header -->
                 <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
-                    <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Admin <span class="text-white">Core</span></h1></div>
-                    <a href="/logout" class="px-4 py-2 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white transition">Logout</a>
+                    <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Master <span class="text-white">Admin</span></h1></div>
+                    <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition">Logout</a>
                 </header>
 
                 <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
                     <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
                 </div>
                 
-                <!-- Fixed Global Save Button -->
                 <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
                     <button id="save-btn" onclick="save()" class="w-full max-w-sm bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">SAVE ALL CHANGES</button>
                 </div>
@@ -265,7 +329,7 @@ export default {
                     async function save(){ 
                         document.getElementById('save-btn').innerText = 'SAVING...';
                         await fetch('/admin/api/save', {method:'POST', body:JSON.stringify(db)}); 
-                        setTimeout(() => { document.getElementById('save-btn').innerText = 'SAVE ALL CHANGES'; CustomModal.show({type:'alert', title:'Success', text:'Database Successfully Updated!'}); }, 500);
+                        setTimeout(() => { document.getElementById('save-btn').innerText = 'SAVE ALL CHANGES'; CustomModal.show({type:'alert', title:'<span class="text-green-500">✔</span> Success', text:'Database Successfully Updated!'}); }, 500);
                     }
 
                     function uPinSt(pin, val) { db.pins[pin].status = val; render(); }
@@ -311,14 +375,14 @@ export default {
                                     db.pins[p] = { name: name, status:'active', sites:[], siteConf:{} }; 
                                     openPins.add(p); tab='pins'; render(); 
                                 } else if(db.pins[p]) {
-                                    CustomModal.show({type:'alert', title:'Error', text:'This PIN already exists!'});
+                                    CustomModal.show({type:'alert', title:'<span class="text-red-500">✖</span> Error', text:'This PIN already exists!'});
                                 }
                             }});
                         }});
                     }
 
-                    function delSite(id) { CustomModal.show({type:'confirm', title:'Delete Site', text:'Are you sure you want to delete this site?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
-                    function delPin(pin) { CustomModal.show({type:'confirm', title:'Delete User', text:'Are you sure you want to delete this user PIN?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
+                    function delSite(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Site', text:'Are you sure you want to delete this site?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
+                    function delPin(pin) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete User', text:'Are you sure you want to delete this user PIN?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
 
                     function toggleAdminPin(pin) {
                         if(openPins.has(pin)) openPins.delete(pin); else openPins.add(pin);
@@ -329,7 +393,6 @@ export default {
                         if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.settings) db.settings = {whatsapp:'', notification:{enabled:false, target:'all', specificUsers:[]}};
                         
                         let html = \`
-                        <!-- TABS -->
                         <div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
                             <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">User Pins</button>
                             <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">Global Sites</button>
@@ -337,7 +400,6 @@ export default {
                         </div>
                         \`;
 
-                        // --- USER PINS TAB ---
                         if(tab === 'pins') {
                             html += \`<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                                 <input type="text" placeholder="Search Users or PIN..." value="\${searchQuery}" oninput="searchQuery=this.value.toLowerCase(); render()" class="w-full md:w-1/2 bg-black border border-white/10 p-3 text-xs text-white outline-none focus:border-indigo-500">
@@ -352,8 +414,6 @@ export default {
                                 let isOpen = openPins.has(pin);
                                 
                                 html += \`<div class="square-card flex flex-col \${st==='suspended'?'opacity-70 grayscale':''}">
-                                    
-                                    <!-- Accordion Header -->
                                     <div class="flex justify-between items-center p-5 cursor-pointer hover:bg-white/5 transition" onclick="toggleAdminPin('\${pin}')">
                                         <div class="flex flex-col truncate pr-4">
                                             <span class="text-lg font-bold text-white truncate">\${pData.name || 'Unnamed'}</span>
@@ -368,7 +428,6 @@ export default {
                                         </div>
                                     </div>
                                     
-                                    <!-- Accordion Body -->
                                     <div class="\${isOpen?'block':'hidden'} p-5 border-t border-white/5 bg-black/40">
                                         <div class="mb-4">
                                             <label class="text-[8px] uppercase tracking-widest text-gray-500 mb-1 block">Edit User Name</label>
@@ -405,7 +464,6 @@ export default {
                             html += \`</div>\`;
                         }
 
-                        // --- GLOBAL SITES TAB ---
                         if(tab === 'sites') {
                             html += \`<div class="flex justify-between items-center mb-6">
                                 <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Website Directory</h3>
@@ -430,7 +488,6 @@ export default {
                             html += \`</div>\`;
                         }
 
-                        // --- SETTINGS TAB ---
                         if(tab === 'settings') {
                             let n = db.settings.notification;
                             html += \`<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -508,14 +565,14 @@ export default {
                     const statusText = isSuspended ? 'Suspended' : 'Active';
                     const statusColor = isSuspended ? 'text-red-400 border-red-400/20 bg-red-400/10' : 'text-green-400 border-green-400/20 bg-green-400/10';
                     
-                    const siteConf = userData.siteConf?.[siteId] || { u: 'N/A', r: 'Admin', p: '' };
+                    const siteConf = userData.siteConf?.[siteId] || { u: '', r: 'Admin', p: '' };
                     let roleColor = siteConf.r === 'Admin' ? 'text-purple-400 border-purple-400/20 bg-purple-400/10' : 
                                     siteConf.r === 'Super Agent' ? 'text-blue-400 border-blue-400/20 bg-blue-400/10' : 
                                     'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
 
                     const connectBtn = isSuspended 
-                        ? `<button disabled class="w-full py-3 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5">Suspended</button>`
-                        : `<a href="/api/start-proxy?id=${siteId}" class="w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mt-4"><span>Login Your Panel</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>`;
+                        ? `<button disabled class="w-full py-4 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5 mt-4">Suspended</button>`
+                        : `<a href="/api/start-proxy?id=${siteId}" class="w-full py-4 bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mt-4 shadow-[0_0_15px_rgba(255,255,255,0.1)]"><span>Login Your Panel</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>`;
 
                     sitesHTML += `
                     <div class="border border-white/5 bg-[#0a0a0a] p-5 flex flex-col justify-between ${isSuspended ? 'opacity-60 grayscale' : ''}">
@@ -536,35 +593,36 @@ export default {
                             </button>
                             
                             <div id="details-${siteId}" class="hidden mt-3 space-y-2 p-3 bg-black/40 border border-white/5">
-                                <div class="bg-white/5 border border-white/10 flex items-center p-1 w-full">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap">Username</span>
+                                <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full">
+                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Username</span>
                                     <input type="text" readonly value="${siteConf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none w-full truncate select-all">
                                 </div>
                                 
-                                <!-- Password Update Section -->
-                                <div class="bg-white/5 border border-white/10 p-2 w-full mt-2">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="text-[8px] font-bold text-gray-500 uppercase px-1">Password</span>
-                                        <button onclick="toggleEditPwd('${siteId}')" class="text-[8px] text-indigo-400 uppercase font-bold px-2 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 transition border border-indigo-500/30">UPDATE</button>
+                                <div class="bg-white/5 border border-white/10 p-1.5 w-full mt-2">
+                                    <div class="flex items-center w-full">
+                                        <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Password</span>
+                                        <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none truncate">
+                                        <div class="flex items-center gap-1 flex-shrink-0 pr-1">
+                                            <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
+                                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                            </button>
+                                            <button onclick="toggleEditPwd('${siteId}')" class="px-2 h-7 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/40 transition text-[8px] font-bold uppercase tracking-widest">Update</button>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center">
-                                        <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-1 outline-none w-full truncate secure-input">
-                                        <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0">
-                                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                        </button>
-                                    </div>
-                                    <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2">
-                                        <input type="text" id="pwd-in-${siteId}" placeholder="New Password" class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
-                                        <button onclick="savePwd('${siteId}')" class="px-3 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white text-[10px] font-bold uppercase transition">Save</button>
+                                    <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
+                                        <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                        <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
                                     </div>
                                 </div>
 
-                                <div class="bg-white/5 border border-white/10 flex items-center p-1 w-full mt-2">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap">Link</span>
+                                <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2">
+                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-16">Link</span>
                                     <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none w-full truncate select-all">
-                                    <button onclick="copyLink('${site.userLink}', this)" class="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0">
-                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                    </button>
+                                    <div class="flex-shrink-0 pr-1">
+                                        <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
+                                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -575,11 +633,16 @@ export default {
                 sitesHTML = `<p class="text-gray-500 text-xs text-center w-full mt-10">No sites assigned to this PIN.</p>`;
             }
 
+            // WhatsApp Button with Pulse Animation
             let waHTML = '';
             if (db.settings.whatsapp) {
-                waHTML = `<a href="https://wa.me/${db.settings.whatsapp.replace(/[^0-9]/g, '')}" target="_blank" class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-110 transition z-40">
-                    <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.12.55 4.195 1.597 6.012L.15 24l6.104-1.602a11.96 11.96 0 005.777 1.488h.005c6.645 0 12.031-5.385 12.031-12.031S18.676 0 12.031 0zm0 21.884c-1.785 0-3.535-.48-5.07-1.386l-.364-.215-3.766.988.996-3.668-.236-.376a9.998 9.998 0 01-1.528-5.342c0-5.523 4.494-10.017 10.017-10.017 5.522 0 10.016 4.494 10.016 10.017 0 5.523-4.494 10.017-10.016 10.017zm5.503-7.518c-.302-.152-1.785-.882-2.062-.982-.277-.101-.48-.152-.682.152-.202.302-.782.982-.958 1.183-.176.202-.353.227-.655.075-1.677-.822-2.825-1.73-3.92-3.623-.177-.303.176-.277.625-1.182.075-.152.038-.278-.038-.429-.075-.152-.682-1.642-.934-2.247-.245-.588-.496-.51-.682-.52h-.58c-.202 0-.53.076-.807.378-.277.303-1.06 1.035-1.06 2.525s1.085 2.928 1.236 3.13c.151.202 2.133 3.257 5.17 4.57 1.956.845 2.76.907 3.754.764.935-.136 2.875-1.176 3.279-2.311.404-1.136.404-2.108.277-2.311-.126-.203-.454-.303-.757-.454z"></path></svg>
-                </a>`;
+                waHTML = `
+                <div class="fixed bottom-6 right-6 z-40 flex items-center justify-center group cursor-pointer" onclick="window.open('https://wa.me/${db.settings.whatsapp.replace(/[^0-9]/g, '')}', '_blank')">
+                    <div class="absolute w-14 h-14 bg-green-500 rounded-full animate-ping opacity-60"></div>
+                    <div class="relative w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                        <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.12.55 4.195 1.597 6.012L.15 24l6.104-1.602a11.96 11.96 0 005.777 1.488h.005c6.645 0 12.031-5.385 12.031-12.031S18.676 0 12.031 0zm0 21.884c-1.785 0-3.535-.48-5.07-1.386l-.364-.215-3.766.988.996-3.668-.236-.376a9.998 9.998 0 01-1.528-5.342c0-5.523 4.494-10.017 10.017-10.017 5.522 0 10.016 4.494 10.016 10.017 0 5.523-4.494 10.017-10.016 10.017zm5.503-7.518c-.302-.152-1.785-.882-2.062-.982-.277-.101-.48-.152-.682.152-.202.302-.782.982-.958 1.183-.176.202-.353.227-.655.075-1.677-.822-2.825-1.73-3.92-3.623-.177-.303.176-.277.625-1.182.075-.152.038-.278-.038-.429-.075-.152-.682-1.642-.934-2.247-.245-.588-.496-.51-.682-.52h-.58c-.202 0-.53.076-.807.378-.277.303-1.06 1.035-1.06 2.525s1.085 2.928 1.236 3.13c.151.202 2.133 3.257 5.17 4.57 1.956.845 2.76.907 3.754.764.935-.136 2.875-1.176 3.279-2.311.404-1.136.404-2.108.277-2.311-.126-.203-.454-.303-.757-.454z"></path></svg>
+                    </div>
+                </div>`;
             }
 
             let notifHTML = '';
@@ -592,7 +655,7 @@ export default {
 
             if (showNotif) {
                 notifHTML = `
-                <div id="notif-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+                <div id="notif-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
                     <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-sm w-full mx-4 relative shadow-2xl">
                         <button onclick="document.getElementById('notif-modal').remove()" class="absolute top-3 right-3 text-gray-500 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                         ${n.image ? `<img src="${n.image}" class="w-full h-32 object-cover mb-4 border border-white/5">` : ''}
@@ -603,18 +666,16 @@ export default {
                 </div>`;
             }
 
-            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
-            <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } .secure-input { -webkit-text-security: disc; font-family: 'Inter', sans-serif; }</style></head>
+            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script><style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
                 
-                <!-- STICKY HEADER -->
                 <header class="sticky top-0 z-40 flex justify-between items-center border-b border-white/10 bg-[#0a0a0a] p-4 md:p-6 shadow-md w-full">
                     <div>
-                        <h1 class="text-lg font-bold tracking-widest uppercase text-indigo-400">Welcome <span class="text-white">${userData.name || userPin}</span></h1>
+                        <h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Welcome <span class="text-white">${userData.name || userPin}</span></h1>
                         <p class="text-[9px] text-gray-500 mt-0.5 uppercase tracking-[0.2em]">Secure Access Identity</p>
                     </div>
-                    <a href="/logout" class="px-5 py-2.5 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white transition">Terminate</a>
+                    <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition">Terminate</a>
                 </header>
 
                 <div class="max-w-6xl mx-auto p-4 md:p-8">
@@ -640,14 +701,14 @@ export default {
                     }
                     async function savePwd(siteId) {
                         const pwd = document.getElementById('pwd-in-' + siteId).value;
-                        if(!pwd) return CustomModal.show({type:'alert', title:'Error', text:'Password cannot be empty!'});
+                        if(!pwd) return CustomModal.show({type:'alert', title:'<span class="text-red-500">⚠</span> Error', text:'Password cannot be empty!'});
                         
                         try {
                             const res = await fetch('/api/update-password', { method: 'POST', body: JSON.stringify({ siteId, newPassword: pwd }) });
                             if(res.ok) {
                                 document.getElementById('pwd-disp-' + siteId).value = pwd;
                                 document.getElementById('pwd-edit-' + siteId).classList.add('hidden');
-                                CustomModal.show({type:'alert', title:'Success', text:'Password Updated Successfully!'});
+                                CustomModal.show({type:'alert', title:'<span class="text-green-500">✔</span> Success', text:'Password Updated Successfully!'});
                             }
                         } catch(e) {}
                     }
@@ -708,6 +769,10 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
+                // --- 🛡️ PASSWORD ISOLATION & STEALTH SCRIPT ---
+                // ক্রোমের পাসওয়ার্ড ম্যানেজার যেন বিভিন্ন সাইটকে আলাদা মনে করে, 
+                // সেজন্য ফর্মের একশন (Action) লিংকে সাইটের একটা ইউনিক আইডি বসিয়ে দেওয়া হচ্ছে।
+                const encTargetTrim = isProxyActive.substring(0,8);
                 const stealthScript = `<script>
                 (function(){
                     try{
@@ -717,17 +782,28 @@ export default {
                         setInterval(function(){if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();},2000);
                         document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")document.body.style.opacity="0";else{document.body.style.opacity="1";if(Date.now()-l>60000)window.location.replace("/api/stop-proxy");l=Date.now();}});
                         
+                        // Password Manager Isolation Trap
+                        var ctx = '${encTargetTrim}';
+                        if(!window.location.search.includes('_ctx=')){
+                            var sep = window.location.search ? '&' : '?';
+                            window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
+                        }
                         window.addEventListener('DOMContentLoaded', () => {
                             document.querySelectorAll('form').forEach(f => {
-                                if(f.action && !f.action.includes('realm=')) {
-                                    f.action = f.action + (f.action.includes('?') ? '&' : '?') + 'realm=' + encodeURIComponent(document.title);
+                                var a = f.getAttribute('action') || '';
+                                if(!a.includes('_ctx=')) {
+                                    var s = a.includes('?') ? '&' : '?';
+                                    f.setAttribute('action', a + s + '_ctx=' + ctx);
                                 }
                             });
                         });
                     }catch(e){}
                 })();
                 </script>`;
-                if (htmlText.includes("<head>")) htmlText = htmlText.replace("<head>", "<head>" + stealthScript); else htmlText = stealthScript + htmlText;
+                
+                if (htmlText.includes("<head>")) htmlText = htmlText.replace("<head>", "<head>" + stealthScript); 
+                else htmlText = stealthScript + htmlText;
+                
                 body = htmlText;
                 responseHeaders.delete("Content-Length");
                 responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
