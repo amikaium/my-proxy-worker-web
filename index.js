@@ -10,7 +10,7 @@ const CONFIG = {
 };
 
 // ==========================================
-// 🔐 ADVANCED CRYPTO ENGINE
+// 🔐 ADVANCED CRYPTO ENGINE (Unicode Safe)
 // ==========================================
 const encrypt = (text) => {
     let res = '';
@@ -130,7 +130,7 @@ export default {
         const url = new URL(request.url);
         const path = url.pathname;
 
-        // 🔥 GLOBAL CORS HANDLER (FIXES API LOGIN ISSUES)
+        // 🔥 GLOBAL CORS HANDLER
         if (request.method === "OPTIONS") {
             return new Response(null, {
                 headers: {
@@ -172,6 +172,7 @@ export default {
         const isUser = !!(userPin && db.pins && db.pins[userPin]);
         let isProxyActive = cookies['proxy_active'];
 
+        // --- 🕵️ DIRECT NAVIGATION TRAP ---
         const destHeader = request.headers.get("Sec-Fetch-Dest") || "";
         const acceptHeader = request.headers.get("Accept") || "";
         const isMainDocument = destHeader === "document" || acceptHeader.includes("text/html");
@@ -184,7 +185,7 @@ export default {
             }
         }
 
-        // --- 📡 API INTERCEPTOR PROXY (CRUCIAL FOR REACT LOGINS) ---
+        // --- 📡 API INTERCEPTOR PROXY ---
         if (path === "/__api_proxy") {
             const targetUrlStr = url.searchParams.get("target");
             if(!targetUrlStr) return new Response("Bad Target", {status:400});
@@ -284,7 +285,9 @@ export default {
             }
 
             const adminHTML = `<!DOCTYPE html><html lang="en" class="dark">
-            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Portal</title>${headInject}<script src="https://cdn.tailwindcss.com"></script>
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Portal</title>
+            ${headInject}
+            <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } 
                 .square-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); } 
@@ -586,7 +589,7 @@ export default {
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
-                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate" style="-webkit-text-security: disc; font-family: text-security-disc, sans-serif; pointer-events: none;">
+                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" data-lpignore="true" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate" style="-webkit-text-security: disc; font-family: text-security-disc, sans-serif; pointer-events: none;">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -595,7 +598,7 @@ export default {
                                     </div>
                                 </div>
                                 <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
-                                    <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                    <input type="text" id="pwd-in-${siteId}" autocomplete="new-password" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
                                     <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
                                 </div>
 
@@ -703,7 +706,7 @@ export default {
             return new Response(html, { headers: { "Content-Type": "text/html" } });
         }
 
-        // --- 🚀 PROXY START ---
+        // --- 🚀 PROXY START WITH AUTO-FILL INJECTION DATA ---
         if (path === "/api/start-proxy") {
             if (!isUser) return new Response("Denied", { status: 403 });
             const siteId = url.searchParams.get("id");
@@ -726,30 +729,24 @@ export default {
         }
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
 
-        // --- 📡 API INTERCEPTOR ENGINE ---
-        if (path === "/__api_proxy") {
-            const targetUrlStr = url.searchParams.get("target");
-            if(!targetUrlStr) return new Response("Bad Target", {status:400});
+        // --- 🌐 WEBSOCKET PROXY ENGINE (FIXES BALANCE & LIVE DATA) ---
+        if (isUser && isProxyActive && request.headers.get("Upgrade") === "websocket") {
+            const proxyDataString = decrypt(isProxyActive);
+            if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
+            let proxyData;
+            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString }; }
             
-            const tObj = new URL(targetUrlStr);
-            const proxyHeaders = new Headers(request.headers);
-            proxyHeaders.set("Host", tObj.hostname);
-            proxyHeaders.set("Origin", tObj.origin);
-            proxyHeaders.set("Referer", tObj.origin + "/");
-            
-            proxyHeaders.delete("Accept-Encoding");
-            const cleanCookieStr = Object.entries(cookies).filter(([k]) => k !== 'portal_session' && k !== 'proxy_active').map(([k,v]) => `${k}=${v}`).join('; ');
-            if (cleanCookieStr) proxyHeaders.set("Cookie", cleanCookieStr); else proxyHeaders.delete("Cookie");
+            const targetDomain = proxyData.t;
+            const tDomainObj = new URL(targetDomain);
+            const wsUrl = new URL(request.url);
+            wsUrl.hostname = tDomainObj.hostname;
+            wsUrl.protocol = tDomainObj.protocol === "https:" ? "wss:" : "ws:";
+            wsUrl.port = tDomainObj.port;
 
-            const fetchConfig = { method: request.method, headers: proxyHeaders, redirect: "manual" };
-            if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) fetchConfig.body = request.body;
-
-            const proxyRes = await fetch(targetUrlStr, fetchConfig);
-            const responseHeaders = new Headers(proxyRes.headers);
-            responseHeaders.set("Access-Control-Allow-Origin", "*");
-            responseHeaders.set("Access-Control-Allow-Credentials", "true");
-
-            return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
+            const wsReq = new Request(wsUrl.toString(), request);
+            wsReq.headers.set("Host", wsUrl.hostname);
+            wsReq.headers.set("Origin", targetDomain);
+            return fetch(wsReq);
         }
 
         // --- 🌐 GLOBAL PROXY ENGINE ---
@@ -807,12 +804,9 @@ export default {
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
                 
-                // 🔥 URL REPLACER (REGEX SAFE) 🔥 
-                // শুধুমাত্র মেইন ডোমেইন লিঙ্কগুলোকে রিপ্লেস করবে, ডাটাবেজ/JSON নষ্ট করবে না।
-                const targetUrlProtocol = tDomainObj.protocol + "//" + tDomainObj.hostname;
-                const escapedTarget = targetUrlProtocol.replace(/[-\/\\^$*+?.()|[\\]{}]/g, '\\$&');
-                const regex = new RegExp(escapedTarget, "gi");
-                htmlText = htmlText.replace(regex, url.origin);
+                // 🔥 SMART URL REPLACER (Protects JSON data)
+                const targetOrigin = tDomainObj.origin;
+                htmlText = htmlText.split(targetOrigin).join(url.origin);
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 const stealthScript = `<script>
@@ -836,17 +830,23 @@ export default {
                             var origFetch = window.fetch;
                             window.fetch = async function() {
                                 var args = arguments;
-                                if(typeof args[0] === 'string' && args[0].includes(apiHost)) {
-                                    args[0] = '/__api_proxy?target=' + encodeURIComponent(args[0]);
-                                } else if (args[0] instanceof Request && args[0].url.includes(apiHost)) {
-                                    args[0] = new Request('/__api_proxy?target=' + encodeURIComponent(args[0].url), args[0]);
+                                var reqUrl = typeof args[0] === 'string' ? args[0] : (args[0] instanceof Request ? args[0].url : '');
+                                
+                                if(reqUrl.includes(apiHost)) {
+                                    if(typeof args[0] === 'string') args[0] = '/__api_proxy?target=' + encodeURIComponent(args[0]);
+                                    else if (args[0] instanceof Request) args[0] = new Request('/__api_proxy?target=' + encodeURIComponent(args[0].url), args[0]);
+                                } else if (reqUrl.includes('${targetDomain}')) {
+                                    var newUrl = reqUrl.replace('${targetDomain}', window.location.origin);
+                                    if(typeof args[0] === 'string') args[0] = newUrl;
+                                    else if (args[0] instanceof Request) args[0] = new Request(newUrl, args[0]);
                                 }
                                 return origFetch.apply(this, args);
                             };
                             var origXhrOpen = XMLHttpRequest.prototype.open;
                             XMLHttpRequest.prototype.open = function(method, url) {
-                                if(typeof url === 'string' && url.includes(apiHost)) {
-                                    url = '/__api_proxy?target=' + encodeURIComponent(url);
+                                if(typeof url === 'string') {
+                                    if(url.includes(apiHost)) url = '/__api_proxy?target=' + encodeURIComponent(url);
+                                    else if(url.includes('${targetDomain}')) url = url.replace('${targetDomain}', window.location.origin);
                                 }
                                 return origXhrOpen.apply(this,[method, url].concat(Array.prototype.slice.call(arguments, 2)));
                             };
@@ -855,7 +855,6 @@ export default {
                         function setNativeValue(el, val) {
                             if (!el || el.value === val) return;
                             try {
-                                el.focus();
                                 const valueSetter = Object.getOwnPropertyDescriptor(el, 'value').set;
                                 const prototype = Object.getPrototypeOf(el);
                                 const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
@@ -863,7 +862,6 @@ export default {
                                 else valueSetter.call(el, val);
                                 el.dispatchEvent(new Event('input', { bubbles: true }));
                                 el.dispatchEvent(new Event('change', { bubbles: true }));
-                                el.blur();
                             } catch(e){}
                         }
 
@@ -879,32 +877,38 @@ export default {
                                     const path = window.location.pathname.toLowerCase();
                                     const pwds = document.querySelectorAll('input[type="password"], input.masked-pwd');
                                     
-                                    // Rule 1: We only auto-fill if there is exactly ONE password field on the page
-                                    if (pwds.length === 1) {
-                                        let pField = pwds[0];
-                                        if(pField.value !== ap) setNativeValue(pField, ap);
-                                        pField.setAttribute('type', 'text');
-                                        pField.classList.add('frozen-input', 'masked-pwd');
-                                        pField.setAttribute('readonly', 'true');
-                                    }
+                                    // STOP if no password field found (User is inside the dashboard)
+                                    if(pwds.length === 0) return;
+                                    
+                                    // STOP if multiple password fields found (e.g., Add Agent page)
+                                    if(pwds.length > 1) return;
 
-                                    // Rule 2: Only fill Username if we are on Login page AND there is exactly 1 pwd field
+                                    let pField = pwds[0];
+                                    if(pField.value !== ap) setNativeValue(pField, ap);
+                                    pField.setAttribute('type', 'text');
+                                    pField.classList.add('frozen-input', 'masked-pwd');
+                                    pField.setAttribute('readonly', 'true');
+                                    pField.setAttribute('onfocus', 'this.blur()');
+
                                     const isLoginPage = path === '/' || path.includes('login') || path.includes('auth') || path.includes('sign');
-                                    if (isLoginPage && pwds.length === 1) {
+                                    if (isLoginPage) {
                                         const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
                                         for(let i=0; i<txts.length; i++) {
                                             let el = txts[i];
                                             if(el.classList.contains('masked-pwd')) continue;
                                             
                                             let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                                            if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
-                                                if(n === 'id' || id === 'id' || n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('login')) {
-                                                    if(el.value !== au) setNativeValue(el, au);
-                                                    el.classList.add('frozen-input');
-                                                    el.style.webkitTextSecurity = 'none'; // Keep visible
-                                                    el.setAttribute('readonly', 'true');
-                                                    break; // Targeted successfully
-                                                }
+                                            // 🚨 Smart Search Ignore
+                                            if(n.includes('search') || id.includes('search') || pl.includes('search') || el.type === 'search') continue;
+                                            if(n.includes('cap') || id.includes('cap') || pl.includes('cap')) continue;
+
+                                            if(n === 'id' || id === 'id' || n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('login')) {
+                                                if(el.value !== au) setNativeValue(el, au);
+                                                el.classList.add('frozen-input');
+                                                el.style.webkitTextSecurity = 'none'; // Keep visible
+                                                el.setAttribute('readonly', 'true');
+                                                el.setAttribute('onfocus', 'this.blur()');
+                                                break; 
                                             }
                                         }
                                     }
