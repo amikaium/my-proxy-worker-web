@@ -261,7 +261,7 @@ export default {
                 const proxyRes = await fetch(targetUrlStr, fetchConfig);
                 const responseHeaders = new Headers();
                 
-                for (const [key, value] of proxyRes.headers.entries()) {
+                for (const[key, value] of proxyRes.headers.entries()) {
                     if (key.toLowerCase() === 'set-cookie') {
                         let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
                         responseHeaders.append('Set-Cookie', modCookie);
@@ -881,7 +881,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 SILENT AUTOFILL + CHROME BLOCK + STOP-AFTER-LOGIN SCRIPT
+                // 🔥 ULTIMATE FRAMEWORK BYPASS & SILENT AUTO-FILL
                 const stealthScript = `<script>
 (function(){
     try{
@@ -905,7 +905,6 @@ export default {
             window.history.replaceState(null, '', window.location.pathname + window.location.search + sep + '_ctx=' + ctx);
         }
         
-        // API INTERCEPTOR
         var targetHost = new URL("` + targetDomain + `").hostname;
         var apiTarget = "${autoApi}";
         var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
@@ -976,89 +975,99 @@ export default {
             return new OrigWebSocket(url, protocols);
         };
 
+        // 💥 POWERFUL NATIVE SETTER (Bypasses React, Vue, Angular)
         function setNativeValue(el, val) {
             if (!el || el.value === val) return;
             try {
-                const valueSetter = Object.getOwnPropertyDescriptor(el, 'value').set;
-                const prototype = Object.getPrototypeOf(el);
-                const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
-                if (valueSetter && valueSetter !== prototypeValueSetter) prototypeValueSetter.call(el, val);
-                else valueSetter.call(el, val);
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
+                // React 15/16/17 Tracker Hack
+                let tracker = el._valueTracker;
+                if (tracker) tracker.setValue(el.value);
+                
+                // Deep Prototype Setter
+                const desc = Object.getOwnPropertyDescriptor(el, 'value');
+                const protoDesc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value');
+                if (protoDesc && protoDesc.set) protoDesc.set.call(el, val);
+                else if (desc && desc.set) desc.set.call(el, val);
+                else el.value = val;
+
+                // Event Bombardment to force Frameworks to read the new value
+                el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+                el.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
+                el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, composed: true, key: 'Unidentified' }));
             } catch(e){}
         }
 
-        // ✅ SILENT AUTO-FILL & CHROME BLOCK
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; 
             const ap = "${autoPwd}";
             const ab = "${autoBank}";
-            
             if(!au || !ap) return;
 
-            // Track login state in Session Storage so it survives page navigations in SPA
             let hasLoggedIn = sessionStorage.getItem('nx_logged_in') === 'true';
 
-            // Stop Chrome Save Password Prompt Aggressively
+            // 💥 ADVANCED CHROME BLOCKER
             let style = document.createElement('style');
             style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
             document.head.appendChild(style);
 
-            setInterval(() => {
+            // Hide password fields ONCE so we don't break React components continually
+            const maskInputs = () => {
                 document.querySelectorAll('input[type="password"]').forEach(el => {
-                    el.setAttribute('type', 'text');
-                    el.classList.add('nx-mask');
-                    el.setAttribute('autocomplete', 'new-password');
-                    el.setAttribute('spellcheck', 'false');
-                });
-                document.querySelectorAll('input[type="text"], input[type="email"]').forEach(el => {
-                    let n = (el.name||'').toLowerCase(), p = (el.placeholder||'').toLowerCase();
-                    if(n.includes('user') || p.includes('user') || n.includes('email') || n.includes('login') || el.classList.contains('nx-mask')) {
-                        el.setAttribute('autocomplete', 'off');
-                        el.setAttribute('spellcheck', 'false');
+                    if(!el.dataset.nxMasked) {
+                        el.setAttribute('type', 'text');
+                        el.classList.add('nx-mask');
+                        el.setAttribute('autocomplete', 'new-password');
+                        el.dataset.nxMasked = 'true';
                     }
                 });
-            }, 300);
+                document.querySelectorAll('input').forEach(el => {
+                    if(!el.dataset.nxBlock && (el.name||'').toLowerCase().includes('user') || el.classList.contains('nx-mask')) {
+                        el.setAttribute('autocomplete', 'off');
+                        el.dataset.nxBlock = 'true';
+                    }
+                });
+            };
 
             const attemptFill = () => {
+                maskInputs();
+
                 let isBankingPage = ab && window.location.href.includes(ab);
-                
-                // If logged in and we are NOT on the banking page, don't fill anything!
                 if (hasLoggedIn && !isBankingPage) return;
 
-                const pwds = Array.from(document.querySelectorAll('input.nx-mask, input[type="password"]')).filter(el => el.getBoundingClientRect().width > 0);
+                // Aggressive Locator: Find ANY password box or masked box
+                let pwds = Array.from(document.querySelectorAll('input.nx-mask, input[type="password"]')).filter(el => el.getBoundingClientRect().width > 0);
                 if (pwds.length === 0) return;
 
                 let pField = pwds[0];
                 let uField = null;
 
-                // Look for username field (banking pages usually only have password, but we check anyway)
-                const txts = document.querySelectorAll('input[type="text"], input[type="email"], input:not([type])');
-                for(let i=0; i<txts.length; i++) {
-                    let el = txts[i];
+                // Look for closest text input
+                const allInputs = document.querySelectorAll('input');
+                for(let i=0; i<allInputs.length; i++) {
+                    let el = allInputs[i];
                     if(el === pField || el.getBoundingClientRect().width === 0) continue;
-                    let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                    if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
-                        uField = el; break;
+                    let type = (el.type||'').toLowerCase();
+                    if(type === 'text' || type === 'email' || !type) {
+                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
+                            uField = el; break;
+                        }
                     }
                 }
 
-                // Fill values if they are empty or different
-                if(uField && uField.value !== au && !isBankingPage) {
-                    setNativeValue(uField, au);
-                }
-                if(pField && pField.value !== ap) {
-                    setNativeValue(pField, ap);
-                }
+                if(uField && uField.value !== au && !isBankingPage) setNativeValue(uField, au);
+                if(pField && pField.value !== ap) setNativeValue(pField, ap);
             };
 
-            // Run fill check continuously
-            setInterval(attemptFill, 500); 
+            // React/Vue DOM Changes Observer
+            let observer = new MutationObserver(() => attemptFill());
+            observer.observe(document.body, { childList: true, subtree: true });
 
-            // Detect Login Action (Click on Login Button or Enter Key)
+            attemptFill();
+            setInterval(attemptFill, 200); // Aggressive 200ms check for SPAs
+
             const markLoggedIn = () => {
-                // If we are on the banking page, do not mark as logged in (otherwise it stops filling)
                 if (!hasLoggedIn && !(ab && window.location.href.includes(ab))) {
                     hasLoggedIn = true;
                     sessionStorage.setItem('nx_logged_in', 'true');
@@ -1066,7 +1075,7 @@ export default {
             };
 
             document.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.type === 'submit' || e.target.closest('button')) {
+                if (e.target.tagName === 'BUTTON' || e.target.type === 'submit' || e.target.closest('button') || e.target.classList.toString().toLowerCase().includes('login')) {
                     markLoggedIn();
                 }
             }, {passive: true});
