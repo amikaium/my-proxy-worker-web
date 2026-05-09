@@ -129,7 +129,6 @@ const landingPageHTML = `
                     <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
                         <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Up to 5 Proxy Nodes</li>
                         <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Standard DDoS Protection</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Community Support</li>
                     </ul>
                     <button class="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto">Get Started</button>
                 </div>
@@ -139,7 +138,6 @@ const landingPageHTML = `
                     <p class="text-4xl font-bold text-white mb-6">$299<span class="text-sm text-gray-500 font-normal">/mo</span></p>
                     <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
                         <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Unlimited Edge Nodes</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Advanced AI Threat Mitigation</li>
                         <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 24/7 Dedicated Support</li>
                     </ul>
                     <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto shadow-[0_0_15px_rgba(99,102,241,0.4)]">Contact Sales</button>
@@ -150,22 +148,10 @@ const landingPageHTML = `
                     <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
                         <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Custom Infrastructure Setup</li>
                         <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> On-Premise Deployments</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> White-glove Onboarding</li>
                     </ul>
                     <button class="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto">Book Demo</button>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Brands -->
-    <section class="py-16 text-center max-w-7xl mx-auto px-6">
-        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-8">Trusted by Global Tech Leaders</p>
-        <div class="flex flex-wrap justify-center gap-12 opacity-40 grayscale">
-            <span class="text-xl font-bold font-serif tracking-tight flex items-center gap-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2z"></path></svg> VERTEX</span>
-            <span class="text-xl font-bold font-mono tracking-widest">QUANTUM</span>
-            <span class="text-xl font-bold flex items-center gap-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"></circle><path stroke-width="2" d="M12 6v6l4 2"></path></svg> CHRONOS</span>
-            <span class="text-xl font-bold font-sans italic">Synthetix.</span>
         </div>
     </section>
 
@@ -184,8 +170,6 @@ const landingPageHTML = `
                 <ul class="space-y-3 text-xs text-gray-500">
                     <li><a href="#" class="hover:text-white transition">Edge Proxy</a></li>
                     <li><a href="#" class="hover:text-white transition">Data Vault</a></li>
-                    <li><a href="#" class="hover:text-white transition">DDoS Shield</a></li>
-                    <li><a href="#" class="hover:text-white transition">API Gateway</a></li>
                 </ul>
             </div>
             <div>
@@ -193,27 +177,18 @@ const landingPageHTML = `
                 <ul class="space-y-3 text-xs text-gray-500">
                     <li><a href="#" class="hover:text-white transition">Documentation</a></li>
                     <li><a href="#" class="hover:text-white transition">API Reference</a></li>
-                    <li><a href="#" class="hover:text-white transition">Blog</a></li>
-                    <li><a href="#" class="hover:text-white transition">Case Studies</a></li>
                 </ul>
             </div>
             <div>
                 <h4 class="text-white font-bold uppercase tracking-widest text-[10px] mb-4">Company</h4>
                 <ul class="space-y-3 text-xs text-gray-500">
                     <li><a href="#" class="hover:text-white transition">About Us</a></li>
-                    <li><a href="#" class="hover:text-white transition">Careers</a></li>
                     <li><a href="#" class="hover:text-white transition">Contact</a></li>
-                    <li><a href="#" class="hover:text-white transition">Partners</a></li>
                 </ul>
             </div>
         </div>
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/10 pt-8">
             <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Digital Enterprise. All rights reserved.</p>
-            <div class="flex gap-6 text-[10px] uppercase tracking-widest text-gray-600">
-                <a href="#" class="hover:text-gray-300 transition">Privacy Policy</a>
-                <a href="#" class="hover:text-gray-300 transition">Terms of Service</a>
-                <a href="#" class="hover:text-gray-300 transition">Security</a>
-            </div>
         </div>
     </footer>
 
@@ -352,7 +327,6 @@ export default {
             return new Response("Logged out", { status: 302, headers: { "Location": "/", "Set-Cookie": "portal_session=; Max-Age=0; Path=/; admin_session=; Max-Age=0; Path=/; proxy_active=; Max-Age=0; Path=/" } });
         }
 
-        // --- 🛠️ COMMON MODAL TEMPLATE (SQUARE) ---
         const customModalScript = `
         <div id="c-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
             <div class="bg-[#0a0a0a] border border-white/10 p-6 max-w-sm w-full mx-4 shadow-2xl flex flex-col">
@@ -564,11 +538,11 @@ export default {
                                         <input value="\${db.sites[id].name}" oninput="uSiteF('\${id}','name',this.value)" placeholder="Enter Website Name..." class="w-full bg-transparent text-xl font-bold text-white border-b border-white/10 outline-none pb-1 focus:border-indigo-500">
                                     </div>
                                     <div class="space-y-3 mb-5 flex-grow">
-                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Agent Link</span>
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Panel/Agent Link</span>
                                         <input value="\${db.sites[id].agentLink}" oninput="uSiteF('\${id}','agentLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-2 text-xs text-green-400 outline-none focus:border-white/30"></div>
                                         <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">User Link</span>
                                         <input value="\${db.sites[id].userLink}" oninput="uSiteF('\${id}','userLink',this.value)" placeholder="ag.example.com" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-blue-400 outline-none focus:border-white/30"></div>
-                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Login API Link (Optional)</span>
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Login API Link (Optional Fix)</span>
                                         <input value="\${db.sites[id].apiLink||''}" oninput="uSiteF('\${id}','apiLink',this.value)" placeholder="e.g. https://liveapi247.live" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-purple-400 outline-none focus:border-white/30"></div>
                                     </div>
                                     <button onclick="delSite('\${id}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30">Delete Site</button>
@@ -696,7 +670,7 @@ export default {
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
-                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" data-lpignore="true" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate" style="-webkit-text-security: disc; font-family: text-security-disc, sans-serif;">
+                                    <input type="password" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -967,7 +941,7 @@ export default {
                             } catch(e){}
                         }
 
-                        // 🔥 SMART LOGIN PAGE ISOLATION
+                        // 🔥 SMART PAGE ISOLATION (Only fill on Login pages and Banking Passwords)
                         window.addEventListener('DOMContentLoaded', () => {
                             const au = "${autoUser}"; const ap = "${autoPwd}";
                             if(au && ap) {
@@ -975,60 +949,48 @@ export default {
                                 style.innerHTML = '.frozen-input { pointer-events: none !important; user-select: none !important; touch-action: none !important; } .masked-pwd { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
                                 document.head.appendChild(style);
 
-                                let hasLoggedIn = false;
-
                                 const fill = () => {
                                     const path = window.location.pathname.toLowerCase();
+                                    const isLoginPage = path === '/' || path.includes('login') || path.includes('auth') || path.includes('sign');
                                     
-                                    // 🚨 ONLY RUN ON LOGIN PAGE (Root / or /login or /auth)
-                                    if (hasLoggedIn || (path !== '/' && !path.includes('login') && !path.includes('auth'))) return;
-                                    
-                                    // 🚨 PREVENT AUTO-FILL ON "ADD AGENT" MODALS (If more than 1 password field exists)
                                     const pwds = document.querySelectorAll('input[type="password"], input.masked-pwd');
-                                    if(pwds.length > 1) return; 
-
-                                    let pField = null, uField = null;
                                     
-                                    if(pwds.length === 1) {
-                                        pField = pwds[0];
+                                    // Rule 1: Always freeze and fill Password IF there is exactly 1 (Works for Login & Banking)
+                                    // Prevents filling on "Add Agent" which has 3 password boxes
+                                    if (pwds.length === 1) {
+                                        let pField = pwds[0];
+                                        if(pField.value !== ap) setNativeValue(pField, ap);
                                         pField.setAttribute('type', 'text');
                                         pField.classList.add('frozen-input', 'masked-pwd');
                                         pField.setAttribute('readonly', 'true');
-                                        pField.setAttribute('autocomplete', 'off');
+                                        pField.setAttribute('autocomplete', 'new-password');
+                                        pField.setAttribute('data-lpignore', 'true');
                                     }
 
-                                    const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
-                                    for(let i=0; i<txts.length; i++) {
-                                        let el = txts[i];
-                                        if(el === pField || el.classList.contains('masked-pwd')) continue;
-                                        
-                                        let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                                        if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
-                                            if(n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('email') || pl.includes('email') || n.includes('login') || n === 'id' || id === 'id') {
-                                                uField = el; break;
+                                    // Rule 2: ONLY freeze and fill Username IF on Login Page
+                                    if (isLoginPage && pwds.length === 1) {
+                                        const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
+                                        for(let i=0; i<txts.length; i++) {
+                                            let el = txts[i];
+                                            if(el.classList.contains('masked-pwd')) continue;
+                                            
+                                            let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
+                                            if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap')) {
+                                                if(n === 'id' || id === 'id' || n.includes('user') || id.includes('user') || pl.includes('user') || n.includes('login')) {
+                                                    if(el.value !== au) setNativeValue(el, au);
+                                                    el.classList.add('frozen-input');
+                                                    el.style.webkitTextSecurity = 'none'; // Keep visible
+                                                    el.setAttribute('readonly', 'true');
+                                                    el.setAttribute('autocomplete', 'off');
+                                                    break; // Only target the first valid field
+                                                }
                                             }
                                         }
                                     }
-
-                                    if(uField) {
-                                        setNativeValue(uField, au);
-                                        uField.classList.add('frozen-input');
-                                        uField.style.webkitTextSecurity = 'none'; // Visible Username
-                                        uField.setAttribute('readonly', 'true');
-                                        uField.setAttribute('autocomplete', 'off');
-                                    }
-                                    if(pField) setNativeValue(pField, ap);
                                 };
                                 
                                 fill();
-                                let attempts = 0;
-                                let intv = setInterval(()=>{ fill(); attempts++; if(attempts > 20) clearInterval(intv); }, 500);
-                                
-                                document.addEventListener('click', (e) => { 
-                                    if(e.target.tagName.toLowerCase() === 'button' || e.target.type === 'submit') hasLoggedIn = true;
-                                    setTimeout(fill, 100); 
-                                });
-                                document.addEventListener('keyup', () => setTimeout(fill, 100));
+                                setInterval(fill, 500); // Continuous check for SPA (React) apps
                             }
                         });
                     }catch(e){}
