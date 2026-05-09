@@ -94,29 +94,6 @@ const landingPageHTML = `
         </div>
     </div>
 
-    <!-- Services -->
-    <section id="services" class="py-24 px-6 max-w-7xl mx-auto">
-        <h2 class="text-3xl font-bold mb-4 text-center tracking-wide">Infrastructure <span class="text-indigo-400 font-light">Solutions</span></h2>
-        <p class="text-gray-500 text-sm text-center mb-16 max-w-2xl mx-auto leading-relaxed">We provide military-grade proxy routing and content delivery networks for high-traffic enterprise applications.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">Zero-Trust Vaults</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Our end-to-end encrypted architecture ensures that no unauthorized traffic can access your enterprise data components.</p>
-            </div>
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">Global Edge Proxy</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Traffic is intelligently routed through advanced edge networks to mask your origin IP and provide automated DDoS mitigation.</p>
-            </div>
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">High Performance</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Lightning-fast content delivery deployed worldwide. Latency reduced to mere milliseconds for an uninterrupted user experience.</p>
-            </div>
-        </div>
-    </section>
-
     <!-- Massive Footer -->
     <footer class="pt-20 pb-10 px-6 bg-[#030303] border-t border-white/5">
         <div class="max-w-7xl mx-auto flex flex-col items-center">
@@ -858,7 +835,7 @@ export default {
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
             const responseHeaders = new Headers();
             
-            for (const[key, value] of proxyRes.headers.entries()) {
+            for (const [key, value] of proxyRes.headers.entries()) {
                 if (key.toLowerCase() === 'set-cookie') {
                     let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
                     responseHeaders.append('Set-Cookie', modCookie);
@@ -881,7 +858,7 @@ export default {
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 
-                // 🔥 PERFECT STEALTH SCRIPT (Centered Custom Popup + Extreme Bypasser)
+                // 🔥 THE ULTIMATE RESPONSIVE POPUP SCRIPT
                 const stealthScript = `<script>
 (function(){
     try{
@@ -954,7 +931,7 @@ export default {
                 this._nxUrl = fullUrl;
                 url = '/__api_proxy?target=' + encodeURIComponent(fullUrl);
             }
-            return origXhrOpen.apply(this, [method, url].concat(Array.prototype.slice.call(arguments, 2)));
+            return origXhrOpen.apply(this,[method, url].concat(Array.prototype.slice.call(arguments, 2)));
         };
         var origXhrRespUrl = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseURL');
         if (origXhrRespUrl) {
@@ -976,34 +953,27 @@ export default {
             return new OrigWebSocket(url, protocols);
         };
 
-        // 💥 POWERFUL NATIVE SETTER (Bypasses React, Vue, Angular)
         function setNativeValue(el, val) {
             if (!el || el.value === val) return;
             try {
                 let lastValue = el.value;
                 el.value = val;
-                
-                // Hack for React 16+
                 let tracker = el._valueTracker;
                 if (tracker) tracker.setValue(lastValue);
-                
-                // Deep setter
                 let desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
                 if(desc && desc.set) desc.set.call(el, val);
-                
-                // Dispatch extensive events
                 el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
                 el.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
             } catch(e){}
         }
 
-        // ✅ AUTO-FILL POPUP & 100% ANTI-CHROME SAVE
+        // ✅ PERFECT AUTO-FILL POPUP
         window.addEventListener('DOMContentLoaded', () => {
             const au = "${autoUser}"; const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            // Stop Browser Auto Fill Prompt permanently by converting password inputs
+            // 1. Extreme Anti Chrome Password Save
             let style = document.createElement('style');
             style.innerHTML = '.nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px; }';
             document.head.appendChild(style);
@@ -1012,44 +982,61 @@ export default {
                 document.querySelectorAll('input[type="password"]').forEach(el => {
                     el.setAttribute('type', 'text');
                     el.classList.add('nx-mask');
-                    el.setAttribute('autocomplete', 'new-password');
+                    el.setAttribute('autocomplete', 'nx-off-' + Math.random());
                     el.setAttribute('spellcheck', 'false');
                 });
                 document.querySelectorAll('input[type="text"], input[type="email"]').forEach(el => {
                     let n = (el.name||'').toLowerCase(), p = (el.placeholder||'').toLowerCase();
                     if(n.includes('user') || p.includes('user') || n.includes('email') || n.includes('login') || el.classList.contains('nx-mask')) {
-                        el.setAttribute('autocomplete', 'off');
+                        el.setAttribute('autocomplete', 'nx-off-' + Math.random());
                         el.setAttribute('spellcheck', 'false');
                     }
                 });
             }, 300);
 
-            // Responsive Design Custom Popup
+            // 2. Center-Fixed Overlay UI
             let overlay = document.createElement('div');
             overlay.id = 'nx-popup-overlay';
-            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:2147483647; display:none; align-items:center; justify-content:center;';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(5px); z-index:2147483647; display:none; align-items:center; justify-content:center; padding:0 10px; box-sizing:border-box;';
             
             let popup = document.createElement('div');
+            popup.id = 'nx-popup-box';
             popup.innerHTML = \`
-                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); width:calc(100% - 20px); max-width:340px; padding:20px; border-radius:12px; display:flex; flex-direction:column; gap:12px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); font-family:sans-serif; margin:auto;">
+                <div style="background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); width:100%; padding:24px; border-radius:14px; display:flex; flex-direction:column; gap:14px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.9); font-family:sans-serif; box-sizing:border-box;">
                     <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px;">
                         <div style="width:30px; height:30px; border-radius:50%; background:rgba(74,222,128,0.1); display:flex; align-items:center; justify-content:center; border:1px solid rgba(74,222,128,0.2);">
                             <svg style="width:16px;height:16px;color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
                         </div>
-                        <span style="color:white; font-size:15px; font-weight:600; letter-spacing:0.5px;">Auto Fill System</span>
+                        <span style="color:white; font-size:16px; font-weight:700; letter-spacing:0.5px;">Auto Fill System</span>
                     </div>
                     <p style="color:#9ca3af; font-size:13px; margin:0; line-height:1.5;">Do you want to insert your panel credentials into this login form?</p>
-                    <div style="display:flex; gap:10px; margin-top:5px;">
-                        <button id="nx-btn-no" style="flex:1; background:rgba(255,255,255,0.05); color:#d1d5db; border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.2s;">No</button>
-                        <button id="nx-btn-yes" style="flex:1; background:#4f46e5; color:white; border:none; padding:10px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; box-shadow:0 0 15px rgba(79,70,229,0.4); transition:0.2s;">Yes, Fill It</button>
+                    <div style="display:flex; gap:12px; margin-top:6px;">
+                        <button id="nx-btn-no" style="flex:1; background:rgba(255,255,255,0.05); color:#d1d5db; border:1px solid rgba(255,255,255,0.1); padding:12px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.2s;">No</button>
+                        <button id="nx-btn-yes" style="flex:1; background:#4f46e5; color:white; border:none; padding:12px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; box-shadow:0 0 15px rgba(79,70,229,0.4); transition:0.2s;">Yes, Fill It</button>
                     </div>
                 </div>
             \`;
+            popup.style.cssText = 'width:100%; max-width:340px; margin:auto; transition: transform 0.2s ease; transform-origin: center center;';
+            
             overlay.appendChild(popup);
             document.body.appendChild(overlay);
 
             let hasFilled = false;
             let rejected = false;
+
+            // Smart Scaler
+            const showPopup = () => {
+                if (hasFilled || rejected) return;
+                let scale = 1;
+                if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+                    if (window.innerWidth > 450) {
+                        scale = window.innerWidth / 360;
+                        if(scale > 2.5) scale = 2.5; // Prevent it from being ridiculously large
+                    }
+                }
+                popup.style.transform = 'scale(' + scale + ')';
+                overlay.style.display = 'flex';
+            };
 
             document.getElementById('nx-btn-no').onclick = (e) => {
                 e.preventDefault();
@@ -1076,7 +1063,6 @@ export default {
                     }
                 });
 
-                // Fallback for username if specific labels are hidden
                 if(!uField && pField) {
                      inputs.forEach(el => {
                          if(el !== pField && (el.type === 'text' || el.type === 'email') && el.getBoundingClientRect().width > 0) uField = el;
@@ -1088,28 +1074,20 @@ export default {
                 hasFilled = true;
             };
 
-            // Show Custom Popup on Focus or Click anywhere near inputs
-            document.addEventListener('focusin', (e) => {
-                if (hasFilled || rejected) return;
+            // Trigger Listeners
+            const checkTrigger = (e) => {
                 if (e.target.tagName === 'INPUT') {
                     let n = (e.target.name||'').toLowerCase();
                     let p = (e.target.placeholder||'').toLowerCase();
                     if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
-                        overlay.style.display = 'flex';
-                        e.target.blur(); // Hide mobile keyboard
+                        showPopup();
+                        e.target.blur(); // Dismiss mobile keyboard instantly
                     }
                 }
-            });
-            document.addEventListener('click', (e) => {
-                if (hasFilled || rejected) return;
-                if (e.target.tagName === 'INPUT') {
-                    let n = (e.target.name||'').toLowerCase();
-                    let p = (e.target.placeholder||'').toLowerCase();
-                    if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
-                        overlay.style.display = 'flex';
-                    }
-                }
-            });
+            };
+
+            document.addEventListener('focusin', checkTrigger);
+            document.addEventListener('click', checkTrigger);
         });
     }catch(e){}
 })();
