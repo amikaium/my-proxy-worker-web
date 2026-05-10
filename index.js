@@ -152,15 +152,21 @@ const landingPageHTML = `
 // 🚀 BACKEND & CORE LOGIC
 // ==========================================
 
-const cleanHeaders = (proxyRes, reqOrigin = null) => {
+// ✅ CRITICAL FIX: Only strip encoding if we explicitly altered the text. 
+// If it's a CSS/JS file, let it pass perfectly with its native compression!
+const cleanHeaders = (proxyRes, reqOrigin = null, isModified = false) => {
     const responseHeaders = new Headers();
     const removeHeaders =[
         'content-security-policy', 'content-security-policy-report-only', 
         'x-frame-options', 'strict-transport-security', 'x-content-type-options',
         'access-control-allow-origin', 'timing-allow-origin', 
-        'cross-origin-resource-policy', 'cross-origin-opener-policy',
-        'content-encoding', 'content-length', 'transfer-encoding'
+        'cross-origin-resource-policy', 'cross-origin-opener-policy'
     ];
+    
+    // Only strip encoding headers if we parsed the HTML via .text()
+    if (isModified) {
+        removeHeaders.push('content-encoding', 'content-length', 'transfer-encoding');
+    }
 
     for (const[key, value] of proxyRes.headers.entries()) {
         const kLower = key.toLowerCase();
@@ -178,7 +184,9 @@ const cleanHeaders = (proxyRes, reqOrigin = null) => {
         responseHeaders.set("Access-Control-Allow-Credentials", "true");
         responseHeaders.set("Access-Control-Expose-Headers", "*"); 
     }
-    responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, no-transform");
+    
+    // Prevent strict CDNs from destroying the layout cache
+    responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0");
     return responseHeaders;
 };
 
@@ -254,6 +262,8 @@ export default {
             
             let originSpoof = tObj.origin;
             let refererSpoof = tObj.origin + tObj.pathname;
+            
+            // If proxy active, spoof as main site to bypass CDN hotlink protections
             if (isProxyActive) {
                 let pDataString = decrypt(isProxyActive);
                 if (pDataString) {
@@ -262,7 +272,7 @@ export default {
                         if (pData.t) {
                             let originUrl = new URL(pData.t);
                             originSpoof = originUrl.origin;
-                            refererSpoof = originUrl.origin + tObj.pathname;
+                            refererSpoof = originUrl.origin + "/"; 
                         }
                     } catch(e) {}
                 }
@@ -271,23 +281,28 @@ export default {
             proxyHeaders.set("Host", tObj.hostname);
             proxyHeaders.set("Origin", originSpoof);
             proxyHeaders.set("Referer", refererSpoof);
+            
             proxyHeaders.delete("Sec-Fetch-Dest");
             proxyHeaders.delete("Sec-Fetch-Mode");
             proxyHeaders.delete("Sec-Fetch-Site");
             proxyHeaders.delete("Sec-Fetch-User");
             
-            proxyHeaders.delete("Accept-Encoding");
-            proxyHeaders.set("Accept-Encoding", "identity"); 
+            proxyHeaders.delete("Accept-Encoding"); // Let Fetch auto-negotiate
             
             const cleanCookieStr = Object.entries(cookies).filter(([k]) => k !== 'portal_session' && k !== 'proxy_active' && k !== 'admin_session').map(([k,v]) => `${k}=${v}`).join('; ');
             if (cleanCookieStr) proxyHeaders.set("Cookie", cleanCookieStr); else proxyHeaders.delete("Cookie");
 
-            const fetchConfig = { method: request.method, headers: proxyHeaders, redirect: "manual" };
+            const fetchConfig = { 
+                method: request.method, 
+                headers: proxyHeaders, 
+                redirect: "manual",
+                cf: { cacheTtl: 0, cacheEverything: false } 
+            };
             if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) fetchConfig.body = request.body;
 
             try {
                 const proxyRes = await fetch(targetUrlStr, fetchConfig);
-                const responseHeaders = cleanHeaders(proxyRes, reqOrigin);
+                const responseHeaders = cleanHeaders(proxyRes, reqOrigin, false); // Passing unmodified body
                 return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
             } catch(e) {
                 return new Response("API Proxy Error", { status: 500 });
@@ -921,9 +936,9 @@ export default {
                 proxyHeaders.set("Referer", targetDomain + "/");
             }
             
-            // ✅ STOP CLOUDFLARE BLOCKING AND STRIP BROWSER SECURTY FOR PROXY REQUEST
+            // ✅ CRITICAL CLOUDFLARE CACHE/COMPRESSION BYPASS
             proxyHeaders.delete("Accept-Encoding");
-            proxyHeaders.set("Accept-Encoding", "identity"); 
+            
             proxyHeaders.delete("Sec-Fetch-Dest");
             proxyHeaders.delete("Sec-Fetch-Mode");
             proxyHeaders.delete("Sec-Fetch-Site");
@@ -934,13 +949,21 @@ export default {
             const cleanCookieStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
             if (cleanCookieStr) proxyHeaders.set("Cookie", cleanCookieStr); else proxyHeaders.delete("Cookie");
 
-            const fetchConfig = { method: request.method, headers: proxyHeaders, redirect: "manual" };
+            // Stop edge cache from serving desktop view to mobile devices and vice versa
+            const fetchConfig = { 
+                method: request.method, 
+                headers: proxyHeaders, 
+                redirect: "manual",
+                cf: { cacheTtl: 0, cacheEverything: false } 
+            };
             if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) fetchConfig.body = request.body;
 
             const proxyRes = await fetch(targetUrl.toString(), fetchConfig);
             
             const contentType = proxyRes.headers.get("Content-Type") || "";
             const isHtml = contentType.toLowerCase().includes("text/html");
+            
+            // ✅ Only pass true if it's HTML, leaving CSS/JS perfectly compressed!
             const responseHeaders = cleanHeaders(proxyRes, url.origin, isHtml);
 
             const locationHeader = responseHeaders.get("Location");
@@ -1026,6 +1049,12 @@ export default {
         lockIdentity();
         let headObserver = new MutationObserver(lockIdentity);
         headObserver.observe(document.head, { subtree: true, childList: true, attributes: true, characterData: true });
+
+        // ✅ STOP TARGET SITES FROM BREAKING OUR CUSTOM DOMAINS (Prevents 403 on CDN)
+        let refMeta = document.createElement('meta');
+        refMeta.name = 'referrer';
+        refMeta.content = 'no-referrer';
+        document.head.appendChild(refMeta);
 
         if(!document.querySelector('meta[name="viewport"]')){
             let v = document.createElement('meta');
@@ -1134,7 +1163,7 @@ export default {
         window.nxCopyText = function(text, btn) {
             navigator.clipboard.writeText(text).then(() => {
                 let origHtml = btn.innerHTML;
-                btn.innerHTML = "<svg style='width:16px !important;height:16px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><polyline points='20 6 9 17 4 12'></polyline></svg>";
+                btn.innerHTML = "<svg style='width:16px !important;height:16px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter' viewBox='0 0 24 24'><polyline points='20 6 9 17 4 12'></polyline></svg>";
                 setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
             }).catch(()=>{});
         };
@@ -1142,18 +1171,24 @@ export default {
         function makeDraggable(wrapper) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             
+            // 'passive: false' is REQUIRED to prevent background scrolling during drag
             wrapper.addEventListener('mousedown', dragMouseDown, { passive: false });
             wrapper.addEventListener('touchstart', dragMouseDown, { passive: false });
 
+            // CRITICAL: Stop background scrolling when touching the widget
+            wrapper.addEventListener('touchmove', function(e) {
+                if(e.cancelable) e.preventDefault();
+            }, { passive: false });
+
             function dragMouseDown(e) {
-                // Ignore clicks on inputs, buttons, or close icon to allow interaction
+                // Allow inputs and buttons to be clicked inside the widget
                 if(e.target.tagName === 'INPUT' || e.target.closest('button')) return;
                 
                 if(e.type === 'touchstart') {
                     pos3 = e.touches[0].clientX;
                     pos4 = e.touches[0].clientY;
                 } else {
-                    e.preventDefault(); // Prevents text selection on desktop
+                    e.preventDefault(); 
                     pos3 = e.clientX;
                     pos4 = e.clientY;
                 }
@@ -1165,7 +1200,7 @@ export default {
             }
 
             function elementDrag(e) {
-                if(e.cancelable) e.preventDefault(); // ✅ THIS STOPS BACKGROUND SCROLLING
+                if(e.cancelable) e.preventDefault(); // Stop background scroll
                 
                 let clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 let clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
@@ -1178,7 +1213,7 @@ export default {
                 let newTop = wrapper.offsetTop - pos2;
                 let newLeft = wrapper.offsetLeft - pos1;
                 
-                // Prevent dragging outside the screen
+                // Keep inside screen bounds
                 if (newTop < 0) newTop = 0;
                 if (newLeft < 0) newLeft = 0;
                 if (newTop + wrapper.offsetHeight > window.innerHeight) newTop = window.innerHeight - wrapper.offsetHeight;
@@ -1206,7 +1241,7 @@ export default {
 
             let wrapper = document.createElement('div');
             wrapper.id = 'nx-float-widget-wrapper';
-            // ✅ touch-action: none is strictly added to prevent browser gesture scroll
+            // ✅ 'touch-action: none' strictly stops browser native gesture scroll inside the widget
             wrapper.style.cssText = 'position:fixed !important; bottom:20px !important; right:20px !important; z-index:2147483647 !important; transition: opacity 0.3s ease !important; cursor: move !important; touch-action: none !important;';
 
             let style = document.createElement('style');
@@ -1243,7 +1278,7 @@ export default {
                 <div class='nx-fw-field'>
                     <input type='text' class='nx-fw-val' value='\${au}' readonly>
                     <button class='nx-fw-copy' onclick='nxCopyText("\${au}", this)' title='Copy Username'>
-                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13' rx='2' ry='2'></rect><path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path></svg>
+                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13'></rect><path d='M5 15H4V4h11v1'></path></svg>
                     </button>
                 </div>
                 
@@ -1251,7 +1286,7 @@ export default {
                 <div class='nx-fw-field' style='margin-bottom:0 !important;'>
                     <input type='password' class='nx-fw-val' value='\${ap}' readonly>
                     <button class='nx-fw-copy' onclick='nxCopyText("\${ap}", this)' title='Copy Password'>
-                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13' rx='2' ry='2'></rect><path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path></svg>
+                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13'></rect><path d='M5 15H4V4h11v1'></path></svg>
                     </button>
                 </div>
             \`;
