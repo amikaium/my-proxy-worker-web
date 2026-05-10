@@ -1,4 +1,3 @@
-```javascript
 // ==========================================
 // ⚙️ SECURE FIREBASE CONFIGURATION
 // ==========================================
@@ -1276,4 +1275,3 @@ export default {
         return new Response(landingPageHTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
     }
 };
-```
