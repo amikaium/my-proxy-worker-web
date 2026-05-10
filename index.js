@@ -437,7 +437,7 @@ export default {
                         if(!db.pins[pin].siteConf) db.pins[pin].siteConf = {};
                         if(chk && !list.includes(siteId)) {
                             list.push(siteId);
-                            db.pins[pin].siteConf[siteId] = [{u:'', r:'Admin', p:''}];
+                            db.pins[pin].siteConf[siteId] =[{u:'', r:'Admin', p:''}];
                         } else if(!chk) {
                             list = list.filter(i => i !== siteId);
                             delete db.pins[pin].siteConf[siteId];
@@ -465,7 +465,7 @@ export default {
                         render();
                     }
 
-                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:'', apiLink:'', bankingLink:''}; tab='sites'; render(); }
+                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:'', apiLink:''}; tab='sites'; render(); }
                     
                     function addPin() { 
                         CustomModal.show({type:'prompt', title:'New User', text:'Enter User Name (e.g. John Doe):', onConfirm: (name) => {
@@ -585,11 +585,6 @@ export default {
                                         <div>
                                             <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Backend API Link</span>
                                             <input value="\${db.sites[id].apiLink||''}" oninput="uSiteF('\${id}','apiLink',this.value)" placeholder="e.g. https://liveapi247.live" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-purple-400 outline-none focus:border-white/30 rounded-sm">
-                                        </div>
-
-                                        <div class="mt-4 pt-3 border-t border-white/5">
-                                            <span class="text-[8px] text-yellow-500 font-bold uppercase tracking-widest mb-1 block">Banking Link (For Auto-fill)</span>
-                                            <input value="\${db.sites[id].bankingLink||''}" oninput="uSiteF('\${id}','bankingLink',this.value)" placeholder="e.g. /agent/banking or full URL" class="w-full bg-yellow-500/10 border border-yellow-500/30 p-2 text-xs text-yellow-400 outline-none focus:border-yellow-500 rounded-sm">
                                         </div>
                                     </div>
                                     <button onclick="delSite('\${id}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30 whitespace-nowrap rounded-sm">Delete Site</button>
@@ -812,7 +807,6 @@ export default {
             const proxyData = JSON.stringify({ 
                 t: db.sites[siteId].agentLink, 
                 a: db.sites[siteId].apiLink || '', 
-                b: db.sites[siteId].bankingLink || '', 
                 u: conf.u || '', 
                 p: conf.p || '' 
             });
@@ -831,11 +825,10 @@ export default {
             if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
             
             let proxyData;
-            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, a: '', b: '', u: '', p: '' }; }
+            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, a: '', u: '', p: '' }; }
 
             const targetDomain = proxyData.t;
             const autoApi = proxyData.a;
-            const autoBank = proxyData.b;
             const autoUser = proxyData.u;
             const autoPwd = proxyData.p;
 
@@ -1080,7 +1073,7 @@ export default {
         window.nxCopyText = function(text, btn) {
             navigator.clipboard.writeText(text).then(() => {
                 let origHtml = btn.innerHTML;
-                btn.innerHTML = "<svg style='width:14px;height:14px;color:#10b981;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>";
+                btn.innerHTML = "<svg style='width:16px !important;height:16px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>";
                 setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
             }).catch(()=>{});
         };
@@ -1097,18 +1090,18 @@ export default {
 
             let style = document.createElement('style');
             style.innerHTML = \`
-                #nx-float-widget { width:280px !important; background:#111827 !important; border:1px solid #374151 !important; border-radius:12px !important; box-shadow:0 10px 25px rgba(0,0,0,0.8) !important; font-family:system-ui, -apple-system, sans-serif !important; padding:16px !important; color:#f3f4f6 !important; box-sizing:border-box !important; }
-                #nx-float-widget * { box-sizing:border-box !important; margin:0 !important; padding:0 !important; line-height:normal !important; letter-spacing:normal !important; font-size:initial !important; font-family:system-ui, -apple-system, sans-serif !important; text-transform:none !important; }
-                .nx-fw-header { display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:10px !important; }
-                .nx-fw-title { font-size:14px !important; font-weight:600 !important; color:#10b981 !important; display:flex !important; align-items:center !important; gap:6px !important; }
-                .nx-fw-close { background:none !important; border:none !important; color:#9ca3af !important; cursor:pointer !important; padding:4px !important; border-radius:4px !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; }
-                .nx-fw-close:hover { background:#374151 !important; color:#fff !important; }
-                .nx-fw-desc { font-size:12px !important; color:#9ca3af !important; margin-bottom:14px !important; line-height:1.4 !important; }
-                .nx-fw-field { background:#1f2937 !important; border:1px solid #374151 !important; border-radius:6px !important; padding:8px 10px !important; margin-bottom:10px !important; display:flex !important; justify-content:space-between !important; align-items:center !important; }
-                .nx-fw-label { font-size:10px !important; color:#6b7280 !important; text-transform:uppercase !important; font-weight:700 !important; margin-bottom:4px !important; display:block !important; text-align:left !important; }
-                .nx-fw-val { font-size:13px !important; color:#f3f4f6 !important; border:none !important; background:transparent !important; outline:none !important; width:100% !important; text-overflow:ellipsis !important; font-family:monospace !important; pointer-events:none !important; }
-                .nx-fw-copy { background:#374151 !important; border:none !important; color:#d1d5db !important; border-radius:4px !important; padding:6px !important; cursor:pointer !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; margin-left:8px !important; flex-shrink:0 !important; }
-                .nx-fw-copy:hover { background:#4b5563 !important; color:#10b981 !important; }
+                #nx-float-widget { width:300px !important; background:#0f172a !important; border:2px solid #059669 !important; border-radius:0px !important; box-shadow:0 15px 30px rgba(0,0,0,0.8) !important; font-family:'Arial', sans-serif !important; padding:20px !important; color:#f3f4f6 !important; box-sizing:border-box !important; }
+                #nx-float-widget * { box-sizing:border-box !important; margin:0 !important; padding:0 !important; line-height:normal !important; letter-spacing:normal !important; font-family:'Arial', sans-serif !important; text-transform:none !important; }
+                .nx-fw-header { display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:12px !important; }
+                .nx-fw-title { font-size:16px !important; font-weight:bold !important; color:#10b981 !important; display:flex !important; align-items:center !important; gap:8px !important; }
+                .nx-fw-close { background:none !important; border:none !important; color:#9ca3af !important; cursor:pointer !important; padding:4px !important; border-radius:0px !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; }
+                .nx-fw-close:hover { background:#334155 !important; color:#fff !important; }
+                .nx-fw-desc { font-size:13px !important; color:#cbd5e1 !important; margin-bottom:18px !important; line-height:1.5 !important; }
+                .nx-fw-field { background:#1e293b !important; border:1px solid #334155 !important; border-radius:0px !important; padding:12px 14px !important; margin-bottom:14px !important; display:flex !important; justify-content:space-between !important; align-items:center !important; }
+                .nx-fw-label { font-size:11px !important; color:#94a3b8 !important; text-transform:uppercase !important; font-weight:bold !important; margin-bottom:6px !important; display:block !important; text-align:left !important; letter-spacing:0.5px !important; }
+                .nx-fw-val { font-size:14px !important; color:#fff !important; font-weight:500 !important; border:none !important; background:transparent !important; outline:none !important; width:100% !important; text-overflow:ellipsis !important; font-family:monospace !important; pointer-events:none !important; }
+                .nx-fw-copy { background:#334155 !important; border:none !important; color:#cbd5e1 !important; border-radius:0px !important; padding:8px !important; cursor:pointer !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; margin-left:10px !important; flex-shrink:0 !important; }
+                .nx-fw-copy:hover { background:#475569 !important; color:#10b981 !important; }
             \`;
 
             let widget = document.createElement('div');
@@ -1116,26 +1109,26 @@ export default {
             widget.innerHTML = \`
                 <div class='nx-fw-header'>
                     <div class='nx-fw-title'>
-                        <svg style='width:16px;height:16px;color:#10b981;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z'></path></svg>
+                        <svg style='width:18px !important;height:18px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z'></path></svg>
                         Panel Access
                     </div>
                     <button class='nx-fw-close' id='nx-fw-close-btn' title='Hide for 10s'>
-                        <svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>
+                        <svg style='width:16px !important;height:16px !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>
                     </button>
                 </div>
                 <div class='nx-fw-desc'>Copy credentials and paste into the login form.</div>
                 <label class='nx-fw-label'>Username</label>
                 <div class='nx-fw-field'>
                     <input type='text' class='nx-fw-val' value='\${au}' readonly>
-                    <button class='nx-fw-copy' onclick='nxCopyText("\${au}", this)'>
-                        <svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'></path></svg>
+                    <button class='nx-fw-copy' onclick='nxCopyText("\${au}", this)' title='Copy Username'>
+                        <svg style='width:16px !important;height:16px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'></path></svg>
                     </button>
                 </div>
                 <label class='nx-fw-label'>Password</label>
-                <div class='nx-fw-field' style='margin-bottom:4px;'>
+                <div class='nx-fw-field' style='margin-bottom:4px !important;'>
                     <input type='password' class='nx-fw-val' value='\${ap}' readonly>
-                    <button class='nx-fw-copy' onclick='nxCopyText("\${ap}", this)'>
-                        <svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'></path></svg>
+                    <button class='nx-fw-copy' onclick='nxCopyText("\${ap}", this)' title='Copy Password'>
+                        <svg style='width:16px !important;height:16px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'></path></svg>
                     </button>
                 </div>
             \`;
@@ -1143,18 +1136,16 @@ export default {
             wrapper.appendChild(style);
             wrapper.appendChild(widget);
             
-            // Appending to document.documentElement (<html>) prevents React/Vue from wiping it out when body changes.
             document.documentElement.appendChild(wrapper);
 
             document.getElementById('nx-fw-close-btn').addEventListener('click', () => {
                 wrapper.style.setProperty('display', 'none', 'important');
                 setTimeout(() => {
                     wrapper.style.setProperty('display', 'block', 'important');
-                }, 10000); // Re-appears after 10 seconds
+                }, 10000);
             });
         }
 
-        // Run immediately and set an interval to FORCE the widget to stay on screen every 1 second
         initNXWidget();
         window.addEventListener('DOMContentLoaded', initNXWidget);
         setInterval(initNXWidget, 1000);
