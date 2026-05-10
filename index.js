@@ -173,12 +173,10 @@ export default {
                             notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } 
                         }, 
                         sites: {}, 
-                        pins: {}, 
-                        selectors: {} 
+                        pins: {}
                     };
                     await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { method: 'PUT', body: JSON.stringify(data) });
                 }
-                if (!data.selectors) data.selectors = {};
                 return data;
             } catch(e) { return null; }
         };
@@ -190,7 +188,6 @@ export default {
         if (!db.sites) db.sites = {};
         if (!db.pins) db.pins = {};
         if (!db.settings) db.settings = { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } };
-        if (!db.selectors) db.selectors = {};
 
         const isAdmin = (cookies['admin_session'] === CONFIG.SESSION_SECRET);
         const userPin = cookies['portal_session'];
@@ -389,9 +386,6 @@ export default {
                 .square-select:focus { border-color: #6366f1; }
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-                .selector-type-btn { padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); background: #0a0a0a; color: #9ca3af; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; border-radius: 4px; white-space: nowrap; }
-                .selector-type-btn.active { background: #4f46e5; color: white; border-color: #6366f1; box-shadow: 0 0 12px rgba(99,102,241,0.3); }
-                .selector-type-btn:hover:not(.active) { border-color: rgba(255,255,255,0.3); color: white; }
             </style>
             </head>
             <body class="pb-28">
@@ -400,7 +394,7 @@ export default {
                     <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Master <span class="text-white">Admin</span></h1></div>
                     <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition whitespace-nowrap rounded-sm">Logout</a>
                 </header>
-                <div class="max-w-7xl mx-auto p-4 md:p-8" id="app">
+                <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
                     <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
                 </div>
                 <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
@@ -412,7 +406,7 @@ export default {
                     async function load(){ const res = await fetch('/admin/api/data'); db = await res.json(); normalizeDB(); render(); }
                     
                     function normalizeDB() {
-                        if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.selectors) db.selectors = {};
+                        if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {};
                         Object.keys(db.pins).forEach(pin => {
                             if(db.pins[pin].siteConf) {
                                 Object.keys(db.pins[pin].siteConf).forEach(siteId => {
@@ -434,8 +428,6 @@ export default {
                     function uPinF(pin, field, val) { db.pins[pin][field] = val; }
                     function uSiteF(id, f, val) { db.sites[id][f] = val; }
                     function uSet(f, val) { db.settings[f] = val; }
-                    function uNotif(f, val) { db.settings.notification[f] = val; }
-                    function uSelectorF(id, f, val) { if(!db.selectors[id]) db.selectors[id] = {url:'', userSelectors:[], passSelectors:[], siteId: '', createdAt: Date.now()}; db.selectors[id][f] = val; }
                     
                     function toggleSite(pin, siteId, chk) {
                         let list = db.pins[pin].sites ||[];
@@ -470,7 +462,7 @@ export default {
                         render();
                     }
 
-                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:'', apiLink:'', bankingLink:''}; tab='sites'; render(); }
+                    function addSite() { db.sites['s_'+Date.now()] = {name:'', agentLink:'', userLink:'', apiLink:''}; tab='sites'; render(); }
                     
                     function addPin() { 
                         CustomModal.show({type:'prompt', title:'New User', text:'Enter User Name (e.g. John Doe):', onConfirm: (name) => {
@@ -486,38 +478,8 @@ export default {
                         }});
                     }
 
-                    function addSelector() {
-                        const id = 'sel_' + Date.now();
-                        db.selectors[id] = {
-                            url: '',
-                            siteId: '',
-                            userSelectors: [''],
-                            passSelectors: [''],
-                            createdAt: Date.now()
-                        };
-                        tab = 'selectors';
-                        render();
-                    }
-
                     function delSite(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Site', text:'Are you sure?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
                     function delPin(pin) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete User', text:'Are you sure?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
-                    function delSelector(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Selector', text:'Are you sure?', onConfirm: (yes) => { if(yes) { delete db.selectors[id]; render(); } }}); }
-
-                    function addSelectorItem(id, type) {
-                        if(!db.selectors[id]) return;
-                        if(type === 'user') db.selectors[id].userSelectors.push('');
-                        else db.selectors[id].passSelectors.push('');
-                        render();
-                    }
-                    function removeSelectorItem(id, type, idx) {
-                        if(!db.selectors[id]) return;
-                        let arr = type === 'user' ? db.selectors[id].userSelectors : db.selectors[id].passSelectors;
-                        if(arr.length > 1) { arr.splice(idx, 1); render(); }
-                    }
-                    function updateSelectorItem(id, type, idx, val) {
-                        if(type === 'user') db.selectors[id].userSelectors[idx] = val;
-                        else db.selectors[id].passSelectors[idx] = val;
-                    }
 
                     function toggleAdminPin(pin) {
                         if(openPins.has(pin)) openPins.delete(pin); else openPins.add(pin);
@@ -526,159 +488,12 @@ export default {
 
                     function render() {
                         if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.settings) db.settings = {whatsapp:'', notification:{enabled:false, target:'all', specificUsers:[]}};
-                        if(!db.selectors) db.selectors = {};
                         
                         let html = \`<div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
                             <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'}">User Pins</button>
                             <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'}">Global Sites</button>
-                            <button onclick="tab='selectors'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='selectors'?'active-tab':'text-gray-500 hover:text-gray-300'}">CSS Selectors</button>
                             <button onclick="tab='settings'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='settings'?'active-tab':'text-gray-500 hover:text-gray-300'}">System Settings</button>
                         </div>\`;
-
-                        if(tab === 'selectors') {
-                            html += \`<div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-3">
-                                <div>
-                                    <h3 class="text-sm font-bold text-white">Advanced Selector Manager</h3>
-                                    <p class="text-[10px] text-gray-500 mt-1 leading-relaxed">Define <span class="text-yellow-400">HOW</span> usernames and passwords are found inside target pages.<br>Use <span class="text-indigo-400">DevTools → Right Click → Copy → Copy selector</span> for best results.</p>
-                                </div>
-                                <button onclick="addSelector()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition whitespace-nowrap rounded-sm flex-shrink-0">+ Add Selector Profile</button>
-                            </div>
-                            <div class="space-y-6">\`;
-                            
-                            if(Object.keys(db.selectors).length === 0) {
-                                html += \`<div class="text-center py-16 bg-[#0a0a0a] border border-white/5 rounded-md">
-                                    <svg class="w-12 h-12 text-gray-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                                    <p class="text-gray-500 text-xs">No custom selectors defined.</p>
-                                    <p class="text-gray-600 text-[10px] mt-1">The system will auto-detect fields as a fallback.</p>
-                                </div>\`;
-                            } else {
-                                // Site grouping logic
-                                let siteMap = {};
-                                Object.keys(db.sites).forEach(sid => { siteMap[sid] = []; });
-                                siteMap['unlinked'] = [];
-                                
-                                Object.keys(db.selectors).forEach(id => {
-                                    let sel = db.selectors[id];
-                                    if(sel.siteId && siteMap[sel.siteId]) {
-                                        siteMap[sel.siteId].push(id);
-                                    } else {
-                                        siteMap['unlinked'].push(id);
-                                    }
-                                });
-
-                                Object.keys(siteMap).forEach(siteId => {
-                                    let selIds = siteMap[siteId];
-                                    if(selIds.length === 0) return;
-                                    
-                                    let siteName = siteId === 'unlinked' ? '🌍 Global (No Site Linked)' : (db.sites[siteId]?.name || 'Unknown Site');
-                                    let siteColor = siteId === 'unlinked' ? 'border-gray-700 bg-gray-500' : 'border-indigo-500 bg-indigo-500';
-                                    
-                                    html += \`<div class="mb-8">
-                                        <div class="flex items-center gap-3 mb-4 px-1">
-                                            <div class="w-2.5 h-2.5 rounded-full \${siteColor}"></div>
-                                            <h4 class="text-xs font-bold text-white uppercase tracking-widest">\${siteName}</h4>
-                                            <span class="text-[9px] text-gray-600 ml-1">· \${selIds.length} profile\${selIds.length>1?'s':''}</span>
-                                        </div>
-                                        <div class="space-y-4">\`;
-                                    
-                                    selIds.forEach(id => {
-                                        let sel = db.selectors[id];
-                                        let shortId = id.replace('sel_','').substring(0,8);
-                                        
-                                        html += \`<div class="square-card rounded-md overflow-hidden border \${siteId === 'unlinked' ? 'border-gray-800' : 'border-indigo-500/20'}">
-                                            <!-- Profile Header -->
-                                            <div class="flex justify-between items-center p-4 bg-[#0f0f0f] border-b border-white/5">
-                                                <div class="flex items-center gap-3">
-                                                    <span class="text-white font-bold text-sm">Profile <span class="text-indigo-400 font-mono text-xs">#\${shortId}</span></span>
-                                                    \${sel.siteId ? \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-green-500/10 text-green-400 border-green-500/20">LINKED TO SITE</span>\` : \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-yellow-500/10 text-yellow-400 border-yellow-500/20">GLOBAL</span>\`}
-                                                </div>
-                                                <button onclick="delSelector('\${id}')" class="text-red-500/50 text-[9px] font-bold uppercase tracking-widest hover:text-red-400 hover:bg-red-500/10 px-2 py-1 rounded-sm transition">Delete</button>
-                                            </div>
-                                            
-                                            <!-- Site & URL Configuration -->
-                                            <div class="p-4 bg-black/20 border-b border-white/5">
-                                                <div class="flex flex-col md:flex-row gap-3">
-                                                    <div class="flex-1">
-                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1.5 block">🔗 Link to Site</span>
-                                                        <select onchange="uSelectorF('\${id}','siteId',this.value)" class="w-full square-select bg-black border border-white/10 p-2 text-xs text-white outline-none rounded-sm">
-                                                            <option value="" \${!sel.siteId?'selected':''}>-- No Specific Site (Global) --</option>
-                                                            \${Object.keys(db.sites).map(sid => \`
-                                                                <option value="\${sid}" \${sel.siteId === sid ? 'selected' : ''}>\${db.sites[sid].name || 'Unnamed Site'}</option>
-                                                            \`).join('')}
-                                                        </select>
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1.5 block">🎯 Target Page URL</span>
-                                                        <input value="\${sel.url || ''}" oninput="uSelectorF('\${id}','url',this.value)" placeholder="/login (empty = all pages)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500 rounded-sm font-mono">
-                                                    </div>
-                                                </div>
-                                                <p class="text-[9px] text-gray-600 mt-3 leading-relaxed">
-                                                    💡 <b>How matching works:</b> 
-                                                    <span class="text-indigo-400">Exact page URL match</span> → 
-                                                    <span class="text-blue-400">Global URL match</span> → 
-                                                    <span class="text-green-400">Site-linked empty URL</span> → 
-                                                    <span class="text-yellow-400">Universal fallback</span>
-                                                </p>
-                                            </div>
-
-                                            <!-- Selectors Section -->
-                                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-5">
-                                                <!-- Username Column -->
-                                                <div>
-                                                    <div class="flex justify-between items-center mb-3">
-                                                        <span class="text-[9px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                                            Username Selectors
-                                                        </span>
-                                                        <button onclick="addSelectorItem('\${id}','user')" class="text-[9px] text-blue-400 hover:text-white px-2.5 py-1.5 bg-blue-400/10 hover:bg-blue-500/30 rounded-sm transition flex items-center gap-1">
-                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add
-                                                        </button>
-                                                    </div>
-                                                    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                                                        \${sel.userSelectors.map((s, idx) => \`
-                                                            <div class="flex gap-2 bg-black/30 border border-white/5 rounded-sm p-1.5 hover:border-blue-500/30 transition-colors">
-                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','user',\${idx},this.value)" placeholder="input[name='username']" class="flex-grow bg-transparent text-[11px] text-blue-300 outline-none font-mono placeholder-gray-700">
-                                                                <button onclick="removeSelectorItem('\${id}','user',\${idx})" class="text-gray-600 hover:text-red-400 hover:bg-red-500/10 px-2 rounded-sm transition text-[10px]" title="Remove">✖</button>
-                                                            </div>\`).join('')}
-                                                        \${sel.userSelectors.length === 0 ? \`<p class="text-[9px] text-gray-700 text-center py-2">No selectors added</p>\` : ''}
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Password Column -->
-                                                <div>
-                                                    <div class="flex justify-between items-center mb-3">
-                                                        <span class="text-[9px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                                            Password Selectors
-                                                        </span>
-                                                        <button onclick="addSelectorItem('\${id}','pass')" class="text-[9px] text-green-400 hover:text-white px-2.5 py-1.5 bg-green-400/10 hover:bg-green-500/30 rounded-sm transition flex items-center gap-1">
-                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add
-                                                        </button>
-                                                    </div>
-                                                    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                                                        \${sel.passSelectors.map((s, idx) => \`
-                                                            <div class="flex gap-2 bg-black/30 border border-white/5 rounded-sm p-1.5 hover:border-green-500/30 transition-colors">
-                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','pass',\${idx},this.value)" placeholder="input[type='password']" class="flex-grow bg-transparent text-[11px] text-green-300 outline-none font-mono placeholder-gray-700">
-                                                                <button onclick="removeSelectorItem('\${id}','pass',\${idx})" class="text-gray-600 hover:text-red-400 hover:bg-red-500/10 px-2 rounded-sm transition text-[10px]" title="Remove">✖</button>
-                                                            </div>\`).join('')}
-                                                        \${sel.passSelectors.length === 0 ? \`<p class="text-[9px] text-gray-700 text-center py-2">No selectors added</p>\` : ''}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Footer Info -->
-                                            <div class="px-4 py-2 bg-black/30 border-t border-white/5 flex justify-between items-center">
-                                                <p class="text-[8px] text-gray-600">🕐 \${new Date(sel.createdAt).toLocaleString()}</p>
-                                                <p class="text-[8px] text-gray-600">\${(sel.userSelectors||[]).filter(Boolean).length} user · \${(sel.passSelectors||[]).filter(Boolean).length} pass</p>
-                                            </div>
-                                        </div>\`;
-                                    });
-                                    
-                                    html += \`</div></div>\`;
-                                });
-                            }
-                            html += \`</div>\`;
-                        }
 
                         if(tab === 'pins') {
                             html += \`<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -769,11 +584,6 @@ export default {
                                             <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Backend API Link</span>
                                             <input value="\${db.sites[id].apiLink||''}" oninput="uSiteF('\${id}','apiLink',this.value)" placeholder="e.g. https://liveapi247.live" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-purple-400 outline-none focus:border-white/30 rounded-sm">
                                         </div>
-
-                                        <div class="mt-4 pt-3 border-t border-white/5">
-                                            <span class="text-[8px] text-yellow-500 font-bold uppercase tracking-widest mb-1 block">Banking Link (For Auto-fill)</span>
-                                            <input value="\${db.sites[id].bankingLink||''}" oninput="uSiteF('\${id}','bankingLink',this.value)" placeholder="e.g. /agent/banking or full URL" class="w-full bg-yellow-500/10 border border-yellow-500/30 p-2 text-xs text-yellow-400 outline-none focus:border-yellow-500 rounded-sm">
-                                        </div>
                                     </div>
                                     <button onclick="delSite('\${id}')" class="w-full py-2.5 bg-red-900/20 text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-red-900/50 transition border border-red-900/30 whitespace-nowrap rounded-sm">Delete Site</button>
                                 </div>\`;
@@ -782,7 +592,6 @@ export default {
                         }
                         
                         if(tab === 'settings') {
-                            let n = db.settings.notification;
                             html += \`<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="square-card p-6 rounded-md">
                                     <h2 class="text-sm font-bold tracking-widest uppercase mb-6 text-green-500">WhatsApp Float</h2>
@@ -841,7 +650,7 @@ export default {
                                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                                     </div>
                                     <input type="text" readonly value="${conf.u}" class="flex-grow bg-transparent text-[12px] text-white px-3 py-2.5 outline-none min-w-0 truncate select-all font-mono">
-                                    <button onclick="copyLink('${conf.u}', this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all flex-shrink-0 rounded-md m-1" title="Copy Username">
+                                    <button onclick="copyText('${conf.u.replace(/'/g, "\\'")}', this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all flex-shrink-0 rounded-md m-1" title="Copy Username">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
                                     </button>
                                 </div>
@@ -854,9 +663,6 @@ export default {
                                     <div class="flex gap-0.5 flex-shrink-0 pr-1">
                                         <button onclick="toggleVisibility('pwd-disp-${siteId}-${idx}', this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-green-400 hover:bg-green-500/10 transition-all rounded-md" title="Show/Hide">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </button>
-                                        <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}-${idx}').value, this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all rounded-md" title="Copy Password">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
                                         </button>
                                         <button onclick="toggleEditPwd('${siteId}-${idx}')" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-all rounded-md" title="Update Password">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -897,16 +703,6 @@ export default {
                         </div>
                         
                         <div id="details-${siteId}" class="hidden border-t border-white/5 bg-black/20 p-5 space-y-4">
-                            <div class="bg-white/5 border border-white/5 flex items-center rounded-md overflow-hidden mb-2">
-                                <div class="bg-white/5 px-3 py-2 border-r border-white/5 flex-shrink-0">
-                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                                </div>
-                                <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-3 py-2 outline-none min-w-0 truncate select-all">
-                                <button onclick="copyLink('${site.userLink}', this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all flex-shrink-0 rounded-md m-1" title="Copy Link">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
-                                </button>
-                            </div>
-                            
                             <div class="space-y-4">
                                 ${accountsHtml}
                             </div>
@@ -948,7 +744,7 @@ export default {
                         }
                     }
 
-                    function copyLink(text, btn) {
+                    function copyText(text, btn) {
                         if(!text) return;
                         navigator.clipboard.writeText(text);
                         const oldHTML = btn.innerHTML;
@@ -1005,10 +801,10 @@ export default {
             const proxyData = JSON.stringify({ 
                 t: db.sites[siteId].agentLink, 
                 a: db.sites[siteId].apiLink || '', 
-                b: db.sites[siteId].bankingLink || '', 
                 u: conf.u || '', 
                 p: conf.p || '',
-                siteId: siteId
+                siteName: db.sites[siteId].name || '',
+                role: conf.r || 'User'
             });
             const encryptedData = encrypt(proxyData);
 
@@ -1026,18 +822,14 @@ export default {
             if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
             
             let proxyData;
-            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, a: '', b: '', u: '', p: '', siteId: '' }; }
+            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, a: '', u: '', p: '', siteName: '', role: 'User' }; }
 
             const targetDomain = proxyData.t;
             const autoApi = proxyData.a;
-            const autoBank = proxyData.b;
             const autoUser = proxyData.u;
             const autoPwd = proxyData.p;
-            const proxySiteId = proxyData.siteId || '';
-            
-            // 🔥 FETCH GLOBAL SELECTORS & CREATE SERIALIZED VERSION FOR PAGE
-            let globalSelectors = db.selectors || {};
-            let serializedSelectors = JSON.stringify(globalSelectors);
+            const siteName = proxyData.siteName || 'Agent Panel';
+            const roleName = proxyData.role || 'User';
 
             const targetUrl = new URL(request.url);
             const tDomainObj = new URL(targetDomain);
@@ -1049,11 +841,9 @@ export default {
                 const wsUrl = new URL(request.url);
                 wsUrl.hostname = tDomainObj.hostname;
                 wsUrl.protocol = tDomainObj.protocol === 'https:' ? 'wss:' : 'ws:';
-                
                 const wsHeaders = new Headers(request.headers);
                 wsHeaders.set("Host", tDomainObj.hostname);
                 wsHeaders.set("Origin", targetDomain);
-                
                 return fetch(new Request(wsUrl.toString(), request), { headers: wsHeaders });
             }
 
@@ -1094,7 +884,6 @@ export default {
             let body = proxyRes.body;
             const contentType = responseHeaders.get("Content-Type") || "";
             
-            // 🚀 ONLY PROXY HTML. LEAVE CSS & JS UNTOUCHED SO THEY LOAD PERFECTLY!
             if (contentType.toLowerCase().includes("text/html")) {
                 try {
                     let htmlText = await proxyRes.text();
@@ -1104,9 +893,6 @@ export default {
                     
                     const stealthScript = `<script>
 (function(){
-    var SELECTORS_DB = ${serializedSelectors};
-    var CURRENT_SITE_ID = "${proxySiteId}";
-    
     try{
         var p = performance.getEntriesByType("navigation")[0];
         if (p && p.type === "reload") {
@@ -1155,282 +941,138 @@ export default {
             document.head.appendChild(v);
         }
         
-        var targetHost = new URL("` + targetDomain + `").hostname;
-        var apiTarget = "${autoApi}";
-        var apiHost = apiTarget ? new URL(apiTarget).hostname : "";
-        var rootDomain = targetHost.split('.').slice(-2).join('.'); 
+        // BLOCK browser password manager suggestions & autofill
+        var styleBlock = document.createElement('style');
+        styleBlock.innerHTML = \`
+            input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none !important; }
+            input[type="password"]::-webkit-credentials-auto-fill-button, input[type="password"]::-webkit-caps-lock-indicator { visibility: hidden !important; display: none !important; pointer-events: none !important; height: 0 !important; position: absolute !important; }
+        \`;
+        document.head.appendChild(styleBlock);
 
-        function shouldIntercept(urlStr) {
-            if(typeof urlStr !== 'string') return false;
-            try {
-                var u = urlStr.startsWith('http') ? new URL(urlStr) : new URL(urlStr, window.location.origin);
-                return u.hostname !== window.location.hostname;
-            } catch(e) { return false; }
-        }
-
-        var origFetch = window.fetch;
-        window.fetch = function(resource, options) {
-            let reqUrl = (resource instanceof Request) ? resource.url : resource;
-            if (shouldIntercept(reqUrl)) {
-                let fullUrl = reqUrl.startsWith('http') ? reqUrl : new URL(reqUrl, window.location.origin).toString();
-                let proxyUrl = '/__api_proxy?target=' + encodeURIComponent(fullUrl);
-                
-                if (resource instanceof Request) {
-                    return (async () => {
-                        let reqInit = { method: resource.method, headers: resource.headers, credentials: resource.credentials, mode: 'cors', redirect: resource.redirect };
-                        if (['POST', 'PUT', 'PATCH'].includes(resource.method)) reqInit.body = await resource.clone().blob();
-                        let res = await origFetch.call(window, proxyUrl, reqInit);
-                        Object.defineProperty(res, 'url', { value: fullUrl }); 
-                        return res;
-                    })();
-                } else {
-                    return origFetch.call(window, proxyUrl, options).then(res => {
-                        Object.defineProperty(res, 'url', { value: fullUrl }); 
-                        return res;
-                    });
-                }
-            }
-            return origFetch.call(window, resource, options);
-        };
-
-        var origXhrOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url) {
-            this._nxIntercepted = false;
-            this._nxUrl = url;
-            if(typeof url === 'string' && shouldIntercept(url)) {
-                this._nxIntercepted = true;
-                let fullUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).toString();
-                this._nxUrl = fullUrl;
-                url = '/__api_proxy?target=' + encodeURIComponent(fullUrl);
-            }
-            return origXhrOpen.apply(this,[method, url].concat(Array.prototype.slice.call(arguments, 2)));
-        };
-        var origXhrRespUrl = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseURL');
-        if (origXhrRespUrl) {
-            Object.defineProperty(XMLHttpRequest.prototype, 'responseURL', {
-                get: function() { return this._nxIntercepted ? this._nxUrl : origXhrRespUrl.get.call(this); }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input').forEach(function(el) {
+                el.setAttribute('autocomplete', 'new-password');
+                el.setAttribute('autocorrect', 'off');
+                el.setAttribute('spellcheck', 'false');
+                el.setAttribute('data-lpignore', 'true');
+                el.setAttribute('data-form-type', 'other');
+                el.setAttribute('aria-autocomplete', 'none');
             });
-        }
+            document.querySelectorAll('form').forEach(function(f) {
+                f.setAttribute('autocomplete', 'off');
+                f.setAttribute('novalidate', '');
+            });
+        });
 
-        var OrigWebSocket = window.WebSocket;
-        window.WebSocket = function(url, protocols) {
-            try {
-                var wsUrl = new URL(url);
-                if (wsUrl.hostname !== window.location.hostname) {
-                    var proxyWsUrl = new URL('/__ws_proxy?target=' + encodeURIComponent(url), window.location.origin);
-                    proxyWsUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                    return new OrigWebSocket(proxyWsUrl.toString(), protocols);
-                }
-            } catch(e) {}
-            return new OrigWebSocket(url, protocols);
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if(node.tagName === 'INPUT') {
+                        node.setAttribute('autocomplete', 'new-password');
+                        node.setAttribute('data-lpignore', 'true');
+                        node.setAttribute('data-form-type', 'other');
+                    }
+                    if(node.tagName === 'FORM') {
+                        node.setAttribute('autocomplete', 'off');
+                    }
+                    if(node.querySelectorAll) {
+                        node.querySelectorAll('input').forEach(function(el) {
+                            el.setAttribute('autocomplete', 'new-password');
+                            el.setAttribute('data-lpignore', 'true');
+                        });
+                        node.querySelectorAll('form').forEach(function(f) {
+                            f.setAttribute('autocomplete', 'off');
+                        });
+                    }
+                });
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // ==========================================
+        // 🎨 FLOATING CREDENTIAL PANEL (Bottom Right)
+        // ==========================================
+        var floatingPanel = document.createElement('div');
+        floatingPanel.id = 'nx-floating-panel';
+        floatingPanel.innerHTML = \`
+            <div style="background: linear-gradient(135deg, #0f0f12 0%, #16161d 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 22px; width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03); backdrop-filter: blur(20px); font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box;">
+                <!-- Header -->
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99,102,241,0.4);">
+                        <svg style="width: 14px; height: 14px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <p style="color: white; font-size: 13px; font-weight: 700; margin: 0 0 2px 0; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${siteName.replace(/'/g, "\\'")}</p>
+                        <p style="color: #818cf8; font-size: 10px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 1.2px;">${roleName.replace(/'/g, "\\'")} Access</p>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <p style="color: #9ca3af; font-size: 11px; line-height: 1.6; margin: 0 0 16px 0;">Your secure credentials are ready. Copy and paste them into the login form below to access your control panel.</p>
+                
+                <!-- Username Field -->
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; color: #6b7280; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px;">Username</label>
+                    <div style="display: flex; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; transition: border-color 0.2s;">
+                        <input type="text" readonly value="${autoUser.replace(/'/g, "\\'")}" style="flex: 1; background: transparent; border: none; color: #e5e7eb; font-size: 12px; padding: 10px 12px; outline: none; font-family: 'SF Mono', 'Fira Code', monospace; letter-spacing: 0.5px; min-width: 0;">
+                        <button onclick="nxCopyText('${autoUser.replace(/'/g, "\\'")}', this)" style="background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.06); color: #6b7280; padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; flex-shrink: 0;" onmouseover="this.style.color='#818cf8';this.style.background='rgba(99,102,241,0.1)'" onmouseout="this.style.color='#6b7280';this.style.background='transparent'">
+                            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Password Field -->
+                <div style="margin-bottom: 6px;">
+                    <label style="display: block; color: #6b7280; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px;">Password</label>
+                    <div style="display: flex; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; transition: border-color 0.2s;">
+                        <input type="text" readonly value="${autoPwd.replace(/'/g, "\\'")}" id="nx-pwd-field" style="flex: 1; background: transparent; border: none; color: #e5e7eb; font-size: 12px; padding: 10px 12px; outline: none; -webkit-text-security: disc; font-family: text-security-disc, sans-serif; letter-spacing: 2px; min-width: 0;">
+                        <button onclick="nxTogglePwd(this)" style="background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.06); color: #6b7280; padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; flex-shrink: 0;" onmouseover="this.style.color='#34d399';this.style.background='rgba(52,211,153,0.1)'" onmouseout="this.style.color='#6b7280';this.style.background='transparent'" title="Show/Hide">
+                            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                        <button onclick="nxCopyText('${autoPwd.replace(/'/g, "\\'")}', this)" style="background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.06); color: #6b7280; padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; flex-shrink: 0;" onmouseover="this.style.color='#818cf8';this.style.background='rgba(99,102,241,0.1)'" onmouseout="this.style.color='#6b7280';this.style.background='transparent'" title="Copy Password">
+                            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Footer note -->
+                <p style="color: #4b5563; font-size: 9px; margin: 12px 0 0 0; text-align: center; letter-spacing: 0.3px;">🔒 Secured by Nexus Enterprise</p>
+            </div>
+        \`;
+
+        // Position the panel at bottom right
+        floatingPanel.style.cssText = 'position: fixed !important; bottom: 20px !important; right: 20px !important; z-index: 2147483646 !important; transition: opacity 0.3s ease !important;';
+        document.body.appendChild(floatingPanel);
+
+        // Global copy & toggle functions
+        window.nxCopyText = function(text, btn) {
+            if(!text) return;
+            navigator.clipboard.writeText(text).then(function() {
+                var originalColor = btn.style.color;
+                btn.style.color = '#34d399';
+                var originalHTML = btn.innerHTML;
+                btn.innerHTML = '<svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                setTimeout(function() {
+                    btn.style.color = originalColor;
+                    btn.innerHTML = originalHTML;
+                }, 1500);
+            });
         };
 
-        function setNativeValue(el, val) {
-            if (!el || el.value === val) return;
-            try {
-                var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                nativeInputValueSetter.call(el, val);
-                el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-                el.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
-                
-                // Handle React/Angular/Vue frameworks
-                var tracker = el._valueTracker;
-                if (tracker) {
-                    var lastValue = el.value;
-                    tracker.setValue(lastValue);
-                }
-                el.focus();
-                el.blur();
-            } catch(e){}
-        }
-
-        function matchPageUrl(pagePath) {
-            if(!pagePath) return true;
-            var currentFull = window.location.pathname + window.location.search;
-            if(pagePath.startsWith('/') || pagePath.startsWith('http')) {
-                return currentFull.includes(pagePath);
+        window.nxTogglePwd = function(btn) {
+            var pwdField = document.getElementById('nx-pwd-field');
+            if(pwdField.style.webkitTextSecurity === 'disc' || pwdField.style.webkitTextSecurity === '') {
+                pwdField.style.webkitTextSecurity = 'none';
+                pwdField.style.fontFamily = "'SF Mono', 'Fira Code', monospace";
+                pwdField.style.letterSpacing = '0.5px';
+                btn.style.color = '#34d399';
+            } else {
+                pwdField.style.webkitTextSecurity = 'disc';
+                pwdField.style.fontFamily = 'text-security-disc, sans-serif';
+                pwdField.style.letterSpacing = '2px';
+                btn.style.color = '#6b7280';
             }
-            return currentFull.includes(pagePath);
-        }
-
-        function findElementBySelectors(selectorsArray) {
-            if(!selectorsArray || selectorsArray.length === 0) return null;
-            
-            for(var i = 0; i < selectorsArray.length; i++) {
-                var sel = selectorsArray[i].trim();
-                if(!sel) continue;
-                
-                try {
-                    var parts = sel.split(',').map(s => s.trim());
-                    for(var j = 0; j < parts.length; j++) {
-                        if(!parts[j]) continue;
-                        var el = document.querySelector(parts[j]);
-                        if(el) {
-                            console.log('[Nexus] Found element via selector:', parts[j]);
-                            return el;
-                        }
-                    }
-                } catch(e) {
-                    console.error('[Nexus] Invalid selector:', sel, e);
-                }
-            }
-            return null;
-        }
-
-        function applyAutoFill() {
-            const au = "${autoUser}"; 
-            const ap = "${autoPwd}";
-            if(!au || !ap) return;
-
-            var currentPath = window.location.pathname;
-            var currentFullUrl = window.location.pathname + window.location.search;
-            var matchedSelectors = null;
-
-            var selIds = Object.keys(SELECTORS_DB);
-            
-            // Priority 1: Exact match (siteId + URL)
-            for(var i = 0; i < selIds.length; i++) {
-                var s = SELECTORS_DB[selIds[i]];
-                if(s.siteId && s.siteId === CURRENT_SITE_ID && s.url && matchPageUrl(s.url)) {
-                    matchedSelectors = s;
-                    console.log('[Nexus] Priority 1 Match: Site-specific selector for this page');
-                    break;
-                }
-            }
-            
-            // Priority 2: Match by URL only (no site link)
-            if(!matchedSelectors) {
-                for(var i = 0; i < selIds.length; i++) {
-                    var s = SELECTORS_DB[selIds[i]];
-                    if(!s.siteId && s.url && matchPageUrl(s.url)) {
-                        matchedSelectors = s;
-                        console.log('[Nexus] Priority 2 Match: Global selector matching URL');
-                        break;
-                    }
-                }
-            }
-            
-            // Priority 3: Site match with empty URL (works on all pages of that site)
-            if(!matchedSelectors) {
-                for(var i = 0; i < selIds.length; i++) {
-                    var s = SELECTORS_DB[selIds[i]];
-                    if(s.siteId && s.siteId === CURRENT_SITE_ID && !s.url) {
-                        matchedSelectors = s;
-                        console.log('[Nexus] Priority 3 Match: Site-linked selector for all pages');
-                        break;
-                    }
-                }
-            }
-            
-            // Priority 4: Global selectors with empty URL
-            if(!matchedSelectors) {
-                for(var i = 0; i < selIds.length; i++) {
-                    var s = SELECTORS_DB[selIds[i]];
-                    if(!s.siteId && !s.url) {
-                        matchedSelectors = s;
-                        console.log('[Nexus] Priority 4 Match: Global fallback selector');
-                        break;
-                    }
-                }
-            }
-
-            var uField = null;
-            var pField = null;
-
-            // Use matched selectors
-            if(matchedSelectors) {
-                console.log('[Nexus] Using selector profile:', matchedSelectors);
-                uField = findElementBySelectors(matchedSelectors.userSelectors);
-                pField = findElementBySelectors(matchedSelectors.passSelectors);
-            } 
-
-            // Smart fallback detection for password
-            if(!pField) {
-                console.log('[Nexus] No password field found, running smart detection...');
-                var allInputs = document.querySelectorAll('input');
-                allInputs.forEach(function(el) {
-                    if(pField) return;
-                    var type = (el.getAttribute('type') || '').toLowerCase();
-                    var name = (el.name || '').toLowerCase();
-                    var placeholder = (el.placeholder || '').toLowerCase();
-                    var id = (el.id || '').toLowerCase();
-                    
-                    if(type === 'password') pField = el;
-                    else if(id.includes('pass') || id.includes('pwd')) pField = el;
-                    else if(name.includes('pass') || name.includes('pwd')) pField = el;
-                    else if(placeholder.includes('pass')) pField = el;
-                });
-            }
-
-            // Smart fallback detection for username
-            if(!uField) {
-                var allInputs = document.querySelectorAll('input');
-                allInputs.forEach(function(el) {
-                    if(uField || el === pField) return;
-                    var type = (el.getAttribute('type') || '').toLowerCase();
-                    var name = (el.name || '').toLowerCase();
-                    var placeholder = (el.placeholder || '').toLowerCase();
-                    var id = (el.id || '').toLowerCase();
-                    
-                    if(type === 'email' || type === 'text' || type === 'tel') {
-                        if(name.includes('user') || name.includes('email') || name.includes('login') || name.includes('id') || name.includes('agent')) uField = el;
-                        else if(id.includes('user') || id.includes('email') || id.includes('login') || id.includes('agent')) uField = el;
-                        else if(placeholder.includes('user') || placeholder.includes('email') || placeholder.includes('id') || placeholder.includes('agent')) uField = el;
-                    }
-                });
-
-                if(!uField && pField) {
-                    allInputs.forEach(function(el) {
-                        if(uField || el === pField) return;
-                        var type = (el.getAttribute('type') || '').toLowerCase();
-                        if((type === 'text' || type === 'email' || type === 'tel') && el.offsetParent !== null) {
-                            uField = el;
-                        }
-                    });
-                }
-            }
-
-            // Fill & Freeze
-            if(uField) { 
-                setNativeValue(uField, au); 
-                uField.setAttribute('data-nx-autofilled', 'true');
-                console.log('[Nexus] Username field filled & frozen');
-            }
-            if(pField) { 
-                setNativeValue(pField, ap); 
-                pField.setAttribute('data-nx-autofilled', 'true');
-                console.log('[Nexus] Password field filled & frozen');
-            }
-
-            // Apply frozen style once
-            if(uField || pField) {
-                if(!document.getElementById('nx-autofill-style')) {
-                    var style = document.createElement('style');
-                    style.id = 'nx-autofill-style';
-                    style.innerHTML = '[data-nx-autofilled="true"] { pointer-events: none !important; background-color: rgba(74, 222, 128, 0.05) !important; border-color: rgba(74, 222, 128, 0.2) !important; box-shadow: 0 0 5px rgba(74, 222, 128, 0.1) !important; opacity: 1 !important; }';
-                    document.head.appendChild(style);
-                }
-            }
-        }
-
-        // 🕒 Auto-fill runs with escalating delays for dynamic frameworks
-        applyAutoFill();
-        setTimeout(applyAutoFill, 500);
-        setTimeout(applyAutoFill, 1500);
-        setTimeout(applyAutoFill, 3000);
-
-        // Also try on URL change (for SPAs)
-        var lastUrl = location.href;
-        new MutationObserver(() => {
-            if (location.href !== lastUrl) {
-                lastUrl = location.href;
-                console.log('[Nexus] URL changed, re-applying auto-fill');
-                setTimeout(applyAutoFill, 300);
-                setTimeout(applyAutoFill, 1000);
-                setTimeout(applyAutoFill, 2500);
-            }
-        }).observe(document, {subtree: true, childList: true});
+        };
         
     }catch(e){ console.error('[Nexus] Error:', e); }
 })();
