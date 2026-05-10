@@ -437,7 +437,7 @@ export default {
                         if(!db.pins[pin].siteConf) db.pins[pin].siteConf = {};
                         if(chk && !list.includes(siteId)) {
                             list.push(siteId);
-                            db.pins[pin].siteConf[siteId] =[{u:'', r:'Admin', p:''}];
+                            db.pins[pin].siteConf[siteId] = [{u:'', r:'Admin', p:''}];
                         } else if(!chk) {
                             list = list.filter(i => i !== siteId);
                             delete db.pins[pin].siteConf[siteId];
@@ -654,7 +654,7 @@ export default {
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[70px]">Username</span>
                                     <input type="text" readonly value="${conf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate select-all font-mono">
                                     <button onclick="copyLink('${conf.u}', this)" class="w-6 h-6 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:text-white transition-all flex-shrink-0 rounded-sm" title="Copy Username">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                     </button>
                                 </div>
                                 
@@ -666,7 +666,7 @@ export default {
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </button>
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}-${idx}').value, this)" class="w-6 h-6 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:text-white transition-all rounded-sm" title="Copy Pwd">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                         </button>
                                         <button onclick="toggleEditPwd('${siteId}-${idx}')" class="w-6 h-6 flex items-center justify-center bg-yellow-500/10 text-yellow-400 hover:text-white transition-all rounded-sm" title="Update">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -710,7 +710,7 @@ export default {
                             <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full rounded-sm mb-2">
                                 <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Portal</span>
                                 <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none min-w-0 truncate select-all">
-                                <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:text-white transition-all flex-shrink-0 rounded-sm" title="Copy Link"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                                <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:text-white transition-all flex-shrink-0 rounded-sm" title="Copy Link"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
                             </div>
                             
                             <div class="space-y-4">
@@ -758,7 +758,7 @@ export default {
                         if(!text) return;
                         navigator.clipboard.writeText(text);
                         const old = btn.innerHTML;
-                        btn.innerHTML = '<svg class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                        btn.innerHTML = '<svg class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
                         setTimeout(() => btn.innerHTML = old, 1500);
                     }
                     
@@ -1073,7 +1073,7 @@ export default {
         window.nxCopyText = function(text, btn) {
             navigator.clipboard.writeText(text).then(() => {
                 let origHtml = btn.innerHTML;
-                btn.innerHTML = "<svg style='width:16px !important;height:16px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>";
+                btn.innerHTML = "<svg style='width:16px !important;height:16px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><polyline points='20 6 9 17 4 12'></polyline></svg>";
                 setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
             }).catch(()=>{});
         };
@@ -1090,17 +1090,17 @@ export default {
 
             let style = document.createElement('style');
             style.innerHTML = \`
-                #nx-float-widget { width:300px !important; background:#0f172a !important; border:2px solid #059669 !important; border-radius:0px !important; box-shadow:0 15px 30px rgba(0,0,0,0.8) !important; font-family:'Arial', sans-serif !important; padding:20px !important; color:#f3f4f6 !important; box-sizing:border-box !important; }
-                #nx-float-widget * { box-sizing:border-box !important; margin:0 !important; padding:0 !important; line-height:normal !important; letter-spacing:normal !important; font-family:'Arial', sans-serif !important; text-transform:none !important; }
-                .nx-fw-header { display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:12px !important; }
+                #nx-float-widget { width:320px !important; background:#0f172a !important; border:2px solid #059669 !important; border-radius:4px !important; box-shadow:0 15px 35px rgba(0,0,0,0.8) !important; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; padding:24px !important; color:#f3f4f6 !important; box-sizing:border-box !important; }
+                #nx-float-widget * { box-sizing:border-box !important; margin:0 !important; padding:0 !important; line-height:normal !important; letter-spacing:normal !important; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; text-transform:none !important; }
+                .nx-fw-header { display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:16px !important; }
                 .nx-fw-title { font-size:16px !important; font-weight:bold !important; color:#10b981 !important; display:flex !important; align-items:center !important; gap:8px !important; }
-                .nx-fw-close { background:none !important; border:none !important; color:#9ca3af !important; cursor:pointer !important; padding:4px !important; border-radius:0px !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; }
+                .nx-fw-close { background:none !important; border:none !important; color:#9ca3af !important; cursor:pointer !important; padding:4px !important; border-radius:4px !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; }
                 .nx-fw-close:hover { background:#334155 !important; color:#fff !important; }
-                .nx-fw-desc { font-size:13px !important; color:#cbd5e1 !important; margin-bottom:18px !important; line-height:1.5 !important; }
-                .nx-fw-field { background:#1e293b !important; border:1px solid #334155 !important; border-radius:0px !important; padding:12px 14px !important; margin-bottom:14px !important; display:flex !important; justify-content:space-between !important; align-items:center !important; }
-                .nx-fw-label { font-size:11px !important; color:#94a3b8 !important; text-transform:uppercase !important; font-weight:bold !important; margin-bottom:6px !important; display:block !important; text-align:left !important; letter-spacing:0.5px !important; }
-                .nx-fw-val { font-size:14px !important; color:#fff !important; font-weight:500 !important; border:none !important; background:transparent !important; outline:none !important; width:100% !important; text-overflow:ellipsis !important; font-family:monospace !important; pointer-events:none !important; }
-                .nx-fw-copy { background:#334155 !important; border:none !important; color:#cbd5e1 !important; border-radius:0px !important; padding:8px !important; cursor:pointer !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; margin-left:10px !important; flex-shrink:0 !important; }
+                .nx-fw-desc { font-size:13px !important; color:#cbd5e1 !important; margin-bottom:20px !important; line-height:1.5 !important; }
+                .nx-fw-field { background:#1e293b !important; border:1px solid #334155 !important; border-radius:4px !important; padding:12px 16px !important; margin-bottom:16px !important; height:48px !important; display:flex !important; justify-content:space-between !important; align-items:center !important; }
+                .nx-fw-label { font-size:12px !important; color:#94a3b8 !important; text-transform:uppercase !important; font-weight:bold !important; margin-bottom:8px !important; display:block !important; text-align:left !important; letter-spacing:0.5px !important; }
+                .nx-fw-val { font-size:15px !important; color:#fff !important; font-weight:600 !important; border:none !important; background:transparent !important; outline:none !important; width:100% !important; text-overflow:ellipsis !important; font-family:monospace !important; pointer-events:none !important; }
+                .nx-fw-copy { background:#334155 !important; border:none !important; color:#cbd5e1 !important; border-radius:4px !important; padding:8px !important; cursor:pointer !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; margin-left:12px !important; flex-shrink:0 !important; height:100% !important; }
                 .nx-fw-copy:hover { background:#475569 !important; color:#10b981 !important; }
             \`;
 
@@ -1121,14 +1121,14 @@ export default {
                 <div class='nx-fw-field'>
                     <input type='text' class='nx-fw-val' value='\${au}' readonly>
                     <button class='nx-fw-copy' onclick='nxCopyText("\${au}", this)' title='Copy Username'>
-                        <svg style='width:16px !important;height:16px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'></path></svg>
+                        <svg style='width:16px !important;height:16px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13' rx='2' ry='2'></rect><path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path></svg>
                     </button>
                 </div>
                 <label class='nx-fw-label'>Password</label>
                 <div class='nx-fw-field' style='margin-bottom:4px !important;'>
                     <input type='password' class='nx-fw-val' value='\${ap}' readonly>
                     <button class='nx-fw-copy' onclick='nxCopyText("\${ap}", this)' title='Copy Password'>
-                        <svg style='width:16px !important;height:16px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'></path></svg>
+                        <svg style='width:16px !important;height:16px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13' rx='2' ry='2'></rect><path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path></svg>
                     </button>
                 </div>
             \`;
