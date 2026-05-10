@@ -152,9 +152,6 @@ const landingPageHTML = `
 // 🚀 BACKEND & CORE LOGIC
 // ==========================================
 
-// ✅ ULTIMATE FIX FOR CUSTOM DOMAIN CSS/JS ISSUES:
-// This strips out all compression headers so Cloudflare doesn't double-compress 
-// and break the files on strict custom domains.
 const cleanHeaders = (proxyRes, reqOrigin = null) => {
     const responseHeaders = new Headers();
     const removeHeaders =[
@@ -162,7 +159,7 @@ const cleanHeaders = (proxyRes, reqOrigin = null) => {
         'x-frame-options', 'strict-transport-security', 'x-content-type-options',
         'access-control-allow-origin', 'timing-allow-origin', 
         'cross-origin-resource-policy', 'cross-origin-opener-policy',
-        'content-encoding', 'content-length', 'transfer-encoding' // MUST BE REMOVED FOR ALL FILES!
+        'content-encoding', 'content-length', 'transfer-encoding'
     ];
 
     for (const[key, value] of proxyRes.headers.entries()) {
@@ -181,7 +178,6 @@ const cleanHeaders = (proxyRes, reqOrigin = null) => {
         responseHeaders.set("Access-Control-Allow-Credentials", "true");
         responseHeaders.set("Access-Control-Expose-Headers", "*"); 
     }
-    // Prevent Cloudflare Auto Minify / Rocket Loader from destroying injected scripts
     responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, no-transform");
     return responseHeaders;
 };
@@ -337,7 +333,7 @@ export default {
             const { siteId, accIdx, newPassword } = await request.json();
             
             let confs = db.pins[userPin].siteConf[siteId];
-            if (!Array.isArray(confs)) confs =[confs]; 
+            if (!Array.isArray(confs)) confs = [confs]; 
             
             if (confs[accIdx]) {
                 confs[accIdx].p = newPassword;
@@ -1145,30 +1141,32 @@ export default {
 
         function makeDraggable(wrapper) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            wrapper.onmousedown = dragMouseDown;
-            wrapper.ontouchstart = dragMouseDown;
+            
+            wrapper.addEventListener('mousedown', dragMouseDown, { passive: false });
+            wrapper.addEventListener('touchstart', dragMouseDown, { passive: false });
 
             function dragMouseDown(e) {
                 // Ignore clicks on inputs, buttons, or close icon to allow interaction
                 if(e.target.tagName === 'INPUT' || e.target.closest('button')) return;
                 
-                e = e || window.event;
-                if (e.type === 'touchstart') {
+                if(e.type === 'touchstart') {
                     pos3 = e.touches[0].clientX;
                     pos4 = e.touches[0].clientY;
                 } else {
-                    e.preventDefault(); 
+                    e.preventDefault(); // Prevents text selection on desktop
                     pos3 = e.clientX;
                     pos4 = e.clientY;
                 }
-                document.onmouseup = closeDragElement;
-                document.ontouchend = closeDragElement;
-                document.onmousemove = elementDrag;
-                document.ontouchmove = elementDrag;
+                
+                document.addEventListener('mouseup', closeDragElement);
+                document.addEventListener('touchend', closeDragElement);
+                document.addEventListener('mousemove', elementDrag, { passive: false });
+                document.addEventListener('touchmove', elementDrag, { passive: false });
             }
 
             function elementDrag(e) {
-                e = e || window.event;
+                if(e.cancelable) e.preventDefault(); // ✅ THIS STOPS BACKGROUND SCROLLING
+                
                 let clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 let clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
                 
@@ -1193,10 +1191,10 @@ export default {
             }
 
             function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-                document.ontouchend = null;
-                document.ontouchmove = null;
+                document.removeEventListener('mouseup', closeDragElement);
+                document.removeEventListener('touchend', closeDragElement);
+                document.removeEventListener('mousemove', elementDrag);
+                document.removeEventListener('touchmove', elementDrag);
             }
         }
 
@@ -1208,11 +1206,12 @@ export default {
 
             let wrapper = document.createElement('div');
             wrapper.id = 'nx-float-widget-wrapper';
-            wrapper.style.cssText = 'position:fixed !important; bottom:20px !important; right:20px !important; z-index:2147483647 !important; transition: opacity 0.3s ease !important; cursor: move !important;';
+            // ✅ touch-action: none is strictly added to prevent browser gesture scroll
+            wrapper.style.cssText = 'position:fixed !important; bottom:20px !important; right:20px !important; z-index:2147483647 !important; transition: opacity 0.3s ease !important; cursor: move !important; touch-action: none !important;';
 
             let style = document.createElement('style');
             style.innerHTML = \`
-                #nx-float-widget { width:310px !important; background:#0f172a !important; border:2px solid #059669 !important; border-radius:0px !important; box-shadow:0 15px 35px rgba(0,0,0,0.8) !important; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; padding:22px !important; color:#f3f4f6 !important; box-sizing:border-box !important; }
+                #nx-float-widget { width:310px !important; background:#0f172a !important; border:2px solid #059669 !important; border-radius:0px !important; box-shadow:0 15px 35px rgba(0,0,0,0.8) !important; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; padding:20px !important; color:#f3f4f6 !important; box-sizing:border-box !important; }
                 #nx-float-widget * { box-sizing:border-box !important; margin:0 !important; padding:0 !important; line-height:normal !important; letter-spacing:normal !important; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; text-transform:none !important; }
                 .nx-fw-header { display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:12px !important; }
                 .nx-fw-title { font-size:15px !important; font-weight:bold !important; color:#10b981 !important; display:flex !important; align-items:center !important; gap:8px !important; pointer-events:none !important; }
@@ -1261,7 +1260,7 @@ export default {
             wrapper.appendChild(widget);
             document.documentElement.appendChild(wrapper);
 
-            // Make the entire widget draggable
+            // Make the entire widget draggable without scrolling the background
             makeDraggable(wrapper);
 
             // 3 Seconds timeout for Close button
