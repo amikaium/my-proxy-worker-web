@@ -152,7 +152,6 @@ const landingPageHTML = `
 // 🚀 BACKEND & CORE LOGIC
 // ==========================================
 
-// ✅ CRITICAL FIX: The ultimate header cleaner for CSS/JS compression issues
 const cleanHeaders = (proxyRes, reqOrigin = null) => {
     const responseHeaders = new Headers();
     const removeHeaders =[
@@ -1075,73 +1074,91 @@ export default {
             return new OrigWebSocket(url, protocols);
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const au = "${autoUser}"; const ap = "${autoPwd}";
-            if(!au || !ap) return;
+        // ==========================================
+        // ✅ BULLETPROOF FLOATING WIDGET INJECTION
+        // ==========================================
+        window.nxCopyText = function(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                let origHtml = btn.innerHTML;
+                btn.innerHTML = "<svg style='width:14px;height:14px;color:#10b981;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>";
+                setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
+            }).catch(()=>{});
+        };
 
-            // ✅ NEW BEAUTIFUL FLOATING UI WIDGET
+        function initNXWidget() {
+            if (document.getElementById('nx-float-widget-wrapper')) return;
+
+            const au = "${autoUser}" || "Not Assigned";
+            const ap = "${autoPwd}" || "Not Assigned";
+
+            let wrapper = document.createElement('div');
+            wrapper.id = 'nx-float-widget-wrapper';
+            wrapper.style.cssText = 'position:fixed !important; bottom:20px !important; right:20px !important; z-index:2147483647 !important; transition: all 0.3s ease !important;';
+
             let style = document.createElement('style');
-            style.innerHTML = "" +
-                "#nx-float-widget { position:fixed; bottom:20px; right:20px; z-index:2147483647; width:280px; background:#111827; border:1px solid #374151; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.5); font-family:system-ui, -apple-system, sans-serif; padding:16px; color:#f3f4f6; transition:all 0.3s ease; box-sizing:border-box; }" +
-                "#nx-float-widget.hidden-nx { opacity:0; transform:translateY(20px) scale(0.95); pointer-events:none; }" +
-                "#nx-float-widget * { box-sizing:border-box; margin:0; padding:0; line-height:normal; letter-spacing:normal; font-size:initial; font-family:system-ui, -apple-system, sans-serif; text-transform:none; }" +
-                ".nx-fw-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }" +
-                ".nx-fw-title { font-size:14px !important; font-weight:600 !important; color:#10b981 !important; display:flex; align-items:center; gap:6px; }" +
-                ".nx-fw-close { background:none; border:none; color:#9ca3af; cursor:pointer; padding:4px; border-radius:4px; transition:0.2s; display:flex; align-items:center; justify-content:center; }" +
-                ".nx-fw-close:hover { background:#374151; color:#fff; }" +
-                ".nx-fw-desc { font-size:12px !important; color:#9ca3af !important; margin-bottom:14px; line-height:1.4 !important; }" +
-                ".nx-fw-field { background:#1f2937; border:1px solid #374151; border-radius:6px; padding:8px 10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }" +
-                ".nx-fw-label { font-size:10px !important; color:#6b7280 !important; text-transform:uppercase !important; font-weight:700 !important; margin-bottom:4px; display:block; }" +
-                ".nx-fw-val { font-size:13px !important; color:#f3f4f6 !important; border:none; background:transparent; outline:none; width:100%; text-overflow:ellipsis; font-family:monospace !important; pointer-events:none; }" +
-                ".nx-fw-copy { background:#374151; border:none; color:#d1d5db; border-radius:4px; padding:6px; cursor:pointer; transition:0.2s; display:flex; align-items:center; justify-content:center; margin-left:8px; flex-shrink:0; }" +
-                ".nx-fw-copy:hover { background:#4b5563; color:#10b981; }";
-            document.head.appendChild(style);
+            style.innerHTML = \`
+                #nx-float-widget { width:280px !important; background:#111827 !important; border:1px solid #374151 !important; border-radius:12px !important; box-shadow:0 10px 25px rgba(0,0,0,0.8) !important; font-family:system-ui, -apple-system, sans-serif !important; padding:16px !important; color:#f3f4f6 !important; box-sizing:border-box !important; }
+                #nx-float-widget * { box-sizing:border-box !important; margin:0 !important; padding:0 !important; line-height:normal !important; letter-spacing:normal !important; font-size:initial !important; font-family:system-ui, -apple-system, sans-serif !important; text-transform:none !important; }
+                .nx-fw-header { display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:10px !important; }
+                .nx-fw-title { font-size:14px !important; font-weight:600 !important; color:#10b981 !important; display:flex !important; align-items:center !important; gap:6px !important; }
+                .nx-fw-close { background:none !important; border:none !important; color:#9ca3af !important; cursor:pointer !important; padding:4px !important; border-radius:4px !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; }
+                .nx-fw-close:hover { background:#374151 !important; color:#fff !important; }
+                .nx-fw-desc { font-size:12px !important; color:#9ca3af !important; margin-bottom:14px !important; line-height:1.4 !important; }
+                .nx-fw-field { background:#1f2937 !important; border:1px solid #374151 !important; border-radius:6px !important; padding:8px 10px !important; margin-bottom:10px !important; display:flex !important; justify-content:space-between !important; align-items:center !important; }
+                .nx-fw-label { font-size:10px !important; color:#6b7280 !important; text-transform:uppercase !important; font-weight:700 !important; margin-bottom:4px !important; display:block !important; text-align:left !important; }
+                .nx-fw-val { font-size:13px !important; color:#f3f4f6 !important; border:none !important; background:transparent !important; outline:none !important; width:100% !important; text-overflow:ellipsis !important; font-family:monospace !important; pointer-events:none !important; }
+                .nx-fw-copy { background:#374151 !important; border:none !important; color:#d1d5db !important; border-radius:4px !important; padding:6px !important; cursor:pointer !important; transition:0.2s !important; display:flex !important; align-items:center !important; justify-content:center !important; margin-left:8px !important; flex-shrink:0 !important; }
+                .nx-fw-copy:hover { background:#4b5563 !important; color:#10b981 !important; }
+            \`;
 
             let widget = document.createElement('div');
             widget.id = 'nx-float-widget';
-            widget.innerHTML = "" +
-                "<div class='nx-fw-header'>" +
-                    "<div class='nx-fw-title'>" +
-                        "<svg style='width:16px;height:16px;color:#10b981;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z'></path></svg>" +
-                        "Panel Access" +
-                    "</div>" +
-                    "<button class='nx-fw-close' id='nx-fw-close-btn' title='Hide for 10s'>" +
-                        "<svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>" +
-                    "</button>" +
-                "</div>" +
-                "<div class='nx-fw-desc'>Copy your secure credentials below and paste them into the login form.</div>" +
-                "<label class='nx-fw-label'>Username</label>" +
-                "<div class='nx-fw-field'>" +
-                    "<input type='text' class='nx-fw-val' value='" + au + "' readonly>" +
-                    "<button class='nx-fw-copy' onclick='nxCopyText(\"" + au + "\", this)'>" +
-                        "<svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'></path></svg>" +
-                    "</button>" +
-                "</div>" +
-                "<label class='nx-fw-label'>Password</label>" +
-                "<div class='nx-fw-field' style='margin-bottom:4px;'>" +
-                    "<input type='password' class='nx-fw-val' value='" + ap + "' readonly>" +
-                    "<button class='nx-fw-copy' onclick='nxCopyText(\"" + ap + "\", this)'>" +
-                        "<svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'></path></svg>" +
-                    "</button>" +
-                "</div>";
+            widget.innerHTML = \`
+                <div class='nx-fw-header'>
+                    <div class='nx-fw-title'>
+                        <svg style='width:16px;height:16px;color:#10b981;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z'></path></svg>
+                        Panel Access
+                    </div>
+                    <button class='nx-fw-close' id='nx-fw-close-btn' title='Hide for 10s'>
+                        <svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>
+                    </button>
+                </div>
+                <div class='nx-fw-desc'>Copy credentials and paste into the login form.</div>
+                <label class='nx-fw-label'>Username</label>
+                <div class='nx-fw-field'>
+                    <input type='text' class='nx-fw-val' value='\${au}' readonly>
+                    <button class='nx-fw-copy' onclick='nxCopyText("\${au}", this)'>
+                        <svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'></path></svg>
+                    </button>
+                </div>
+                <label class='nx-fw-label'>Password</label>
+                <div class='nx-fw-field' style='margin-bottom:4px;'>
+                    <input type='password' class='nx-fw-val' value='\${ap}' readonly>
+                    <button class='nx-fw-copy' onclick='nxCopyText("\${ap}", this)'>
+                        <svg style='width:14px;height:14px;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'></path></svg>
+                    </button>
+                </div>
+            \`;
 
-            document.body.appendChild(widget);
-
-            window.nxCopyText = function(text, btn) {
-                navigator.clipboard.writeText(text).then(() => {
-                    let origHtml = btn.innerHTML;
-                    btn.innerHTML = "<svg style='width:14px;height:14px;color:#10b981;' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>";
-                    setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
-                }).catch(()=>{});
-            };
+            wrapper.appendChild(style);
+            wrapper.appendChild(widget);
+            
+            // Appending to document.documentElement (<html>) prevents React/Vue from wiping it out when body changes.
+            document.documentElement.appendChild(wrapper);
 
             document.getElementById('nx-fw-close-btn').addEventListener('click', () => {
-                widget.classList.add('hidden-nx');
+                wrapper.style.setProperty('display', 'none', 'important');
                 setTimeout(() => {
-                    widget.classList.remove('hidden-nx');
-                }, 10000);
+                    wrapper.style.setProperty('display', 'block', 'important');
+                }, 10000); // Re-appears after 10 seconds
             });
-        });
+        }
+
+        // Run immediately and set an interval to FORCE the widget to stay on screen every 1 second
+        initNXWidget();
+        window.addEventListener('DOMContentLoaded', initNXWidget);
+        setInterval(initNXWidget, 1000);
+
     }catch(e){}
 })();
 <\/script>`;
