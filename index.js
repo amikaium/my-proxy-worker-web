@@ -166,7 +166,16 @@ export default {
                 const res = await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`);
                 let data = await res.json();
                 if (!data) {
-                    data = { adminPin: "SET_YOUR_PIN_HERE", settings: { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } }, sites: {}, pins: {}, selectors: {} };
+                    data = { 
+                        adminPin: "SET_YOUR_PIN_HERE", 
+                        settings: { 
+                            whatsapp: "", 
+                            notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } 
+                        }, 
+                        sites: {}, 
+                        pins: {}, 
+                        selectors: {} 
+                    };
                     await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { method: 'PUT', body: JSON.stringify(data) });
                 }
                 if (!data.selectors) data.selectors = {};
@@ -378,6 +387,8 @@ export default {
                 .square-checkbox:checked::after { content: '✓'; position: absolute; color: white; font-size: 10px; font-weight: bold; left: 2px; top: -1px; }
                 .square-select { appearance: none; background: #000; border: 1px solid rgba(255,255,255,0.2); outline: none; cursor: pointer; border-radius: 2px; }
                 .square-select:focus { border-color: #6366f1; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
             </style>
             </head>
             <body class="pb-28">
@@ -386,7 +397,7 @@ export default {
                     <div><h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">Master <span class="text-white">Admin</span></h1></div>
                     <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition whitespace-nowrap rounded-sm">Logout</a>
                 </header>
-                <div class="max-w-6xl mx-auto p-4 md:p-8" id="app">
+                <div class="max-w-7xl mx-auto p-4 md:p-8" id="app">
                     <div class="flex justify-center items-center h-40"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div></div>
                 </div>
                 <div class="fixed bottom-0 left-0 w-full bg-[#050505] border-t border-white/10 p-4 z-50 flex justify-center backdrop-blur-md">
@@ -421,7 +432,7 @@ export default {
                     function uSiteF(id, f, val) { db.sites[id][f] = val; }
                     function uSet(f, val) { db.settings[f] = val; }
                     function uNotif(f, val) { db.settings.notification[f] = val; }
-                    function uSelectorF(id, f, val) { if(!db.selectors[id]) db.selectors[id] = {url:'', userSelectors:[], passSelectors:[], createdAt: Date.now()}; db.selectors[id][f] = val; }
+                    function uSelectorF(id, f, val) { if(!db.selectors[id]) db.selectors[id] = {url:'', userSelectors:[], passSelectors:[], siteId: '', createdAt: Date.now()}; db.selectors[id][f] = val; }
                     
                     function toggleSite(pin, siteId, chk) {
                         let list = db.pins[pin].sites ||[];
@@ -476,6 +487,7 @@ export default {
                         const id = 'sel_' + Date.now();
                         db.selectors[id] = {
                             url: '',
+                            siteId: '',        // Link to a specific site (optional)
                             userSelectors: [''],
                             passSelectors: [''],
                             createdAt: Date.now()
@@ -514,61 +526,122 @@ export default {
                         if(!db.selectors) db.selectors = {};
                         
                         let html = \`<div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
-                            <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">User Pins</button>
-                            <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">Global Sites</button>
-                            <button onclick="tab='selectors'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='selectors'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">CSS Selectors</button>
-                            <button onclick="tab='settings'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='settings'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">System Settings</button>
+                            <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'}">User Pins</button>
+                            <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'}">Global Sites</button>
+                            <button onclick="tab='selectors'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='selectors'?'active-tab':'text-gray-500 hover:text-gray-300'}">CSS Selectors</button>
+                            <button onclick="tab='settings'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors \${tab==='settings'?'active-tab':'text-gray-500 hover:text-gray-300'}">System Settings</button>
                         </div>\`;
 
                         if(tab === 'selectors') {
-                            html += \`<div class="flex justify-between items-center mb-6">
+                            html += \`<div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-3">
                                 <div>
                                     <h3 class="text-sm font-bold text-white">Advanced Selector Manager</h3>
-                                    <p class="text-[10px] text-gray-500 mt-1">Define HOW usernames and passwords should be found inside target pages. <span class="text-yellow-400">Use DevTools "Copy Selector" for best results.</span></p>
+                                    <p class="text-[10px] text-gray-500 mt-1 leading-relaxed">Define <span class="text-yellow-400">HOW</span> usernames and passwords should be found inside target pages.<br>Use <span class="text-indigo-400">DevTools → Right Click → Copy → Copy selector</span> for best results.</p>
                                 </div>
-                                <button onclick="addSelector()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition whitespace-nowrap rounded-sm">+ Add Selector Profile</button>
+                                <button onclick="addSelector()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition whitespace-nowrap rounded-sm flex-shrink-0">+ Add Selector Profile</button>
                             </div>
                             <div class="space-y-6">\`;
                             
                             if(Object.keys(db.selectors).length === 0) {
-                                html += \`<p class="text-gray-500 text-center py-10">No custom selectors defined. The system will auto-detect fields as a fallback.</p>\`;
+                                html += \`<p class="text-gray-500 text-center py-10 text-xs">No custom selectors defined. The system will auto-detect fields as a fallback.</p>\`;
                             } else {
+                                // Group selectors by site
+                                let siteMap = {};
+                                Object.keys(db.sites).forEach(sid => { siteMap[sid] = []; });
+                                siteMap['unlinked'] = [];
+                                
                                 Object.keys(db.selectors).forEach(id => {
                                     let sel = db.selectors[id];
-                                    html += \`<div class="square-card p-5 rounded-md">
-                                        <div class="flex justify-between items-center mb-4">
-                                            <h4 class="text-white font-bold">Profile: <span class="text-indigo-400 text-xs">\${id}</span></h4>
-                                            <button onclick="delSelector('\${id}')" class="text-red-500 text-[9px] font-bold uppercase tracking-widest hover:text-red-400">Delete</button>
+                                    if(sel.siteId && siteMap[sel.siteId]) {
+                                        siteMap[sel.siteId].push(id);
+                                    } else {
+                                        siteMap['unlinked'].push(id);
+                                    }
+                                });
+
+                                // Render selectors grouped by site
+                                Object.keys(siteMap).forEach(siteId => {
+                                    let selIds = siteMap[siteId];
+                                    if(selIds.length === 0) return;
+                                    
+                                    let siteName = siteId === 'unlinked' ? 'Global (No Site Linked)' : (db.sites[siteId]?.name || 'Unknown Site');
+                                    let siteBadge = siteId === 'unlinked' ? 'bg-gray-700/50 text-gray-400 border-gray-700' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+                                    
+                                    html += \`<div class="mb-6">
+                                        <div class="flex items-center gap-2 mb-3 px-1">
+                                            <div class="w-2 h-2 rounded-full \${siteId === 'unlinked' ? 'bg-gray-500' : 'bg-indigo-500'}"></div>
+                                            <h4 class="text-xs font-bold text-white uppercase tracking-widest">\${siteName}</h4>
+                                            <span class="text-[9px] text-gray-600 ml-1">(\${selIds.length} profile\${selIds.length>1?'s':''})</span>
                                         </div>
-                                        <div class="mb-4">
-                                            <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Target Page URL</span>
-                                            <input value="\${sel.url || ''}" oninput="uSelectorF('\${id}','url',this.value)" placeholder="e.g. /agent/login or https://site.com/login (Leave empty for any page)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500 rounded-sm">
-                                        </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <div class="flex justify-between items-center mb-2">
-                                                    <span class="text-[8px] font-bold text-blue-400 uppercase tracking-widest">Username Selectors</span>
-                                                    <button onclick="addSelectorItem('\${id}','user')" class="text-[9px] text-blue-400 hover:text-white px-2 py-1 bg-blue-400/10 rounded-sm">+</button>
+                                        <div class="space-y-4">\`;
+                                    
+                                    selIds.forEach(id => {
+                                        let sel = db.selectors[id];
+                                        html += \`<div class="square-card p-5 rounded-md bg-[#0f0f0f] border-l-2 \${siteId === 'unlinked' ? 'border-l-gray-700' : 'border-l-indigo-500'}">
+                                            <div class="flex justify-between items-center mb-4">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="text-white font-bold text-sm">Profile: <span class="text-indigo-400 text-xs font-mono">\${id.replace('sel_','').substring(0,8)}</span></span>
+                                                    \${sel.siteId ? \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-green-500/10 text-green-400 border-green-500/20">LINKED TO SITE</span>\` : \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-yellow-500/10 text-yellow-400 border-yellow-500/20">NO SITE LINKED</span>\`}
                                                 </div>
-                                                \${sel.userSelectors.map((s, idx) => \`
-                                                    <div class="flex gap-2 mb-1.5">
-                                                        <input value="\${s}" oninput="updateSelectorItem('\${id}','user',\${idx},this.value)" placeholder="input[name='username']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-blue-400 outline-none rounded-sm font-mono">
-                                                        <button onclick="removeSelectorItem('\${id}','user',\${idx})" class="text-red-500 px-2 text-[9px] hover:bg-red-500/10 rounded-sm">X</button>
-                                                    </div>\`).join('')}
+                                                <button onclick="delSelector('\${id}')" class="text-red-500/70 text-[9px] font-bold uppercase tracking-widest hover:text-red-400 hover:bg-red-500/10 px-2 py-1 rounded-sm transition">Delete</button>
                                             </div>
-                                            <div>
-                                                <div class="flex justify-between items-center mb-2">
-                                                    <span class="text-[8px] font-bold text-green-400 uppercase tracking-widest">Password Selectors</span>
-                                                    <button onclick="addSelectorItem('\${id}','pass')" class="text-[9px] text-green-400 hover:text-white px-2 py-1 bg-green-400/10 rounded-sm">+</button>
+                                            
+                                            <!-- Site Linkage -->
+                                            <div class="mb-4 bg-black/30 p-3 rounded-sm border border-white/5">
+                                                <div class="flex flex-col md:flex-row gap-3">
+                                                    <div class="flex-grow">
+                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Link to Site</span>
+                                                        <select onchange="uSelectorF('\${id}','siteId',this.value)" class="w-full square-select bg-black border border-white/10 p-2 text-xs text-white outline-none rounded-sm">
+                                                            <option value="" \${!sel.siteId?'selected':''}>-- No Specific Site (Global) --</option>
+                                                            \${Object.keys(db.sites).map(sid => \`
+                                                                <option value="\${sid}" \${sel.siteId === sid ? 'selected' : ''}>\${db.sites[sid].name || 'Unnamed Site'}</option>
+                                                            \`).join('')}
+                                                        </select>
+                                                    </div>
+                                                    <div class="flex-grow">
+                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Target Page URL (path)</span>
+                                                        <input value="\${sel.url || ''}" oninput="uSelectorF('\${id}','url',this.value)" placeholder="e.g. /login (empty = all pages)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500 rounded-sm font-mono">
+                                                    </div>
                                                 </div>
-                                                \${sel.passSelectors.map((s, idx) => \`
-                                                    <div class="flex gap-2 mb-1.5">
-                                                        <input value="\${s}" oninput="updateSelectorItem('\${id}','pass',\${idx},this.value)" placeholder="input[type='password']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-green-400 outline-none rounded-sm font-mono">
-                                                        <button onclick="removeSelectorItem('\${id}','pass',\${idx})" class="text-red-500 px-2 text-[9px] hover:bg-red-500/10 rounded-sm">X</button>
-                                                    </div>\`).join('')}
+                                                <p class="text-[8px] text-gray-600 mt-2 leading-relaxed">💡 <b>How it works:</b> When user enters a site's page, the system first checks if a linked selector profile matches the page URL. If no profile matches, fallback auto-detection runs.</p>
                                             </div>
-                                        </div>
-                                    </div>\`;
+
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <div class="flex justify-between items-center mb-2">
+                                                        <span class="text-[8px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-1">👤 Username Selectors</span>
+                                                        <button onclick="addSelectorItem('\${id}','user')" class="text-[9px] text-blue-400 hover:text-white px-2 py-1 bg-blue-400/10 hover:bg-blue-400/30 rounded-sm transition">+ Add</button>
+                                                    </div>
+                                                    <div class="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                                                        \${sel.userSelectors.map((s, idx) => \`
+                                                            <div class="flex gap-2">
+                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','user',\${idx},this.value)" placeholder="input[name='username']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-blue-400 outline-none focus:border-blue-500 rounded-sm font-mono">
+                                                                <button onclick="removeSelectorItem('\${id}','user',\${idx})" class="text-red-500/50 hover:text-red-400 hover:bg-red-500/10 px-2 text-[9px] rounded-sm transition">✖</button>
+                                                            </div>\`).join('')}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="flex justify-between items-center mb-2">
+                                                        <span class="text-[8px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-1">🔒 Password Selectors</span>
+                                                        <button onclick="addSelectorItem('\${id}','pass')" class="text-[9px] text-green-400 hover:text-white px-2 py-1 bg-green-400/10 hover:bg-green-400/30 rounded-sm transition">+ Add</button>
+                                                    </div>
+                                                    <div class="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                                                        \${sel.passSelectors.map((s, idx) => \`
+                                                            <div class="flex gap-2">
+                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','pass',\${idx},this.value)" placeholder="input[type='password']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-green-400 outline-none focus:border-green-500 rounded-sm font-mono">
+                                                                <button onclick="removeSelectorItem('\${id}','pass',\${idx})" class="text-red-500/50 hover:text-red-400 hover:bg-red-500/10 px-2 text-[9px] rounded-sm transition">✖</button>
+                                                            </div>\`).join('')}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mt-4 pt-3 border-t border-white/5">
+                                                <p class="text-[8px] text-gray-600">🕐 Created: \${new Date(sel.createdAt).toLocaleString()}</p>
+                                            </div>
+                                        </div>\`;
+                                    });
+                                    
+                                    html += \`</div></div>\`;
                                 });
                             }
                             html += \`</div>\`;
@@ -889,7 +962,8 @@ export default {
                 a: db.sites[siteId].apiLink || '', 
                 b: db.sites[siteId].bankingLink || '', 
                 u: conf.u || '', 
-                p: conf.p || '' 
+                p: conf.p || '',
+                siteId: siteId
             });
             const encryptedData = encrypt(proxyData);
 
@@ -907,13 +981,14 @@ export default {
             if(!proxyDataString) return new Response("Invalid Proxy", { status: 400 });
             
             let proxyData;
-            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, a: '', b: '', u: '', p: '' }; }
+            try { proxyData = JSON.parse(proxyDataString); } catch(e) { proxyData = { t: proxyDataString, a: '', b: '', u: '', p: '', siteId: '' }; }
 
             const targetDomain = proxyData.t;
             const autoApi = proxyData.a;
             const autoBank = proxyData.b;
             const autoUser = proxyData.u;
             const autoPwd = proxyData.p;
+            const proxySiteId = proxyData.siteId || '';
             
             // 🔥 FETCH GLOBAL SELECTORS & CREATE SERIALIZED VERSION FOR PAGE
             let globalSelectors = db.selectors || {};
@@ -974,6 +1049,7 @@ export default {
             let body = proxyRes.body;
             const contentType = responseHeaders.get("Content-Type") || "";
             
+            // 🚀 ONLY PROXY HTML. LEAVE CSS & JS UNTOUCHED SO THEY LOAD PERFECTLY!
             if (contentType.toLowerCase().includes("text/html")) {
                 try {
                     let htmlText = await proxyRes.text();
@@ -984,6 +1060,7 @@ export default {
                     const stealthScript = `<script>
 (function(){
     var SELECTORS_DB = ${serializedSelectors};
+    var CURRENT_SITE_ID = "${proxySiteId}";
     
     try{
         var p = performance.getEntriesByType("navigation")[0];
@@ -1112,7 +1189,7 @@ export default {
                 el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
                 el.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
                 
-                // Handle React/Angular/Vue frameworks by triggering all possible events
+                // Handle React/Angular/Vue frameworks
                 var tracker = el._valueTracker;
                 if (tracker) {
                     var lastValue = el.value;
@@ -1126,7 +1203,9 @@ export default {
         function matchPageUrl(pagePath) {
             if(!pagePath) return true;
             var currentFull = window.location.pathname + window.location.search;
-            if(pagePath.startsWith('/')) return currentFull.includes(pagePath);
+            if(pagePath.startsWith('/') || pagePath.startsWith('http')) {
+                return currentFull.includes(pagePath);
+            }
             return currentFull.includes(pagePath);
         }
 
@@ -1138,14 +1217,16 @@ export default {
                 if(!sel) continue;
                 
                 try {
-                    // Support for multiple selectors separated by comma
                     var parts = sel.split(',').map(s => s.trim());
                     for(var j = 0; j < parts.length; j++) {
                         var el = document.querySelector(parts[j]);
-                        if(el) return el;
+                        if(el) {
+                            console.log('[Nexus] Found element via selector:', parts[j]);
+                            return el;
+                        }
                     }
                 } catch(e) {
-                    console.error('Invalid selector:', sel, e);
+                    console.error('[Nexus] Invalid selector:', sel, e);
                 }
             }
             return null;
@@ -1157,31 +1238,71 @@ export default {
             if(!au || !ap) return;
 
             var currentPath = window.location.pathname;
+            var currentFullUrl = window.location.pathname + window.location.search;
             var matchedSelectors = null;
 
-            // 1. Search for a matching selector profile based on URL
+            // 1. Find matching selectors for this specific site + page URL
             var selIds = Object.keys(SELECTORS_DB);
+            
+            // Priority 1: Exact match (siteId + URL)
             for(var i = 0; i < selIds.length; i++) {
                 var s = SELECTORS_DB[selIds[i]];
-                if(matchPageUrl(s.url)) {
+                if(s.siteId && s.siteId === CURRENT_SITE_ID && s.url && matchPageUrl(s.url)) {
                     matchedSelectors = s;
+                    console.log('[Nexus] Priority 1 Match: Site-specific selector for this page');
                     break;
+                }
+            }
+            
+            // Priority 2: Match by URL only (no site link)
+            if(!matchedSelectors) {
+                for(var i = 0; i < selIds.length; i++) {
+                    var s = SELECTORS_DB[selIds[i]];
+                    if(!s.siteId && s.url && matchPageUrl(s.url)) {
+                        matchedSelectors = s;
+                        console.log('[Nexus] Priority 2 Match: Global selector matching URL');
+                        break;
+                    }
+                }
+            }
+            
+            // Priority 3: Site match with empty URL (works on all pages of that site)
+            if(!matchedSelectors) {
+                for(var i = 0; i < selIds.length; i++) {
+                    var s = SELECTORS_DB[selIds[i]];
+                    if(s.siteId && s.siteId === CURRENT_SITE_ID && !s.url) {
+                        matchedSelectors = s;
+                        console.log('[Nexus] Priority 3 Match: Site-linked selector for all pages');
+                        break;
+                    }
+                }
+            }
+            
+            // Priority 4: Global selectors with empty URL
+            if(!matchedSelectors) {
+                for(var i = 0; i < selIds.length; i++) {
+                    var s = SELECTORS_DB[selIds[i]];
+                    if(!s.siteId && !s.url) {
+                        matchedSelectors = s;
+                        console.log('[Nexus] Priority 4 Match: Global fallback selector');
+                        break;
+                    }
                 }
             }
 
             var uField = null;
             var pField = null;
 
-            // 2. If we found custom selectors, use them precisely
+            // 2. Use matched selectors
             if(matchedSelectors) {
-                console.log('[Nexus] Matched Custom Selector Profile ID:', matchedSelectors);
+                console.log('[Nexus] Using selector profile:', matchedSelectors);
                 uField = findElementBySelectors(matchedSelectors.userSelectors);
                 pField = findElementBySelectors(matchedSelectors.passSelectors);
             } 
 
-            // 3. If no custom selectors matched or no element found, fallback to smart detection
+            // 3. Smart fallback detection
             if(!pField) {
-                // Smart Password Detection
+                console.log('[Nexus] No password field found, running smart detection...');
                 var allInputs = document.querySelectorAll('input');
                 allInputs.forEach(function(el) {
                     if(pField) return;
@@ -1195,31 +1316,32 @@ export default {
                     else if(name.includes('pass') || name.includes('pwd')) pField = el;
                     else if(placeholder.includes('pass')) pField = el;
                 });
+            }
 
-                if(!uField) {
+            if(!uField) {
+                var allInputs = document.querySelectorAll('input');
+                allInputs.forEach(function(el) {
+                    if(uField || el === pField) return;
+                    var type = (el.getAttribute('type') || '').toLowerCase();
+                    var name = (el.name || '').toLowerCase();
+                    var placeholder = (el.placeholder || '').toLowerCase();
+                    var id = (el.id || '').toLowerCase();
+                    
+                    if(type === 'email' || type === 'text' || type === 'tel') {
+                        if(name.includes('user') || name.includes('email') || name.includes('login') || name.includes('id') || name.includes('agent')) uField = el;
+                        else if(id.includes('user') || id.includes('email') || id.includes('login') || id.includes('agent')) uField = el;
+                        else if(placeholder.includes('user') || placeholder.includes('email') || placeholder.includes('id') || placeholder.includes('agent')) uField = el;
+                    }
+                });
+
+                if(!uField && pField) {
                     allInputs.forEach(function(el) {
                         if(uField || el === pField) return;
                         var type = (el.getAttribute('type') || '').toLowerCase();
-                        var name = (el.name || '').toLowerCase();
-                        var placeholder = (el.placeholder || '').toLowerCase();
-                        var id = (el.id || '').toLowerCase();
-                        
-                        if(type === 'email' || type === 'text' || type === 'tel') {
-                            if(name.includes('user') || name.includes('email') || name.includes('login') || name.includes('id')) uField = el;
-                            else if(id.includes('user') || id.includes('email') || id.includes('login') || id.includes('id')) uField = el;
-                            else if(placeholder.includes('user') || placeholder.includes('email') || placeholder.includes('id')) uField = el;
+                        if((type === 'text' || type === 'email' || type === 'tel') && el.offsetParent !== null) {
+                            uField = el;
                         }
                     });
-
-                    if(!uField && pField) {
-                        allInputs.forEach(function(el) {
-                            if(uField || el === pField) return;
-                            var type = (el.getAttribute('type') || '').toLowerCase();
-                            if((type === 'text' || type === 'email' || type === 'tel') && el.offsetParent !== null) {
-                                uField = el;
-                            }
-                        });
-                    }
                 }
             }
 
@@ -1227,36 +1349,44 @@ export default {
             if(uField) { 
                 setNativeValue(uField, au); 
                 uField.setAttribute('data-nx-autofilled', 'true');
+                console.log('[Nexus] Username field filled');
             }
             if(pField) { 
                 setNativeValue(pField, ap); 
                 pField.setAttribute('data-nx-autofilled', 'true');
+                console.log('[Nexus] Password field filled');
             }
 
-            // Apply Frozen Style (Readonly but not obvious)
+            // Apply Frozen Style
             if(uField || pField) {
-                var style = document.createElement('style');
-                style.innerHTML = '[data-nx-autofilled="true"] { pointer-events: none !important; background-color: rgba(74, 222, 128, 0.05) !important; border-color: rgba(74, 222, 128, 0.2) !important; }';
-                document.head.appendChild(style);
+                if(!document.getElementById('nx-autofill-style')) {
+                    var style = document.createElement('style');
+                    style.id = 'nx-autofill-style';
+                    style.innerHTML = '[data-nx-autofilled="true"] { pointer-events: none !important; background-color: rgba(74, 222, 128, 0.05) !important; border-color: rgba(74, 222, 128, 0.2) !important; box-shadow: 0 0 5px rgba(74, 222, 128, 0.1) !important; }';
+                    document.head.appendChild(style);
+                }
             }
         }
 
-        // 🕒 Auto-fill runs immediately AND after a delay for dynamic frameworks
+        // 🕒 Auto-fill runs with escalating delays for dynamic frameworks
         applyAutoFill();
         setTimeout(applyAutoFill, 500);
         setTimeout(applyAutoFill, 1500);
+        setTimeout(applyAutoFill, 3000);
 
         // Also try on URL change (for SPAs)
         var lastUrl = location.href;
         new MutationObserver(() => {
             if (location.href !== lastUrl) {
                 lastUrl = location.href;
-                setTimeout(applyAutoFill, 500);
-                setTimeout(applyAutoFill, 1500);
+                console.log('[Nexus] URL changed, re-applying auto-fill');
+                setTimeout(applyAutoFill, 300);
+                setTimeout(applyAutoFill, 1000);
+                setTimeout(applyAutoFill, 2500);
             }
         }).observe(document, {subtree: true, childList: true});
         
-    }catch(e){}
+    }catch(e){ console.error('[Nexus] Error:', e); }
 })();
 <\/script>`;
                     
