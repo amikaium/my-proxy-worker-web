@@ -389,6 +389,9 @@ export default {
                 .square-select:focus { border-color: #6366f1; }
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+                .selector-type-btn { padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); background: #0a0a0a; color: #9ca3af; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; border-radius: 4px; white-space: nowrap; }
+                .selector-type-btn.active { background: #4f46e5; color: white; border-color: #6366f1; box-shadow: 0 0 12px rgba(99,102,241,0.3); }
+                .selector-type-btn:hover:not(.active) { border-color: rgba(255,255,255,0.3); color: white; }
             </style>
             </head>
             <body class="pb-28">
@@ -487,7 +490,7 @@ export default {
                         const id = 'sel_' + Date.now();
                         db.selectors[id] = {
                             url: '',
-                            siteId: '',        // Link to a specific site (optional)
+                            siteId: '',
                             userSelectors: [''],
                             passSelectors: [''],
                             createdAt: Date.now()
@@ -496,8 +499,8 @@ export default {
                         render();
                     }
 
-                    function delSite(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Site', text:'Are you sure you want to delete this site?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
-                    function delPin(pin) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete User', text:'Are you sure you want to delete this user PIN?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
+                    function delSite(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Site', text:'Are you sure?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
+                    function delPin(pin) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete User', text:'Are you sure?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
                     function delSelector(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Selector', text:'Are you sure?', onConfirm: (yes) => { if(yes) { delete db.selectors[id]; render(); } }}); }
 
                     function addSelectorItem(id, type) {
@@ -536,16 +539,20 @@ export default {
                             html += \`<div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-3">
                                 <div>
                                     <h3 class="text-sm font-bold text-white">Advanced Selector Manager</h3>
-                                    <p class="text-[10px] text-gray-500 mt-1 leading-relaxed">Define <span class="text-yellow-400">HOW</span> usernames and passwords should be found inside target pages.<br>Use <span class="text-indigo-400">DevTools → Right Click → Copy → Copy selector</span> for best results.</p>
+                                    <p class="text-[10px] text-gray-500 mt-1 leading-relaxed">Define <span class="text-yellow-400">HOW</span> usernames and passwords are found inside target pages.<br>Use <span class="text-indigo-400">DevTools → Right Click → Copy → Copy selector</span> for best results.</p>
                                 </div>
                                 <button onclick="addSelector()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition whitespace-nowrap rounded-sm flex-shrink-0">+ Add Selector Profile</button>
                             </div>
                             <div class="space-y-6">\`;
                             
                             if(Object.keys(db.selectors).length === 0) {
-                                html += \`<p class="text-gray-500 text-center py-10 text-xs">No custom selectors defined. The system will auto-detect fields as a fallback.</p>\`;
+                                html += \`<div class="text-center py-16 bg-[#0a0a0a] border border-white/5 rounded-md">
+                                    <svg class="w-12 h-12 text-gray-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                                    <p class="text-gray-500 text-xs">No custom selectors defined.</p>
+                                    <p class="text-gray-600 text-[10px] mt-1">The system will auto-detect fields as a fallback.</p>
+                                </div>\`;
                             } else {
-                                // Group selectors by site
+                                // Site grouping logic
                                 let siteMap = {};
                                 Object.keys(db.sites).forEach(sid => { siteMap[sid] = []; });
                                 siteMap['unlinked'] = [];
@@ -559,38 +566,40 @@ export default {
                                     }
                                 });
 
-                                // Render selectors grouped by site
                                 Object.keys(siteMap).forEach(siteId => {
                                     let selIds = siteMap[siteId];
                                     if(selIds.length === 0) return;
                                     
-                                    let siteName = siteId === 'unlinked' ? 'Global (No Site Linked)' : (db.sites[siteId]?.name || 'Unknown Site');
-                                    let siteBadge = siteId === 'unlinked' ? 'bg-gray-700/50 text-gray-400 border-gray-700' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+                                    let siteName = siteId === 'unlinked' ? '🌍 Global (No Site Linked)' : (db.sites[siteId]?.name || 'Unknown Site');
+                                    let siteColor = siteId === 'unlinked' ? 'border-gray-700 bg-gray-500' : 'border-indigo-500 bg-indigo-500';
                                     
-                                    html += \`<div class="mb-6">
-                                        <div class="flex items-center gap-2 mb-3 px-1">
-                                            <div class="w-2 h-2 rounded-full \${siteId === 'unlinked' ? 'bg-gray-500' : 'bg-indigo-500'}"></div>
+                                    html += \`<div class="mb-8">
+                                        <div class="flex items-center gap-3 mb-4 px-1">
+                                            <div class="w-2.5 h-2.5 rounded-full \${siteColor}"></div>
                                             <h4 class="text-xs font-bold text-white uppercase tracking-widest">\${siteName}</h4>
-                                            <span class="text-[9px] text-gray-600 ml-1">(\${selIds.length} profile\${selIds.length>1?'s':''})</span>
+                                            <span class="text-[9px] text-gray-600 ml-1">· \${selIds.length} profile\${selIds.length>1?'s':''}</span>
                                         </div>
                                         <div class="space-y-4">\`;
                                     
                                     selIds.forEach(id => {
                                         let sel = db.selectors[id];
-                                        html += \`<div class="square-card p-5 rounded-md bg-[#0f0f0f] border-l-2 \${siteId === 'unlinked' ? 'border-l-gray-700' : 'border-l-indigo-500'}">
-                                            <div class="flex justify-between items-center mb-4">
+                                        let shortId = id.replace('sel_','').substring(0,8);
+                                        
+                                        html += \`<div class="square-card rounded-md overflow-hidden border \${siteId === 'unlinked' ? 'border-gray-800' : 'border-indigo-500/20'}">
+                                            <!-- Profile Header -->
+                                            <div class="flex justify-between items-center p-4 bg-[#0f0f0f] border-b border-white/5">
                                                 <div class="flex items-center gap-3">
-                                                    <span class="text-white font-bold text-sm">Profile: <span class="text-indigo-400 text-xs font-mono">\${id.replace('sel_','').substring(0,8)}</span></span>
-                                                    \${sel.siteId ? \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-green-500/10 text-green-400 border-green-500/20">LINKED TO SITE</span>\` : \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-yellow-500/10 text-yellow-400 border-yellow-500/20">NO SITE LINKED</span>\`}
+                                                    <span class="text-white font-bold text-sm">Profile <span class="text-indigo-400 font-mono text-xs">#\${shortId}</span></span>
+                                                    \${sel.siteId ? \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-green-500/10 text-green-400 border-green-500/20">LINKED TO SITE</span>\` : \`<span class="text-[8px] px-2 py-0.5 rounded-sm border bg-yellow-500/10 text-yellow-400 border-yellow-500/20">GLOBAL</span>\`}
                                                 </div>
-                                                <button onclick="delSelector('\${id}')" class="text-red-500/70 text-[9px] font-bold uppercase tracking-widest hover:text-red-400 hover:bg-red-500/10 px-2 py-1 rounded-sm transition">Delete</button>
+                                                <button onclick="delSelector('\${id}')" class="text-red-500/50 text-[9px] font-bold uppercase tracking-widest hover:text-red-400 hover:bg-red-500/10 px-2 py-1 rounded-sm transition">Delete</button>
                                             </div>
                                             
-                                            <!-- Site Linkage -->
-                                            <div class="mb-4 bg-black/30 p-3 rounded-sm border border-white/5">
+                                            <!-- Site & URL Configuration -->
+                                            <div class="p-4 bg-black/20 border-b border-white/5">
                                                 <div class="flex flex-col md:flex-row gap-3">
-                                                    <div class="flex-grow">
-                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Link to Site</span>
+                                                    <div class="flex-1">
+                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1.5 block">🔗 Link to Site</span>
                                                         <select onchange="uSelectorF('\${id}','siteId',this.value)" class="w-full square-select bg-black border border-white/10 p-2 text-xs text-white outline-none rounded-sm">
                                                             <option value="" \${!sel.siteId?'selected':''}>-- No Specific Site (Global) --</option>
                                                             \${Object.keys(db.sites).map(sid => \`
@@ -598,45 +607,69 @@ export default {
                                                             \`).join('')}
                                                         </select>
                                                     </div>
-                                                    <div class="flex-grow">
-                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Target Page URL (path)</span>
-                                                        <input value="\${sel.url || ''}" oninput="uSelectorF('\${id}','url',this.value)" placeholder="e.g. /login (empty = all pages)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500 rounded-sm font-mono">
+                                                    <div class="flex-1">
+                                                        <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1.5 block">🎯 Target Page URL</span>
+                                                        <input value="\${sel.url || ''}" oninput="uSelectorF('\${id}','url',this.value)" placeholder="/login (empty = all pages)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500 rounded-sm font-mono">
                                                     </div>
                                                 </div>
-                                                <p class="text-[8px] text-gray-600 mt-2 leading-relaxed">💡 <b>How it works:</b> When user enters a site's page, the system first checks if a linked selector profile matches the page URL. If no profile matches, fallback auto-detection runs.</p>
+                                                <p class="text-[9px] text-gray-600 mt-3 leading-relaxed">
+                                                    💡 <b>How matching works:</b> 
+                                                    <span class="text-indigo-400">Exact page URL match</span> → 
+                                                    <span class="text-blue-400">Global URL match</span> → 
+                                                    <span class="text-green-400">Site-linked empty URL</span> → 
+                                                    <span class="text-yellow-400">Universal fallback</span>
+                                                </p>
                                             </div>
 
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <!-- Selectors Section -->
+                                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                <!-- Username Column -->
                                                 <div>
-                                                    <div class="flex justify-between items-center mb-2">
-                                                        <span class="text-[8px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-1">👤 Username Selectors</span>
-                                                        <button onclick="addSelectorItem('\${id}','user')" class="text-[9px] text-blue-400 hover:text-white px-2 py-1 bg-blue-400/10 hover:bg-blue-400/30 rounded-sm transition">+ Add</button>
+                                                    <div class="flex justify-between items-center mb-3">
+                                                        <span class="text-[9px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                                            Username Selectors
+                                                        </span>
+                                                        <button onclick="addSelectorItem('\${id}','user')" class="text-[9px] text-blue-400 hover:text-white px-2.5 py-1.5 bg-blue-400/10 hover:bg-blue-500/30 rounded-sm transition flex items-center gap-1">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add
+                                                        </button>
                                                     </div>
-                                                    <div class="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                                                    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                                                         \${sel.userSelectors.map((s, idx) => \`
-                                                            <div class="flex gap-2">
-                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','user',\${idx},this.value)" placeholder="input[name='username']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-blue-400 outline-none focus:border-blue-500 rounded-sm font-mono">
-                                                                <button onclick="removeSelectorItem('\${id}','user',\${idx})" class="text-red-500/50 hover:text-red-400 hover:bg-red-500/10 px-2 text-[9px] rounded-sm transition">✖</button>
+                                                            <div class="flex gap-2 bg-black/30 border border-white/5 rounded-sm p-1.5 hover:border-blue-500/30 transition-colors">
+                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','user',\${idx},this.value)" placeholder="input[name='username']" class="flex-grow bg-transparent text-[11px] text-blue-300 outline-none font-mono placeholder-gray-700">
+                                                                <button onclick="removeSelectorItem('\${id}','user',\${idx})" class="text-gray-600 hover:text-red-400 hover:bg-red-500/10 px-2 rounded-sm transition text-[10px]" title="Remove">✖</button>
                                                             </div>\`).join('')}
+                                                        \${sel.userSelectors.length === 0 ? \`<p class="text-[9px] text-gray-700 text-center py-2">No selectors added</p>\` : ''}
                                                     </div>
                                                 </div>
+                                                
+                                                <!-- Password Column -->
                                                 <div>
-                                                    <div class="flex justify-between items-center mb-2">
-                                                        <span class="text-[8px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-1">🔒 Password Selectors</span>
-                                                        <button onclick="addSelectorItem('\${id}','pass')" class="text-[9px] text-green-400 hover:text-white px-2 py-1 bg-green-400/10 hover:bg-green-400/30 rounded-sm transition">+ Add</button>
+                                                    <div class="flex justify-between items-center mb-3">
+                                                        <span class="text-[9px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                                            Password Selectors
+                                                        </span>
+                                                        <button onclick="addSelectorItem('\${id}','pass')" class="text-[9px] text-green-400 hover:text-white px-2.5 py-1.5 bg-green-400/10 hover:bg-green-500/30 rounded-sm transition flex items-center gap-1">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add
+                                                        </button>
                                                     </div>
-                                                    <div class="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                                                    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                                                         \${sel.passSelectors.map((s, idx) => \`
-                                                            <div class="flex gap-2">
-                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','pass',\${idx},this.value)" placeholder="input[type='password']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-green-400 outline-none focus:border-green-500 rounded-sm font-mono">
-                                                                <button onclick="removeSelectorItem('\${id}','pass',\${idx})" class="text-red-500/50 hover:text-red-400 hover:bg-red-500/10 px-2 text-[9px] rounded-sm transition">✖</button>
+                                                            <div class="flex gap-2 bg-black/30 border border-white/5 rounded-sm p-1.5 hover:border-green-500/30 transition-colors">
+                                                                <input value="\${s}" oninput="updateSelectorItem('\${id}','pass',\${idx},this.value)" placeholder="input[type='password']" class="flex-grow bg-transparent text-[11px] text-green-300 outline-none font-mono placeholder-gray-700">
+                                                                <button onclick="removeSelectorItem('\${id}','pass',\${idx})" class="text-gray-600 hover:text-red-400 hover:bg-red-500/10 px-2 rounded-sm transition text-[10px]" title="Remove">✖</button>
                                                             </div>\`).join('')}
+                                                        \${sel.passSelectors.length === 0 ? \`<p class="text-[9px] text-gray-700 text-center py-2">No selectors added</p>\` : ''}
                                                     </div>
                                                 </div>
                                             </div>
                                             
-                                            <div class="mt-4 pt-3 border-t border-white/5">
-                                                <p class="text-[8px] text-gray-600">🕐 Created: \${new Date(sel.createdAt).toLocaleString()}</p>
+                                            <!-- Footer Info -->
+                                            <div class="px-4 py-2 bg-black/30 border-t border-white/5 flex justify-between items-center">
+                                                <p class="text-[8px] text-gray-600">🕐 \${new Date(sel.createdAt).toLocaleString()}</p>
+                                                <p class="text-[8px] text-gray-600">\${(sel.userSelectors||[]).filter(Boolean).length} user · \${(sel.passSelectors||[]).filter(Boolean).length} pass</p>
                                             </div>
                                         </div>\`;
                                     });
@@ -787,65 +820,69 @@ export default {
                     
                     let accountsHtml = '';
                     confs.forEach((conf, idx) => {
-                        let roleColor = conf.r === 'Admin' ? 'text-purple-400 border-purple-400/20 bg-purple-400/10' : 
-                                        conf.r === 'Super Agent' ? 'text-blue-400 border-blue-400/20 bg-blue-400/10' : 
-                                        'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
+                        let roleColor = conf.r === 'Admin' ? 'from-purple-500/20 to-purple-600/10 border-purple-500/30 text-purple-300' : 
+                                        conf.r === 'Super Agent' ? 'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-300' : 
+                                        'from-yellow-500/20 to-yellow-600/10 border-yellow-500/30 text-yellow-300';
                         
                         const hasPwd = conf.p && conf.p.trim() !== '';
                         const loginAction = hasPwd 
                             ? `window.location.href='/api/start-proxy?id=${siteId}&acc=${idx}'` 
-                            : `CustomModal.show({type:'alert', title:'<span class=\\'text-red-500\\'>⚠</span> Password Required', text:'Please setup your panel password before logging in.'})`;
+                            : `CustomModal.show({type:'alert', title:'<span style="color:#f87171">⚠</span> Password Required', text:'Please setup your panel password before logging in.'})`;
 
                         accountsHtml += `
-                        <div class="border border-white/10 bg-[#0f0f0f] rounded-md p-4 relative shadow-sm">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 border ${roleColor} rounded-sm">${conf.r}</span>
+                        <div class="border border-white/5 bg-gradient-to-br from-[#0f0f0f] to-[#0a0a0a] rounded-lg p-5 relative shadow-sm hover:border-white/10 transition-all group">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-sm bg-gradient-to-r ${roleColor} border">${conf.r}</span>
                             </div>
                             
-                            <div class="space-y-2 mb-4">
-                                <div class="bg-black border border-white/10 flex items-center p-1.5 w-full rounded-sm">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[70px]">Username</span>
-                                    <input type="text" readonly value="${conf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate select-all font-mono">
-                                    <button onclick="copyLink('${conf.u}', this)" class="w-6 h-6 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:text-white transition-all flex-shrink-0 rounded-sm" title="Copy Username">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <div class="space-y-3 mb-4">
+                                <div class="bg-black/50 border border-white/5 flex items-center rounded-md overflow-hidden group-hover:border-white/10 transition-all">
+                                    <div class="bg-white/5 px-3 py-2.5 border-r border-white/5 flex-shrink-0">
+                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                    </div>
+                                    <input type="text" readonly value="${conf.u}" class="flex-grow bg-transparent text-[12px] text-white px-3 py-2.5 outline-none min-w-0 truncate select-all font-mono">
+                                    <button onclick="copyLink('${conf.u}', this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all flex-shrink-0 rounded-md m-1" title="Copy Username">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
                                     </button>
                                 </div>
                                 
-                                <div class="bg-black border border-white/10 flex items-center p-1.5 w-full relative rounded-sm">
-                                    <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[70px]">Password</span>
-                                    <input type="text" readonly value="${conf.p || ''}" id="pwd-disp-${siteId}-${idx}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate font-mono" style="-webkit-text-security: disc; font-family: text-security-disc, sans-serif;">
-                                    <div class="flex gap-1 flex-shrink-0">
-                                        <button onclick="toggleVisibility('pwd-disp-${siteId}-${idx}', this)" class="w-6 h-6 flex items-center justify-center bg-white/5 text-gray-400 hover:text-white transition-all rounded-sm" title="Show/Hide">
+                                <div class="bg-black/50 border border-white/5 flex items-center rounded-md overflow-hidden group-hover:border-white/10 transition-all">
+                                    <div class="bg-white/5 px-3 py-2.5 border-r border-white/5 flex-shrink-0">
+                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                    </div>
+                                    <input type="text" readonly value="${conf.p || ''}" id="pwd-disp-${siteId}-${idx}" class="flex-grow bg-transparent text-[12px] text-white px-3 py-2.5 outline-none min-w-0 truncate font-mono" style="-webkit-text-security: disc;">
+                                    <div class="flex gap-0.5 flex-shrink-0 pr-1">
+                                        <button onclick="toggleVisibility('pwd-disp-${siteId}-${idx}', this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-green-400 hover:bg-green-500/10 transition-all rounded-md" title="Show/Hide">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </button>
-                                        <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}-${idx}').value, this)" class="w-6 h-6 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:text-white transition-all rounded-sm" title="Copy Pwd">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}-${idx}').value, this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all rounded-md" title="Copy Password">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
                                         </button>
-                                        <button onclick="toggleEditPwd('${siteId}-${idx}')" class="w-6 h-6 flex items-center justify-center bg-yellow-500/10 text-yellow-400 hover:text-white transition-all rounded-sm" title="Update">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                        <button onclick="toggleEditPwd('${siteId}-${idx}')" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-all rounded-md" title="Update Password">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                         </button>
                                     </div>
                                 </div>
                                 
-                                <div id="pwd-edit-${siteId}-${idx}" class="hidden flex gap-2 pt-2 border-t border-white/10">
-                                    <input type="text" id="pwd-in-${siteId}-${idx}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-yellow-500 rounded-sm transition-colors">
-                                    <button onclick="savePwd('${siteId}', ${idx})" class="px-4 bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500 hover:text-black transition-all text-[9px] font-bold uppercase tracking-widest whitespace-nowrap rounded-sm">Save</button>
+                                <div id="pwd-edit-${siteId}-${idx}" class="hidden flex gap-2 pt-2 border-t border-white/5">
+                                    <input type="text" id="pwd-in-${siteId}-${idx}" placeholder="Type new password..." class="flex-grow bg-black/50 border border-white/10 p-2.5 text-xs text-white outline-none focus:border-yellow-500 rounded-md transition-colors">
+                                    <button onclick="savePwd('${siteId}', ${idx})" class="px-4 bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500 hover:text-black transition-all text-[9px] font-bold uppercase tracking-widest whitespace-nowrap rounded-md">Save</button>
                                 </div>
                             </div>
 
                             ${isSuspended ? 
-                                `<button disabled class="w-full py-3 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5 whitespace-nowrap rounded-sm">Suspended</button>` 
+                                `<button disabled class="w-full py-3 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5 whitespace-nowrap rounded-md">Suspended</button>` 
                                 : 
-                                `<button onclick="${loginAction}" class="w-full py-3 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.3)] whitespace-nowrap flex-shrink-0 rounded-sm"><span>Launch Proxy Session</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"></path></svg></button>`
+                                `<button onclick="${loginAction}" class="w-full py-3 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] whitespace-nowrap flex-shrink-0 rounded-md group"><span>Launch Proxy Session</span><svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></button>`
                             }
                         </div>`;
                     });
 
                     sitesHTML += `
-                    <div class="border border-white/5 bg-[#0a0a0a] flex flex-col rounded-md shadow-lg overflow-hidden ${isSuspended ? 'opacity-60 grayscale' : ''}">
-                        <div class="flex justify-between items-center p-5 cursor-pointer hover:bg-white/5 transition" onclick="toggleDetails('${siteId}')">
+                    <div class="border border-white/5 bg-gradient-to-br from-[#0a0a0a] to-[#060606] flex flex-col rounded-lg shadow-lg overflow-hidden ${isSuspended ? 'opacity-60 grayscale' : ''}">
+                        <div class="flex justify-between items-center p-5 cursor-pointer hover:bg-white/[0.02] transition" onclick="toggleDetails('${siteId}')">
                             <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center rounded-md flex-shrink-0">
+                                <div class="w-11 h-11 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center rounded-lg flex-shrink-0">
                                     <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
                                 </div>
                                 <div class="overflow-hidden">
@@ -854,16 +891,20 @@ export default {
                                 </div>
                             </div>
                             <div class="flex items-center gap-3 flex-shrink-0">
-                                <span class="text-[8px] font-bold uppercase tracking-widest px-2 py-1 border rounded-sm ${isSuspended?'text-red-400 border-red-400/20 bg-red-400/10':'text-green-400 border-green-400/20 bg-green-400/10'}">${isSuspended ? 'Suspended' : 'Active'}</span>
+                                <span class="text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm border ${isSuspended?'text-red-400 border-red-400/20 bg-red-400/10':'text-green-400 border-green-400/20 bg-green-400/10'}">${isSuspended ? 'Suspended' : 'Active'}</span>
                                 <svg id="arrow-${siteId}" class="w-5 h-5 text-gray-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
                         
-                        <div id="details-${siteId}" class="hidden border-t border-white/5 bg-black/40 p-5 space-y-4">
-                            <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full rounded-sm mb-2">
-                                <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Portal</span>
-                                <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none min-w-0 truncate select-all">
-                                <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:text-white transition-all flex-shrink-0 rounded-sm" title="Copy Link"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                        <div id="details-${siteId}" class="hidden border-t border-white/5 bg-black/20 p-5 space-y-4">
+                            <div class="bg-white/5 border border-white/5 flex items-center rounded-md overflow-hidden mb-2">
+                                <div class="bg-white/5 px-3 py-2 border-r border-white/5 flex-shrink-0">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                                </div>
+                                <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-3 py-2 outline-none min-w-0 truncate select-all">
+                                <button onclick="copyLink('${site.userLink}', this)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all flex-shrink-0 rounded-md m-1" title="Copy Link">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-width="2"/></svg>
+                                </button>
                             </div>
                             
                             <div class="space-y-4">
@@ -886,7 +927,7 @@ export default {
                         <h1 class="text-lg md:text-xl font-bold tracking-widest uppercase text-indigo-400">ID: <span class="text-white">${userPin}</span></h1>
                         <p class="text-[9px] text-gray-500 mt-0.5 uppercase tracking-[0.2em]">Secure Access Node</p>
                     </div>
-                    <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition whitespace-nowrap rounded-sm">Terminate</a>
+                    <a href="/logout" class="px-5 py-2.5 bg-red-900/20 text-[10px] font-bold tracking-widest uppercase border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white transition whitespace-nowrap rounded-md">Terminate</a>
                 </header>
 
                 <div class="max-w-6xl mx-auto p-4 md:p-8">
@@ -910,9 +951,13 @@ export default {
                     function copyLink(text, btn) {
                         if(!text) return;
                         navigator.clipboard.writeText(text);
-                        const old = btn.innerHTML;
+                        const oldHTML = btn.innerHTML;
                         btn.innerHTML = '<svg class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-                        setTimeout(() => btn.innerHTML = old, 1500);
+                        btn.classList.add('text-green-400');
+                        setTimeout(() => {
+                            btn.innerHTML = oldHTML;
+                            btn.classList.remove('text-green-400');
+                        }, 1500);
                     }
                     
                     function toggleDetails(id) {
@@ -928,14 +973,14 @@ export default {
                     
                     async function savePwd(siteId, accIdx) {
                         const pwd = document.getElementById('pwd-in-' + siteId + '-' + accIdx).value;
-                        if(!pwd) return CustomModal.show({type:'alert', title:'<span class="text-red-500">⚠</span> Error', text:'Password cannot be empty!'});
+                        if(!pwd) return CustomModal.show({type:'alert', title:'<span style="color:#f87171">⚠</span> Error', text:'Password cannot be empty!'});
                         
                         try {
                             const res = await fetch('/api/update-password', { method: 'POST', body: JSON.stringify({ siteId, accIdx, newPassword: pwd }) });
                             if(res.ok) {
                                 document.getElementById('pwd-disp-' + siteId + '-' + accIdx).value = pwd;
                                 document.getElementById('pwd-edit-' + siteId + '-' + accIdx).classList.add('hidden');
-                                CustomModal.show({type:'alert', title:'<span class="text-green-500">✔</span> Success', text:'Password Updated Successfully!'});
+                                CustomModal.show({type:'alert', title:'<span style="color:#4ade80">✔</span> Success', text:'Password Updated Successfully!'});
                             }
                         } catch(e) {}
                     }
@@ -1219,6 +1264,7 @@ export default {
                 try {
                     var parts = sel.split(',').map(s => s.trim());
                     for(var j = 0; j < parts.length; j++) {
+                        if(!parts[j]) continue;
                         var el = document.querySelector(parts[j]);
                         if(el) {
                             console.log('[Nexus] Found element via selector:', parts[j]);
@@ -1241,7 +1287,6 @@ export default {
             var currentFullUrl = window.location.pathname + window.location.search;
             var matchedSelectors = null;
 
-            // 1. Find matching selectors for this specific site + page URL
             var selIds = Object.keys(SELECTORS_DB);
             
             // Priority 1: Exact match (siteId + URL)
@@ -1293,14 +1338,14 @@ export default {
             var uField = null;
             var pField = null;
 
-            // 2. Use matched selectors
+            // Use matched selectors
             if(matchedSelectors) {
                 console.log('[Nexus] Using selector profile:', matchedSelectors);
                 uField = findElementBySelectors(matchedSelectors.userSelectors);
                 pField = findElementBySelectors(matchedSelectors.passSelectors);
             } 
 
-            // 3. Smart fallback detection
+            // Smart fallback detection for password
             if(!pField) {
                 console.log('[Nexus] No password field found, running smart detection...');
                 var allInputs = document.querySelectorAll('input');
@@ -1318,6 +1363,7 @@ export default {
                 });
             }
 
+            // Smart fallback detection for username
             if(!uField) {
                 var allInputs = document.querySelectorAll('input');
                 allInputs.forEach(function(el) {
@@ -1345,24 +1391,24 @@ export default {
                 }
             }
 
-            // Final check and fill
+            // Fill & Freeze
             if(uField) { 
                 setNativeValue(uField, au); 
                 uField.setAttribute('data-nx-autofilled', 'true');
-                console.log('[Nexus] Username field filled');
+                console.log('[Nexus] Username field filled & frozen');
             }
             if(pField) { 
                 setNativeValue(pField, ap); 
                 pField.setAttribute('data-nx-autofilled', 'true');
-                console.log('[Nexus] Password field filled');
+                console.log('[Nexus] Password field filled & frozen');
             }
 
-            // Apply Frozen Style
+            // Apply frozen style once
             if(uField || pField) {
                 if(!document.getElementById('nx-autofill-style')) {
                     var style = document.createElement('style');
                     style.id = 'nx-autofill-style';
-                    style.innerHTML = '[data-nx-autofilled="true"] { pointer-events: none !important; background-color: rgba(74, 222, 128, 0.05) !important; border-color: rgba(74, 222, 128, 0.2) !important; box-shadow: 0 0 5px rgba(74, 222, 128, 0.1) !important; }';
+                    style.innerHTML = '[data-nx-autofilled="true"] { pointer-events: none !important; background-color: rgba(74, 222, 128, 0.05) !important; border-color: rgba(74, 222, 128, 0.2) !important; box-shadow: 0 0 5px rgba(74, 222, 128, 0.1) !important; opacity: 1 !important; }';
                     document.head.appendChild(style);
                 }
             }
