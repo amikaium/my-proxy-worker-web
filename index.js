@@ -152,8 +152,7 @@ const landingPageHTML = `
 // 🚀 BACKEND & CORE LOGIC
 // ==========================================
 
-// ✅ CRITICAL FIX: Only strip encoding if we explicitly altered the text. 
-// If it's a CSS/JS file, let it pass perfectly with its native compression!
+// ✅ CRITICAL BUG FIX: Accurate Header Parsing to Prevent Session/CSS Breaking
 const cleanHeaders = (proxyRes, reqOrigin = null, isModified = false) => {
     const responseHeaders = new Headers();
     const removeHeaders =[
@@ -168,14 +167,28 @@ const cleanHeaders = (proxyRes, reqOrigin = null, isModified = false) => {
         removeHeaders.push('content-encoding', 'content-length', 'transfer-encoding');
     }
 
+    // 🔥 CRITICAL FIX: Proper iteration ignoring Set-Cookie for custom handling
     for (const[key, value] of proxyRes.headers.entries()) {
         const kLower = key.toLowerCase();
-        if (kLower === 'set-cookie') {
-            let modCookie = value.replace(/Domain=[^;]+;?\s*/gi, '');
+        if (kLower !== 'set-cookie' && !removeHeaders.includes(kLower)) {
+            responseHeaders.append(key, value);
+        }
+    }
+    
+    // 🔥 ULTIMATE COOKIE FIX: Prevents Cloudflare from merging multiple cookies and breaking sessions/CSS
+    if (proxyRes.headers.getSetCookie) {
+        const setCookies = proxyRes.headers.getSetCookie();
+        for (const cookie of setCookies) {
+            let modCookie = cookie.replace(/Domain=[^;]+;?\s*/gi, '');
             modCookie = modCookie.replace(/SameSite=(Strict|None)/gi, 'SameSite=Lax'); 
             responseHeaders.append('Set-Cookie', modCookie);
-        } else if (!removeHeaders.includes(kLower)) {
-            responseHeaders.append(key, value);
+        }
+    } else {
+        const cookieStr = proxyRes.headers.get('set-cookie');
+        if (cookieStr) {
+            let modCookie = cookieStr.replace(/Domain=[^;]+;?\s*/gi, '');
+            modCookie = modCookie.replace(/SameSite=(Strict|None)/gi, 'SameSite=Lax'); 
+            responseHeaders.append('Set-Cookie', modCookie);
         }
     }
     
@@ -185,7 +198,7 @@ const cleanHeaders = (proxyRes, reqOrigin = null, isModified = false) => {
         responseHeaders.set("Access-Control-Expose-Headers", "*"); 
     }
     
-    // Prevent strict CDNs from destroying the layout cache
+    // Bypass Cloudflare cache completely so it never serves Desktop view to Mobile devices
     responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0");
     return responseHeaders;
 };
@@ -263,7 +276,6 @@ export default {
             let originSpoof = tObj.origin;
             let refererSpoof = tObj.origin + tObj.pathname;
             
-            // If proxy active, spoof as main site to bypass CDN hotlink protections
             if (isProxyActive) {
                 let pDataString = decrypt(isProxyActive);
                 if (pDataString) {
@@ -282,12 +294,17 @@ export default {
             proxyHeaders.set("Origin", originSpoof);
             proxyHeaders.set("Referer", refererSpoof);
             
+            // Clean strict headers
             proxyHeaders.delete("Sec-Fetch-Dest");
             proxyHeaders.delete("Sec-Fetch-Mode");
             proxyHeaders.delete("Sec-Fetch-Site");
             proxyHeaders.delete("Sec-Fetch-User");
+            proxyHeaders.delete("CF-Connecting-IP"); 
+            proxyHeaders.delete("X-Forwarded-For");
+            proxyHeaders.delete("X-Forwarded-Proto");
+            proxyHeaders.delete("X-Real-IP");
             
-            proxyHeaders.delete("Accept-Encoding"); // Let Fetch auto-negotiate
+            proxyHeaders.delete("Accept-Encoding"); 
             
             const cleanCookieStr = Object.entries(cookies).filter(([k]) => k !== 'portal_session' && k !== 'proxy_active' && k !== 'admin_session').map(([k,v]) => `${k}=${v}`).join('; ');
             if (cleanCookieStr) proxyHeaders.set("Cookie", cleanCookieStr); else proxyHeaders.delete("Cookie");
@@ -302,8 +319,28 @@ export default {
 
             try {
                 const proxyRes = await fetch(targetUrlStr, fetchConfig);
-                const responseHeaders = cleanHeaders(proxyRes, reqOrigin, false); // Passing unmodified body
-                return new Response(proxyRes.body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
+                const contentType = proxyRes.headers.get("Content-Type") || "";
+                const isTextModifier = contentType.toLowerCase().includes("text/html") || contentType.toLowerCase().includes("text/css");
+                const responseHeaders = cleanHeaders(proxyRes, reqOrigin, isTextModifier);
+                
+                let body = proxyRes.body;
+                
+                if (contentType.toLowerCase().includes("text/css")) {
+                    try {
+                        let cssText = await proxyRes.text();
+                        if (isProxyActive) {
+                            let pData = JSON.parse(decrypt(isProxyActive));
+                            if (pData.t) {
+                                cssText = cssText.split(pData.t).join(url.origin);
+                                const schemaLessTarget = pData.t.replace(/^https?:\/\//, '//');
+                                cssText = cssText.split(schemaLessTarget).join('//' + url.host);
+                            }
+                        }
+                        body = cssText;
+                    } catch(e) {}
+                }
+                
+                return new Response(body, { status: proxyRes.status, statusText: proxyRes.statusText, headers: responseHeaders });
             } catch(e) {
                 return new Response("API Proxy Error", { status: 500 });
             }
@@ -700,7 +737,7 @@ export default {
                                     <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[70px]">Username</span>
                                     <input type="text" readonly value="${conf.u}" class="flex-grow bg-transparent text-[11px] text-white px-2 outline-none min-w-0 truncate select-all font-mono">
                                     <button onclick="copyLink('${conf.u}', this)" class="w-7 h-7 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all flex-shrink-0 rounded-none border border-indigo-500/30" title="Copy Username">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13"></rect><path d="M5 15H4V4h11v1"></path></svg>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                     </button>
                                 </div>
                                 
@@ -712,7 +749,7 @@ export default {
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </button>
                                         <button onclick="copyLink(document.getElementById('pwd-disp-${siteId}-${idx}').value, this)" class="w-7 h-7 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all flex-shrink-0 rounded-none border border-indigo-500/30" title="Copy Pwd">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13"></rect><path d="M5 15H4V4h11v1"></path></svg>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                         </button>
                                         <button onclick="toggleEditPwd('${siteId}-${idx}')" class="w-7 h-7 flex items-center justify-center bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500 hover:text-black transition-all rounded-none border border-yellow-500/30" title="Update">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -756,7 +793,7 @@ export default {
                             <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full rounded-none mb-2">
                                 <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Portal</span>
                                 <input type="text" readonly value="${site.userLink}" class="flex-grow bg-transparent text-[11px] text-blue-400 px-2 outline-none min-w-0 truncate select-all">
-                                <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all flex-shrink-0 rounded-none border border-indigo-500/30" title="Copy Link"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13"></rect><path d="M5 15H4V4h11v1"></path></svg></button>
+                                <button onclick="copyLink('${site.userLink}', this)" class="w-7 h-7 flex items-center justify-center bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all flex-shrink-0 rounded-none border border-indigo-500/30" title="Copy Link"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
                             </div>
                             
                             <div class="space-y-4">
@@ -826,7 +863,7 @@ export default {
                         if(!text) return;
                         navigator.clipboard.writeText(text);
                         const old = btn.innerHTML;
-                        btn.innerHTML = '<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                        btn.innerHTML = '<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
                         setTimeout(() => btn.innerHTML = old, 1500);
                     }
                     
@@ -936,9 +973,8 @@ export default {
                 proxyHeaders.set("Referer", targetDomain + "/");
             }
             
-            // ✅ CRITICAL CLOUDFLARE CACHE/COMPRESSION BYPASS
+            // ✅ STOP CLOUDFLARE BLOCKING AND STRIP BROWSER SECURTY FOR PROXY REQUEST
             proxyHeaders.delete("Accept-Encoding");
-            
             proxyHeaders.delete("Sec-Fetch-Dest");
             proxyHeaders.delete("Sec-Fetch-Mode");
             proxyHeaders.delete("Sec-Fetch-Site");
@@ -949,7 +985,7 @@ export default {
             const cleanCookieStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
             if (cleanCookieStr) proxyHeaders.set("Cookie", cleanCookieStr); else proxyHeaders.delete("Cookie");
 
-            // Stop edge cache from serving desktop view to mobile devices and vice versa
+            // ✅ Bypass Edge Cache completely for absolute accuracy 
             const fetchConfig = { 
                 method: request.method, 
                 headers: proxyHeaders, 
@@ -962,9 +998,9 @@ export default {
             
             const contentType = proxyRes.headers.get("Content-Type") || "";
             const isHtml = contentType.toLowerCase().includes("text/html");
-            
-            // ✅ Only pass true if it's HTML, leaving CSS/JS perfectly compressed!
-            const responseHeaders = cleanHeaders(proxyRes, url.origin, isHtml);
+            const isCss = contentType.toLowerCase().includes("text/css");
+            const isTextModifier = isHtml || isCss;
+            const responseHeaders = cleanHeaders(proxyRes, url.origin, isTextModifier);
 
             const locationHeader = responseHeaders.get("Location");
             if (locationHeader) {
@@ -979,7 +1015,18 @@ export default {
 
             let body = proxyRes.body;
             
-            // 🚀 ONLY PROXY HTML. LEAVE CSS & JS UNTOUCHED SO THEY LOAD PERFECTLY!
+            // Rewrite CSS files directly to fix broken absolute CDN layouts
+            if (isCss) {
+                try {
+                    let cssText = await proxyRes.text();
+                    cssText = cssText.split(targetDomain).join(url.origin);
+                    const schemaLessTarget = targetDomain.replace(/^https?:\/\//, '//');
+                    cssText = cssText.split(schemaLessTarget).join('//' + url.host);
+                    body = cssText;
+                } catch(e) {}
+            }
+            
+            // 🚀 ONLY PROXY HTML. LEAVE JS UNTOUCHED SO THEY LOAD PERFECTLY!
             if (isHtml) {
                 try {
                     let htmlText = await proxyRes.text();
@@ -1006,7 +1053,7 @@ export default {
                     
                     const encTargetTrim = encrypt(targetDomain).substring(0,8);
                     
-                    const stealthScript = `<script>
+                    const stealthScript = `<script data-cfasync="false">
 (function(){
     try{
         var p = performance.getEntriesByType("navigation")[0];
@@ -1163,7 +1210,7 @@ export default {
         window.nxCopyText = function(text, btn) {
             navigator.clipboard.writeText(text).then(() => {
                 let origHtml = btn.innerHTML;
-                btn.innerHTML = "<svg style='width:16px !important;height:16px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter' viewBox='0 0 24 24'><polyline points='20 6 9 17 4 12'></polyline></svg>";
+                btn.innerHTML = "<svg style='width:16px !important;height:16px !important;color:#10b981 !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><polyline points='20 6 9 17 4 12'></polyline></svg>";
                 setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
             }).catch(()=>{});
         };
@@ -1278,7 +1325,7 @@ export default {
                 <div class='nx-fw-field'>
                     <input type='text' class='nx-fw-val' value='\${au}' readonly>
                     <button class='nx-fw-copy' onclick='nxCopyText("\${au}", this)' title='Copy Username'>
-                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13'></rect><path d='M5 15H4V4h11v1'></path></svg>
+                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13' rx='2' ry='2'></rect><path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path></svg>
                     </button>
                 </div>
                 
@@ -1286,7 +1333,7 @@ export default {
                 <div class='nx-fw-field' style='margin-bottom:0 !important;'>
                     <input type='password' class='nx-fw-val' value='\${ap}' readonly>
                     <button class='nx-fw-copy' onclick='nxCopyText("\${ap}", this)' title='Copy Password'>
-                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13'></rect><path d='M5 15H4V4h11v1'></path></svg>
+                        <svg style='width:14px !important;height:14px !important;color:inherit !important;display:block !important;' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13' rx='2' ry='2'></rect><path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path></svg>
                     </button>
                 </div>
             \`;
