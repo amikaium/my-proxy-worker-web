@@ -1,3 +1,4 @@
+```javascript
 // ==========================================
 // ⚙️ SECURE FIREBASE CONFIGURATION
 // ==========================================
@@ -166,9 +167,10 @@ export default {
                 const res = await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`);
                 let data = await res.json();
                 if (!data) {
-                    data = { adminPin: "SET_YOUR_PIN_HERE", settings: { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } }, sites: {}, pins: {} };
+                    data = { adminPin: "SET_YOUR_PIN_HERE", settings: { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } }, sites: {}, pins: {}, selectors: {} };
                     await fetch(`${CONFIG.FB_URL}/${CONFIG.DB_NODE}.json?key=${CONFIG.FB_KEY}`, { method: 'PUT', body: JSON.stringify(data) });
                 }
+                if (!data.selectors) data.selectors = {};
                 return data;
             } catch(e) { return null; }
         };
@@ -180,6 +182,7 @@ export default {
         if (!db.sites) db.sites = {};
         if (!db.pins) db.pins = {};
         if (!db.settings) db.settings = { whatsapp: "", notification: { enabled: false, target: "all", specificUsers:[], text: "", image: "", btnText: "", btnLink: "" } };
+        if (!db.selectors) db.selectors = {};
 
         const isAdmin = (cookies['admin_session'] === CONFIG.SESSION_SECRET);
         const userPin = cookies['portal_session'];
@@ -370,7 +373,7 @@ export default {
             <style>
                 body { background-color: #030303; color: white; font-family: 'Inter', sans-serif; } 
                 .square-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); } 
-                .active-tab { border-b-2 border-indigo-400; color: white; }
+                .active-tab { border-bottom: 2px solid #818cf8; color: white; }
                 .square-checkbox { appearance: none; width: 14px; height: 14px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.2s; border-radius: 2px; }
                 .square-checkbox:checked { background: #6366f1; border-color: #6366f1; }
                 .square-checkbox:checked::after { content: '✓'; position: absolute; color: white; font-size: 10px; font-weight: bold; left: 2px; top: -1px; }
@@ -396,7 +399,7 @@ export default {
                     async function load(){ const res = await fetch('/admin/api/data'); db = await res.json(); normalizeDB(); render(); }
                     
                     function normalizeDB() {
-                        if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {};
+                        if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.selectors) db.selectors = {};
                         Object.keys(db.pins).forEach(pin => {
                             if(db.pins[pin].siteConf) {
                                 Object.keys(db.pins[pin].siteConf).forEach(siteId => {
@@ -419,6 +422,7 @@ export default {
                     function uSiteF(id, f, val) { db.sites[id][f] = val; }
                     function uSet(f, val) { db.settings[f] = val; }
                     function uNotif(f, val) { db.settings.notification[f] = val; }
+                    function uSelectorF(id, f, val) { if(!db.selectors[id]) db.selectors[id] = {url:'', userSelectors:[], passSelectors:[], createdAt: Date.now()}; db.selectors[id][f] = val; }
                     
                     function toggleSite(pin, siteId, chk) {
                         let list = db.pins[pin].sites ||[];
@@ -469,8 +473,37 @@ export default {
                         }});
                     }
 
+                    function addSelector() {
+                        const id = 'sel_' + Date.now();
+                        db.selectors[id] = {
+                            url: '',
+                            userSelectors: [''],
+                            passSelectors: [''],
+                            createdAt: Date.now()
+                        };
+                        tab = 'selectors';
+                        render();
+                    }
+
                     function delSite(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Site', text:'Are you sure you want to delete this site?', onConfirm: (yes) => { if(yes) { delete db.sites[id]; render(); } }}); }
                     function delPin(pin) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete User', text:'Are you sure you want to delete this user PIN?', onConfirm: (yes) => { if(yes) { delete db.pins[pin]; render(); } }}); }
+                    function delSelector(id) { CustomModal.show({type:'confirm', title:'<span class="text-red-500">⚠</span> Delete Selector', text:'Are you sure?', onConfirm: (yes) => { if(yes) { delete db.selectors[id]; render(); } }}); }
+
+                    function addSelectorItem(id, type) {
+                        if(!db.selectors[id]) return;
+                        if(type === 'user') db.selectors[id].userSelectors.push('');
+                        else db.selectors[id].passSelectors.push('');
+                        render();
+                    }
+                    function removeSelectorItem(id, type, idx) {
+                        if(!db.selectors[id]) return;
+                        let arr = type === 'user' ? db.selectors[id].userSelectors : db.selectors[id].passSelectors;
+                        if(arr.length > 1) { arr.splice(idx, 1); render(); }
+                    }
+                    function updateSelectorItem(id, type, idx, val) {
+                        if(type === 'user') db.selectors[id].userSelectors[idx] = val;
+                        else db.selectors[id].passSelectors[idx] = val;
+                    }
 
                     function toggleAdminPin(pin) {
                         if(openPins.has(pin)) openPins.delete(pin); else openPins.add(pin);
@@ -479,11 +512,68 @@ export default {
 
                     function render() {
                         if(!db.sites) db.sites = {}; if(!db.pins) db.pins = {}; if(!db.settings) db.settings = {whatsapp:'', notification:{enabled:false, target:'all', specificUsers:[]}};
+                        if(!db.selectors) db.selectors = {};
+                        
                         let html = \`<div class="flex gap-6 mb-8 border-b border-white/10 px-2 overflow-x-auto custom-scrollbar">
                             <button onclick="tab='pins'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='pins'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">User Pins</button>
                             <button onclick="tab='sites'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='sites'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">Global Sites</button>
+                            <button onclick="tab='selectors'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='selectors'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">CSS Selectors</button>
                             <button onclick="tab='settings'; render()" class="pb-3 text-xs font-bold uppercase tracking-widest \${tab==='settings'?'active-tab':'text-gray-500 hover:text-gray-300'} whitespace-nowrap">System Settings</button>
                         </div>\`;
+
+                        if(tab === 'selectors') {
+                            html += \`<div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">Advanced Selector Manager</h3>
+                                    <p class="text-[10px] text-gray-500 mt-1">Define HOW usernames and passwords should be found inside target pages. <span class="text-yellow-400">Use DevTools "Copy Selector" for best results.</span></p>
+                                </div>
+                                <button onclick="addSelector()" class="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition whitespace-nowrap rounded-sm">+ Add Selector Profile</button>
+                            </div>
+                            <div class="space-y-6">\`;
+                            
+                            if(Object.keys(db.selectors).length === 0) {
+                                html += \`<p class="text-gray-500 text-center py-10">No custom selectors defined. The system will auto-detect fields as a fallback.</p>\`;
+                            } else {
+                                Object.keys(db.selectors).forEach(id => {
+                                    let sel = db.selectors[id];
+                                    html += \`<div class="square-card p-5 rounded-md">
+                                        <div class="flex justify-between items-center mb-4">
+                                            <h4 class="text-white font-bold">Profile: <span class="text-indigo-400 text-xs">\${id}</span></h4>
+                                            <button onclick="delSelector('\${id}')" class="text-red-500 text-[9px] font-bold uppercase tracking-widest hover:text-red-400">Delete</button>
+                                        </div>
+                                        <div class="mb-4">
+                                            <span class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 block">Target Page URL</span>
+                                            <input value="\${sel.url || ''}" oninput="uSelectorF('\${id}','url',this.value)" placeholder="e.g. /agent/login or https://site.com/login (Leave empty for any page)" class="w-full bg-black/50 border border-white/10 p-2 text-xs text-white outline-none focus:border-indigo-500 rounded-sm">
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <span class="text-[8px] font-bold text-blue-400 uppercase tracking-widest">Username Selectors</span>
+                                                    <button onclick="addSelectorItem('\${id}','user')" class="text-[9px] text-blue-400 hover:text-white px-2 py-1 bg-blue-400/10 rounded-sm">+</button>
+                                                </div>
+                                                \${sel.userSelectors.map((s, idx) => \`
+                                                    <div class="flex gap-2 mb-1.5">
+                                                        <input value="\${s}" oninput="updateSelectorItem('\${id}','user',\${idx},this.value)" placeholder="input[name='username']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-blue-400 outline-none rounded-sm font-mono">
+                                                        <button onclick="removeSelectorItem('\${id}','user',\${idx})" class="text-red-500 px-2 text-[9px] hover:bg-red-500/10 rounded-sm">X</button>
+                                                    </div>\`).join('')}
+                                            </div>
+                                            <div>
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <span class="text-[8px] font-bold text-green-400 uppercase tracking-widest">Password Selectors</span>
+                                                    <button onclick="addSelectorItem('\${id}','pass')" class="text-[9px] text-green-400 hover:text-white px-2 py-1 bg-green-400/10 rounded-sm">+</button>
+                                                </div>
+                                                \${sel.passSelectors.map((s, idx) => \`
+                                                    <div class="flex gap-2 mb-1.5">
+                                                        <input value="\${s}" oninput="updateSelectorItem('\${id}','pass',\${idx},this.value)" placeholder="input[type='password']" class="flex-grow bg-black/50 border border-white/10 p-2 text-[10px] text-green-400 outline-none rounded-sm font-mono">
+                                                        <button onclick="removeSelectorItem('\${id}','pass',\${idx})" class="text-red-500 px-2 text-[9px] hover:bg-red-500/10 rounded-sm">X</button>
+                                                    </div>\`).join('')}
+                                            </div>
+                                        </div>
+                                    </div>\`;
+                                });
+                            }
+                            html += \`</div>\`;
+                        }
 
                         if(tab === 'pins') {
                             html += \`<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -585,7 +675,7 @@ export default {
                             });
                             html += \`</div>\`;
                         }
-                        // Settings logic remains unchanged...
+                        
                         if(tab === 'settings') {
                             let n = db.settings.notification;
                             html += \`<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -618,8 +708,6 @@ export default {
                     if (!site) return;
                     
                     const isSuspended = userData.status === 'suspended';
-                    const statusText = isSuspended ? 'Suspended' : 'Active';
-                    const statusColor = isSuspended ? 'text-red-400 border-red-400/20 bg-red-400/10' : 'text-green-400 border-green-400/20 bg-green-400/10';
                     const safeSiteName = (site.name || 'Unnamed Site').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     
                     let confs = userData.siteConf?.[siteId] ||[];
@@ -676,14 +764,13 @@ export default {
                             ${isSuspended ? 
                                 `<button disabled class="w-full py-3 bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] cursor-not-allowed border border-white/5 whitespace-nowrap rounded-sm">Suspended</button>` 
                                 : 
-                                `<button onclick="${loginAction}" class="w-full py-3 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.3)] whitespace-nowrap flex-shrink-0 rounded-sm"><span>Login Agent Panel</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"></path></svg></button>`
+                                `<button onclick="${loginAction}" class="w-full py-3 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.3)] whitespace-nowrap flex-shrink-0 rounded-sm"><span>Launch Proxy Session</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"></path></svg></button>`
                             }
                         </div>`;
                     });
 
                     sitesHTML += `
                     <div class="border border-white/5 bg-[#0a0a0a] flex flex-col rounded-md shadow-lg overflow-hidden ${isSuspended ? 'opacity-60 grayscale' : ''}">
-                        <!-- Visible Header (Accordion Toggle) -->
                         <div class="flex justify-between items-center p-5 cursor-pointer hover:bg-white/5 transition" onclick="toggleDetails('${siteId}')">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center rounded-md flex-shrink-0">
@@ -700,7 +787,6 @@ export default {
                             </div>
                         </div>
                         
-                        <!-- Hidden Accordion Body -->
                         <div id="details-${siteId}" class="hidden border-t border-white/5 bg-black/40 p-5 space-y-4">
                             <div class="bg-white/5 border border-white/10 flex items-center p-1.5 w-full rounded-sm mb-2">
                                 <span class="text-[8px] font-bold text-gray-500 uppercase px-2 whitespace-nowrap w-[60px]">Portal</span>
@@ -813,6 +899,7 @@ export default {
                 headers: { "Location": "/", "Set-Cookie": `proxy_active=${encryptedData}; HttpOnly; Path=/; Max-Age=3600; SameSite=Lax` }
             });
         }
+
         if (path === "/api/stop-proxy") return new Response("Stopped", { status: 302, headers: { "Location": "/", "Set-Cookie": "proxy_active=; Max-Age=0; Path=/" } });
 
         // --- 🌐 GLOBAL PROXY ENGINE ---
@@ -828,6 +915,10 @@ export default {
             const autoBank = proxyData.b;
             const autoUser = proxyData.u;
             const autoPwd = proxyData.p;
+            
+            // 🔥 FETCH GLOBAL SELECTORS & CREATE SERIALIZED VERSION FOR PAGE
+            let globalSelectors = db.selectors || {};
+            let serializedSelectors = JSON.stringify(globalSelectors);
 
             const targetUrl = new URL(request.url);
             const tDomainObj = new URL(targetDomain);
@@ -884,7 +975,6 @@ export default {
             let body = proxyRes.body;
             const contentType = responseHeaders.get("Content-Type") || "";
             
-            // 🚀 ONLY PROXY HTML. LEAVE CSS & JS UNTOUCHED SO THEY LOAD PERFECTLY!
             if (contentType.toLowerCase().includes("text/html")) {
                 try {
                     let htmlText = await proxyRes.text();
@@ -894,6 +984,8 @@ export default {
                     
                     const stealthScript = `<script>
 (function(){
+    var SELECTORS_DB = ${serializedSelectors};
+    
     try{
         var p = performance.getEntriesByType("navigation")[0];
         if (p && p.type === "reload") {
@@ -1015,138 +1107,156 @@ export default {
         function setNativeValue(el, val) {
             if (!el || el.value === val) return;
             try {
-                let lastValue = el.value;
-                el.value = val;
-                let tracker = el._valueTracker;
-                if (tracker) tracker.setValue(lastValue);
-                let desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
-                if(desc && desc.set) desc.set.call(el, val);
+                var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                nativeInputValueSetter.call(el, val);
                 el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
                 el.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
+                
+                // Handle React/Angular/Vue frameworks by triggering all possible events
+                var tracker = el._valueTracker;
+                if (tracker) {
+                    var lastValue = el.value;
+                    tracker.setValue(lastValue);
+                }
+                el.focus();
+                el.blur();
             } catch(e){}
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const au = "${autoUser}"; const ap = "${autoPwd}";
+        function matchPageUrl(pagePath) {
+            if(!pagePath) return true;
+            var currentFull = window.location.pathname + window.location.search;
+            if(pagePath.startsWith('/')) return currentFull.includes(pagePath);
+            return currentFull.includes(pagePath);
+        }
+
+        function findElementBySelectors(selectorsArray) {
+            if(!selectorsArray || selectorsArray.length === 0) return null;
+            
+            for(var i = 0; i < selectorsArray.length; i++) {
+                var sel = selectorsArray[i].trim();
+                if(!sel) continue;
+                
+                try {
+                    // Support for multiple selectors separated by comma
+                    var parts = sel.split(',').map(s => s.trim());
+                    for(var j = 0; j < parts.length; j++) {
+                        var el = document.querySelector(parts[j]);
+                        if(el) return el;
+                    }
+                } catch(e) {
+                    console.error('Invalid selector:', sel, e);
+                }
+            }
+            return null;
+        }
+
+        function applyAutoFill() {
+            const au = "${autoUser}"; 
+            const ap = "${autoPwd}";
             if(!au || !ap) return;
 
-            let style = document.createElement('style');
-            style.innerHTML = \`
-                .nx-mask { -webkit-text-security: disc !important; font-family: text-security-disc, sans-serif !important; letter-spacing: 2px !important; }
-                #nx-popup-overlay { position:fixed !important; inset:0 !important; background:rgba(0,0,0,0.7) !important; backdrop-filter:blur(5px) !important; z-index:2147483647 !important; display:none; align-items:center !important; justify-content:center !important; padding:0 15px !important; box-sizing:border-box !important; }
-                #nx-popup-box { background:#0a0a0a !important; border:1px solid rgba(255,255,255,0.1) !important; width:100% !important; max-width:420px !important; padding:24px !important; border-radius:14px !important; display:flex !important; flex-direction:column !important; gap:14px !important; box-shadow:0 25px 50px -12px rgba(0,0,0,0.9) !important; font-family:sans-serif !important; box-sizing:border-box !important; }
-                #nx-popup-box * { box-sizing:border-box !important; line-height:normal !important; text-transform:none !important; letter-spacing:normal !important; font-size:initial !important; margin:0 !important; padding:0 !important; font-family:sans-serif !important; }
-            \`;
-            document.head.appendChild(style);
+            var currentPath = window.location.pathname;
+            var matchedSelectors = null;
 
-            const secureInputs = () => {
-                document.querySelectorAll('input').forEach(el => {
-                    if (el.dataset.nxSecured) return; 
+            // 1. Search for a matching selector profile based on URL
+            var selIds = Object.keys(SELECTORS_DB);
+            for(var i = 0; i < selIds.length; i++) {
+                var s = SELECTORS_DB[selIds[i]];
+                if(matchPageUrl(s.url)) {
+                    matchedSelectors = s;
+                    break;
+                }
+            }
+
+            var uField = null;
+            var pField = null;
+
+            // 2. If we found custom selectors, use them precisely
+            if(matchedSelectors) {
+                console.log('[Nexus] Matched Custom Selector Profile ID:', matchedSelectors);
+                uField = findElementBySelectors(matchedSelectors.userSelectors);
+                pField = findElementBySelectors(matchedSelectors.passSelectors);
+            } 
+
+            // 3. If no custom selectors matched or no element found, fallback to smart detection
+            if(!pField) {
+                // Smart Password Detection
+                var allInputs = document.querySelectorAll('input');
+                allInputs.forEach(function(el) {
+                    if(pField) return;
+                    var type = (el.getAttribute('type') || '').toLowerCase();
+                    var name = (el.name || '').toLowerCase();
+                    var placeholder = (el.placeholder || '').toLowerCase();
+                    var id = (el.id || '').toLowerCase();
                     
-                    let type = (el.getAttribute('type') || '').toLowerCase();
-                    let name = (el.name || '').toLowerCase();
-                    let placeholder = (el.placeholder || '').toLowerCase();
-
-                    if (type === 'password' || el.classList.contains('nx-mask')) {
-                        el.setAttribute('type', 'text');
-                        el.classList.add('nx-mask');
-                        el.setAttribute('autocomplete', 'new-password');
-                        el.setAttribute('spellcheck', 'false');
-                        el.setAttribute('data-lpignore', 'true');
-                        el.dataset.nxSecured = "true";
-                    } else if (name.includes('user') || placeholder.includes('user') || name.includes('email') || name.includes('login')) {
-                        el.setAttribute('autocomplete', 'off');
-                        el.setAttribute('spellcheck', 'false');
-                        el.setAttribute('data-lpignore', 'true');
-                        el.dataset.nxSecured = "true";
-                    }
+                    if(type === 'password') pField = el;
+                    else if(id.includes('pass') || id.includes('pwd')) pField = el;
+                    else if(name.includes('pass') || name.includes('pwd')) pField = el;
+                    else if(placeholder.includes('pass')) pField = el;
                 });
-            };
 
-            secureInputs();
-            let domObserver = new MutationObserver(() => secureInputs());
-            domObserver.observe(document.body, { childList: true, subtree: true });
-
-            let overlay = document.createElement('div');
-            overlay.id = 'nx-popup-overlay';
-            
-            let popup = document.createElement('div');
-            popup.id = 'nx-popup-box';
-            popup.innerHTML = \`
-                <div style="display:flex !important; align-items:center !important; gap:10px !important; border-bottom:1px solid rgba(255,255,255,0.05) !important; padding-bottom:12px !important; width:100% !important;">
-                    <div style="width:30px !important; height:30px !important; border-radius:50% !important; background:rgba(74,222,128,0.1) !important; display:flex !important; align-items:center !important; justify-content:center !important; border:1px solid rgba(74,222,128,0.2) !important;">
-                        <svg style="width:16px !important; height:16px !important; color:#4ade80 !important; display:block !important;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
-                    </div>
-                    <span style="color:white !important; font-size:16px !important; font-weight:700 !important; letter-spacing:0.5px !important; display:block !important;">Auto Fill System</span>
-                </div>
-                <p style="color:#9ca3af !important; font-size:13px !important; line-height:1.5 !important; display:block !important; width:100% !important; margin-top:8px !important; margin-bottom:8px !important;">Do you want to insert your panel credentials into this login form?</p>
-                <div style="display:flex !important; gap:12px !important; margin-top:6px !important; width:100% !important;">
-                    <button id="nx-btn-no" style="flex:1 !important; background:rgba(255,255,255,0.05) !important; color:#d1d5db !important; border:1px solid rgba(255,255,255,0.1) !important; padding:12px !important; border-radius:8px !important; font-size:12px !important; font-weight:bold !important; cursor:pointer !important; text-transform:uppercase !important; letter-spacing:1px !important; transition:0.2s !important; display:block !important;">No</button>
-                    <button id="nx-btn-yes" style="flex:1 !important; background:#4f46e5 !important; color:white !important; border:none !important; padding:12px !important; border-radius:8px !important; font-size:12px !important; font-weight:bold !important; cursor:pointer !important; text-transform:uppercase !important; letter-spacing:1px !important; box-shadow:0 0 15px rgba(79,70,229,0.4) !important; transition:0.2s !important; display:block !important;">Yes, Fill It</button>
-                </div>
-            \`;
-            overlay.appendChild(popup);
-            document.body.appendChild(overlay);
-
-            let lastFocusedInput = null;
-
-            document.getElementById('nx-btn-no').onclick = (e) => {
-                e.preventDefault();
-                overlay.style.display = 'none';
-                if(lastFocusedInput) { 
-                    lastFocusedInput.dataset.nxIgnored = "true";
-                    setTimeout(() => lastFocusedInput.focus(), 100); 
-                }
-            };
-
-            document.getElementById('nx-btn-yes').onclick = (e) => {
-                e.preventDefault();
-                overlay.style.display = 'none';
-                
-                let pField = null, uField = null;
-                const inputs = document.querySelectorAll('input');
-                
-                inputs.forEach(el => { if(el.classList.contains('nx-mask') || el.type === 'password') pField = el; });
-                
-                inputs.forEach(el => {
-                    if(el === pField) return;
-                    let n = (el.name||'').toLowerCase(), id = (el.id||'').toLowerCase(), pl = (el.placeholder||'').toLowerCase();
-                    if(!n.includes('cap') && !id.includes('cap') && !pl.includes('cap') && !n.includes('search')) {
-                        if(n.includes('user') || pl.includes('user') || n.includes('email') || n.includes('login')) {
-                            uField = el;
+                if(!uField) {
+                    allInputs.forEach(function(el) {
+                        if(uField || el === pField) return;
+                        var type = (el.getAttribute('type') || '').toLowerCase();
+                        var name = (el.name || '').toLowerCase();
+                        var placeholder = (el.placeholder || '').toLowerCase();
+                        var id = (el.id || '').toLowerCase();
+                        
+                        if(type === 'email' || type === 'text' || type === 'tel') {
+                            if(name.includes('user') || name.includes('email') || name.includes('login') || name.includes('id')) uField = el;
+                            else if(id.includes('user') || id.includes('email') || id.includes('login') || id.includes('id')) uField = el;
+                            else if(placeholder.includes('user') || placeholder.includes('email') || placeholder.includes('id')) uField = el;
                         }
-                    }
-                });
+                    });
 
-                if(!uField && pField) {
-                     inputs.forEach(el => {
-                         if(el !== pField && (el.type === 'text' || el.type === 'email') && el.getBoundingClientRect().width > 0) uField = el;
-                     });
-                }
-
-                if(uField) { setNativeValue(uField, au); uField.dataset.nxFilled = "true"; }
-                if(pField) { setNativeValue(pField, ap); pField.dataset.nxFilled = "true"; }
-                if(lastFocusedInput) lastFocusedInput.dataset.nxFilled = "true";
-            };
-
-            const checkTrigger = (e) => {
-                if (e.target.tagName === 'INPUT') {
-                    if (e.target.dataset.nxIgnored || e.target.dataset.nxFilled) return;
-
-                    let n = (e.target.name||'').toLowerCase();
-                    let p = (e.target.placeholder||'').toLowerCase();
-                    if (e.target.classList.contains('nx-mask') || e.target.type === 'password' || n.includes('user') || p.includes('user') || n.includes('login')) {
-                        lastFocusedInput = e.target;
-                        overlay.style.setProperty('display', 'flex', 'important');
-                        e.target.blur(); 
+                    if(!uField && pField) {
+                        allInputs.forEach(function(el) {
+                            if(uField || el === pField) return;
+                            var type = (el.getAttribute('type') || '').toLowerCase();
+                            if((type === 'text' || type === 'email' || type === 'tel') && el.offsetParent !== null) {
+                                uField = el;
+                            }
+                        });
                     }
                 }
-            };
+            }
 
-            document.addEventListener('focusin', checkTrigger);
-            document.addEventListener('click', checkTrigger);
-        });
+            // Final check and fill
+            if(uField) { 
+                setNativeValue(uField, au); 
+                uField.setAttribute('data-nx-autofilled', 'true');
+            }
+            if(pField) { 
+                setNativeValue(pField, ap); 
+                pField.setAttribute('data-nx-autofilled', 'true');
+            }
+
+            // Apply Frozen Style (Readonly but not obvious)
+            if(uField || pField) {
+                var style = document.createElement('style');
+                style.innerHTML = '[data-nx-autofilled="true"] { pointer-events: none !important; background-color: rgba(74, 222, 128, 0.05) !important; border-color: rgba(74, 222, 128, 0.2) !important; }';
+                document.head.appendChild(style);
+            }
+        }
+
+        // 🕒 Auto-fill runs immediately AND after a delay for dynamic frameworks
+        applyAutoFill();
+        setTimeout(applyAutoFill, 500);
+        setTimeout(applyAutoFill, 1500);
+
+        // Also try on URL change (for SPAs)
+        var lastUrl = location.href;
+        new MutationObserver(() => {
+            if (location.href !== lastUrl) {
+                lastUrl = location.href;
+                setTimeout(applyAutoFill, 500);
+                setTimeout(applyAutoFill, 1500);
+            }
+        }).observe(document, {subtree: true, childList: true});
+        
     }catch(e){}
 })();
 <\/script>`;
@@ -1166,3 +1276,4 @@ export default {
         return new Response(landingPageHTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
     }
 };
+```
